@@ -1,0 +1,178 @@
+{
+  "meta": {
+    "project_name": "Sistema E-Commerce",
+    "created_at": "2026-01-03T11:02:03.590174",
+    "version": "v1",
+    "srs_version": "v1"
+  },
+  "domain": {
+    "entities": [
+      {
+        "name": "produto",
+        "primary_key": "id",
+        "fields": [
+          {
+            "name": "id",
+            "type": "uuid",
+            "required": true,
+            "unique": true,
+            "indexed": true
+          },
+          {
+            "name": "nome",
+            "type": "string",
+            "required": true,
+            "unique": false,
+            "indexed": false
+          },
+          {
+            "name": "descricao",
+            "type": "string",
+            "required": false,
+            "unique": false,
+            "indexed": false
+          },
+          {
+            "name": "preco",
+            "type": "decimal",
+            "required": true,
+            "unique": false,
+            "indexed": false
+          }
+        ]
+      },
+      {
+        "name": "pedido",
+        "primary_key": "id",
+        "fields": [
+          {
+            "name": "id",
+            "type": "uuid",
+            "required": true,
+            "unique": true,
+            "indexed": true
+          },
+          {
+            "name": "nome",
+            "type": "string",
+            "required": true,
+            "unique": false,
+            "indexed": false
+          },
+          {
+            "name": "data",
+            "type": "datetime",
+            "required": true,
+            "unique": false,
+            "indexed": false
+          },
+          {
+            "name": "status",
+            "type": "string",
+            "required": true,
+            "unique": false,
+            "indexed": false
+          },
+          {
+            "name": "valor_total",
+            "type": "decimal",
+            "required": true,
+            "unique": false,
+            "indexed": false
+          }
+        ]
+      }
+    ],
+    "relations": [],
+    "workflows": [],
+    "rules": []
+  },
+  "api_intent": {
+    "resources": [
+      "produto",
+      "pedido"
+    ]
+  },
+  "ui": {
+    "pages": [
+      {
+        "path": "/app/produto/list",
+        "title": "Listar Produto",
+        "components": [
+          "table",
+          "pagination",
+          "search"
+        ],
+        "actions": [
+          "list",
+          "view",
+          "delete"
+        ]
+      },
+      {
+        "path": "/app/produto/new",
+        "title": "Novo Produto",
+        "components": [
+          "form"
+        ],
+        "actions": [
+          "create"
+        ]
+      },
+      {
+        "path": "/app/produto/:id",
+        "title": "Detalhes Produto",
+        "components": [
+          "form"
+        ],
+        "actions": [
+          "view",
+          "update",
+          "delete"
+        ]
+      },
+      {
+        "path": "/app/pedido/list",
+        "title": "Listar Pedido",
+        "components": [
+          "table",
+          "pagination",
+          "search"
+        ],
+        "actions": [
+          "list",
+          "view",
+          "delete"
+        ]
+      },
+      {
+        "path": "/app/pedido/new",
+        "title": "Novo Pedido",
+        "components": [
+          "form"
+        ],
+        "actions": [
+          "create"
+        ]
+      },
+      {
+        "path": "/app/pedido/:id",
+        "title": "Detalhes Pedido",
+        "components": [
+          "form"
+        ],
+        "actions": [
+          "view",
+          "update",
+          "delete"
+        ]
+      }
+    ]
+  },
+  "nfr": {
+    "security": {
+      "auth_required": true,
+      "audit_log_required": false
+    }
+  }
+}

@@ -1,0 +1,1505 @@
+{
+  "id": "srs-067da5ab",
+  "title": "Sistema Petclinic",
+  "version": "1.0.0",
+  "requirements": [
+    {
+      "id": "FR-001",
+      "description": "O sistema deve permitir cadastrar quero_um_sistema_web_para_controle_de_clinica_veterinaria",
+      "priority": "high",
+      "type": "functional"
+    },
+    {
+      "id": "FR-002",
+      "description": "O sistema deve permitir listar quero_um_sistema_web_para_controle_de_clinica_veterinaria",
+      "priority": "medium",
+      "type": "functional"
+    },
+    {
+      "id": "FR-003",
+      "description": "O sistema deve permitir visualizar quero_um_sistema_web_para_controle_de_clinica_veterinaria",
+      "priority": "medium",
+      "type": "functional"
+    },
+    {
+      "id": "FR-004",
+      "description": "O sistema deve permitir editar quero_um_sistema_web_para_controle_de_clinica_veterinaria",
+      "priority": "medium",
+      "type": "functional"
+    },
+    {
+      "id": "FR-005",
+      "description": "O sistema deve permitir excluir quero_um_sistema_web_para_controle_de_clinica_veterinaria",
+      "priority": "low",
+      "type": "functional"
+    },
+    {
+      "id": "FR-006",
+      "description": "O sistema deve permitir cadastrar preciso_cadastrar_tutor",
+      "priority": "high",
+      "type": "functional"
+    },
+    {
+      "id": "FR-007",
+      "description": "O sistema deve permitir listar preciso_cadastrar_tutor",
+      "priority": "medium",
+      "type": "functional"
+    },
+    {
+      "id": "FR-008",
+      "description": "O sistema deve permitir visualizar preciso_cadastrar_tutor",
+      "priority": "medium",
+      "type": "functional"
+    },
+    {
+      "id": "FR-009",
+      "description": "O sistema deve permitir editar preciso_cadastrar_tutor",
+      "priority": "medium",
+      "type": "functional"
+    },
+    {
+      "id": "FR-010",
+      "description": "O sistema deve permitir excluir preciso_cadastrar_tutor",
+      "priority": "low",
+      "type": "functional"
+    },
+    {
+      "id": "FR-011",
+      "description": "O sistema deve permitir cadastrar pet",
+      "priority": "high",
+      "type": "functional"
+    },
+    {
+      "id": "FR-012",
+      "description": "O sistema deve permitir listar pet",
+      "priority": "medium",
+      "type": "functional"
+    },
+    {
+      "id": "FR-013",
+      "description": "O sistema deve permitir visualizar pet",
+      "priority": "medium",
+      "type": "functional"
+    },
+    {
+      "id": "FR-014",
+      "description": "O sistema deve permitir editar pet",
+      "priority": "medium",
+      "type": "functional"
+    },
+    {
+      "id": "FR-015",
+      "description": "O sistema deve permitir excluir pet",
+      "priority": "low",
+      "type": "functional"
+    },
+    {
+      "id": "FR-016",
+      "description": "O sistema deve permitir cadastrar veterinario",
+      "priority": "high",
+      "type": "functional"
+    },
+    {
+      "id": "FR-017",
+      "description": "O sistema deve permitir listar veterinario",
+      "priority": "medium",
+      "type": "functional"
+    },
+    {
+      "id": "FR-018",
+      "description": "O sistema deve permitir visualizar veterinario",
+      "priority": "medium",
+      "type": "functional"
+    },
+    {
+      "id": "FR-019",
+      "description": "O sistema deve permitir editar veterinario",
+      "priority": "medium",
+      "type": "functional"
+    },
+    {
+      "id": "FR-020",
+      "description": "O sistema deve permitir excluir veterinario",
+      "priority": "low",
+      "type": "functional"
+    },
+    {
+      "id": "FR-021",
+      "description": "O sistema deve permitir cadastrar consulta",
+      "priority": "high",
+      "type": "functional"
+    },
+    {
+      "id": "FR-022",
+      "description": "O sistema deve permitir listar consulta",
+      "priority": "medium",
+      "type": "functional"
+    },
+    {
+      "id": "FR-023",
+      "description": "O sistema deve permitir visualizar consulta",
+      "priority": "medium",
+      "type": "functional"
+    },
+    {
+      "id": "FR-024",
+      "description": "O sistema deve permitir editar consulta",
+      "priority": "medium",
+      "type": "functional"
+    },
+    {
+      "id": "FR-025",
+      "description": "O sistema deve permitir excluir consulta",
+      "priority": "low",
+      "type": "functional"
+    },
+    {
+      "id": "FR-026",
+      "description": "O sistema deve permitir cadastrar vacina",
+      "priority": "high",
+      "type": "functional"
+    },
+    {
+      "id": "FR-027",
+      "description": "O sistema deve permitir listar vacina",
+      "priority": "medium",
+      "type": "functional"
+    },
+    {
+      "id": "FR-028",
+      "description": "O sistema deve permitir visualizar vacina",
+      "priority": "medium",
+      "type": "functional"
+    },
+    {
+      "id": "FR-029",
+      "description": "O sistema deve permitir editar vacina",
+      "priority": "medium",
+      "type": "functional"
+    },
+    {
+      "id": "FR-030",
+      "description": "O sistema deve permitir excluir vacina",
+      "priority": "low",
+      "type": "functional"
+    },
+    {
+      "id": "FR-031",
+      "description": "O sistema deve permitir cadastrar agendamento",
+      "priority": "high",
+      "type": "functional"
+    },
+    {
+      "id": "FR-032",
+      "description": "O sistema deve permitir listar agendamento",
+      "priority": "medium",
+      "type": "functional"
+    },
+    {
+      "id": "FR-033",
+      "description": "O sistema deve permitir visualizar agendamento",
+      "priority": "medium",
+      "type": "functional"
+    },
+    {
+      "id": "FR-034",
+      "description": "O sistema deve permitir editar agendamento",
+      "priority": "medium",
+      "type": "functional"
+    },
+    {
+      "id": "FR-035",
+      "description": "O sistema deve permitir excluir agendamento",
+      "priority": "low",
+      "type": "functional"
+    },
+    {
+      "id": "FR-036",
+      "description": "O sistema deve permitir cadastrar e_pagamento",
+      "priority": "high",
+      "type": "functional"
+    },
+    {
+      "id": "FR-037",
+      "description": "O sistema deve permitir listar e_pagamento",
+      "priority": "medium",
+      "type": "functional"
+    },
+    {
+      "id": "FR-038",
+      "description": "O sistema deve permitir visualizar e_pagamento",
+      "priority": "medium",
+      "type": "functional"
+    },
+    {
+      "id": "FR-039",
+      "description": "O sistema deve permitir editar e_pagamento",
+      "priority": "medium",
+      "type": "functional"
+    },
+    {
+      "id": "FR-040",
+      "description": "O sistema deve permitir excluir e_pagamento",
+      "priority": "low",
+      "type": "functional"
+    },
+    {
+      "id": "FR-041",
+      "description": "O sistema deve permitir cadastrar dashboard_inicial_com_atalho",
+      "priority": "high",
+      "type": "functional"
+    },
+    {
+      "id": "FR-042",
+      "description": "O sistema deve permitir listar dashboard_inicial_com_atalho",
+      "priority": "medium",
+      "type": "functional"
+    },
+    {
+      "id": "FR-043",
+      "description": "O sistema deve permitir visualizar dashboard_inicial_com_atalho",
+      "priority": "medium",
+      "type": "functional"
+    },
+    {
+      "id": "FR-044",
+      "description": "O sistema deve permitir editar dashboard_inicial_com_atalho",
+      "priority": "medium",
+      "type": "functional"
+    },
+    {
+      "id": "FR-045",
+      "description": "O sistema deve permitir excluir dashboard_inicial_com_atalho",
+      "priority": "low",
+      "type": "functional"
+    },
+    {
+      "id": "FR-046",
+      "description": "O sistema deve permitir cadastrar especie",
+      "priority": "high",
+      "type": "functional"
+    },
+    {
+      "id": "FR-047",
+      "description": "O sistema deve permitir listar especie",
+      "priority": "medium",
+      "type": "functional"
+    },
+    {
+      "id": "FR-048",
+      "description": "O sistema deve permitir visualizar especie",
+      "priority": "medium",
+      "type": "functional"
+    },
+    {
+      "id": "FR-049",
+      "description": "O sistema deve permitir editar especie",
+      "priority": "medium",
+      "type": "functional"
+    },
+    {
+      "id": "FR-050",
+      "description": "O sistema deve permitir excluir especie",
+      "priority": "low",
+      "type": "functional"
+    },
+    {
+      "id": "FR-051",
+      "description": "O sistema deve permitir cadastrar raca",
+      "priority": "high",
+      "type": "functional"
+    },
+    {
+      "id": "FR-052",
+      "description": "O sistema deve permitir listar raca",
+      "priority": "medium",
+      "type": "functional"
+    },
+    {
+      "id": "FR-053",
+      "description": "O sistema deve permitir visualizar raca",
+      "priority": "medium",
+      "type": "functional"
+    },
+    {
+      "id": "FR-054",
+      "description": "O sistema deve permitir editar raca",
+      "priority": "medium",
+      "type": "functional"
+    },
+    {
+      "id": "FR-055",
+      "description": "O sistema deve permitir excluir raca",
+      "priority": "low",
+      "type": "functional"
+    },
+    {
+      "id": "FR-056",
+      "description": "O sistema deve permitir cadastrar sexo",
+      "priority": "high",
+      "type": "functional"
+    },
+    {
+      "id": "FR-057",
+      "description": "O sistema deve permitir listar sexo",
+      "priority": "medium",
+      "type": "functional"
+    },
+    {
+      "id": "FR-058",
+      "description": "O sistema deve permitir visualizar sexo",
+      "priority": "medium",
+      "type": "functional"
+    },
+    {
+      "id": "FR-059",
+      "description": "O sistema deve permitir editar sexo",
+      "priority": "medium",
+      "type": "functional"
+    },
+    {
+      "id": "FR-060",
+      "description": "O sistema deve permitir excluir sexo",
+      "priority": "low",
+      "type": "functional"
+    },
+    {
+      "id": "FR-061",
+      "description": "O sistema deve permitir cadastrar tutor",
+      "priority": "high",
+      "type": "functional"
+    },
+    {
+      "id": "FR-062",
+      "description": "O sistema deve permitir listar tutor",
+      "priority": "medium",
+      "type": "functional"
+    },
+    {
+      "id": "FR-063",
+      "description": "O sistema deve permitir visualizar tutor",
+      "priority": "medium",
+      "type": "functional"
+    },
+    {
+      "id": "FR-064",
+      "description": "O sistema deve permitir editar tutor",
+      "priority": "medium",
+      "type": "functional"
+    },
+    {
+      "id": "FR-065",
+      "description": "O sistema deve permitir excluir tutor",
+      "priority": "low",
+      "type": "functional"
+    },
+    {
+      "id": "FR-066",
+      "description": "O sistema deve permitir cadastrar crmv",
+      "priority": "high",
+      "type": "functional"
+    },
+    {
+      "id": "FR-067",
+      "description": "O sistema deve permitir listar crmv",
+      "priority": "medium",
+      "type": "functional"
+    },
+    {
+      "id": "FR-068",
+      "description": "O sistema deve permitir visualizar crmv",
+      "priority": "medium",
+      "type": "functional"
+    },
+    {
+      "id": "FR-069",
+      "description": "O sistema deve permitir editar crmv",
+      "priority": "medium",
+      "type": "functional"
+    },
+    {
+      "id": "FR-070",
+      "description": "O sistema deve permitir excluir crmv",
+      "priority": "low",
+      "type": "functional"
+    },
+    {
+      "id": "FR-071",
+      "description": "O sistema deve permitir cadastrar especialidade",
+      "priority": "high",
+      "type": "functional"
+    },
+    {
+      "id": "FR-072",
+      "description": "O sistema deve permitir listar especialidade",
+      "priority": "medium",
+      "type": "functional"
+    },
+    {
+      "id": "FR-073",
+      "description": "O sistema deve permitir visualizar especialidade",
+      "priority": "medium",
+      "type": "functional"
+    },
+    {
+      "id": "FR-074",
+      "description": "O sistema deve permitir editar especialidade",
+      "priority": "medium",
+      "type": "functional"
+    },
+    {
+      "id": "FR-075",
+      "description": "O sistema deve permitir excluir especialidade",
+      "priority": "low",
+      "type": "functional"
+    },
+    {
+      "id": "FR-076",
+      "description": "O sistema deve permitir cadastrar motivo",
+      "priority": "high",
+      "type": "functional"
+    },
+    {
+      "id": "FR-077",
+      "description": "O sistema deve permitir listar motivo",
+      "priority": "medium",
+      "type": "functional"
+    },
+    {
+      "id": "FR-078",
+      "description": "O sistema deve permitir visualizar motivo",
+      "priority": "medium",
+      "type": "functional"
+    },
+    {
+      "id": "FR-079",
+      "description": "O sistema deve permitir editar motivo",
+      "priority": "medium",
+      "type": "functional"
+    },
+    {
+      "id": "FR-080",
+      "description": "O sistema deve permitir excluir motivo",
+      "priority": "low",
+      "type": "functional"
+    },
+    {
+      "id": "FR-081",
+      "description": "O sistema deve permitir cadastrar anotacao",
+      "priority": "high",
+      "type": "functional"
+    },
+    {
+      "id": "FR-082",
+      "description": "O sistema deve permitir listar anotacao",
+      "priority": "medium",
+      "type": "functional"
+    },
+    {
+      "id": "FR-083",
+      "description": "O sistema deve permitir visualizar anotacao",
+      "priority": "medium",
+      "type": "functional"
+    },
+    {
+      "id": "FR-084",
+      "description": "O sistema deve permitir editar anotacao",
+      "priority": "medium",
+      "type": "functional"
+    },
+    {
+      "id": "FR-085",
+      "description": "O sistema deve permitir excluir anotacao",
+      "priority": "low",
+      "type": "functional"
+    },
+    {
+      "id": "FR-086",
+      "description": "O sistema deve permitir cadastrar diagnostico",
+      "priority": "high",
+      "type": "functional"
+    },
+    {
+      "id": "FR-087",
+      "description": "O sistema deve permitir listar diagnostico",
+      "priority": "medium",
+      "type": "functional"
+    },
+    {
+      "id": "FR-088",
+      "description": "O sistema deve permitir visualizar diagnostico",
+      "priority": "medium",
+      "type": "functional"
+    },
+    {
+      "id": "FR-089",
+      "description": "O sistema deve permitir editar diagnostico",
+      "priority": "medium",
+      "type": "functional"
+    },
+    {
+      "id": "FR-090",
+      "description": "O sistema deve permitir excluir diagnostico",
+      "priority": "low",
+      "type": "functional"
+    },
+    {
+      "id": "FR-091",
+      "description": "O sistema deve permitir cadastrar prescricao",
+      "priority": "high",
+      "type": "functional"
+    },
+    {
+      "id": "FR-092",
+      "description": "O sistema deve permitir listar prescricao",
+      "priority": "medium",
+      "type": "functional"
+    },
+    {
+      "id": "FR-093",
+      "description": "O sistema deve permitir visualizar prescricao",
+      "priority": "medium",
+      "type": "functional"
+    },
+    {
+      "id": "FR-094",
+      "description": "O sistema deve permitir editar prescricao",
+      "priority": "medium",
+      "type": "functional"
+    },
+    {
+      "id": "FR-095",
+      "description": "O sistema deve permitir excluir prescricao",
+      "priority": "low",
+      "type": "functional"
+    },
+    {
+      "id": "FR-096",
+      "description": "O sistema deve permitir cadastrar data_aplicacao",
+      "priority": "high",
+      "type": "functional"
+    },
+    {
+      "id": "FR-097",
+      "description": "O sistema deve permitir listar data_aplicacao",
+      "priority": "medium",
+      "type": "functional"
+    },
+    {
+      "id": "FR-098",
+      "description": "O sistema deve permitir visualizar data_aplicacao",
+      "priority": "medium",
+      "type": "functional"
+    },
+    {
+      "id": "FR-099",
+      "description": "O sistema deve permitir editar data_aplicacao",
+      "priority": "medium",
+      "type": "functional"
+    },
+    {
+      "id": "FR-100",
+      "description": "O sistema deve permitir excluir data_aplicacao",
+      "priority": "low",
+      "type": "functional"
+    },
+    {
+      "id": "FR-101",
+      "description": "O sistema deve permitir cadastrar proxima_dose",
+      "priority": "high",
+      "type": "functional"
+    },
+    {
+      "id": "FR-102",
+      "description": "O sistema deve permitir listar proxima_dose",
+      "priority": "medium",
+      "type": "functional"
+    },
+    {
+      "id": "FR-103",
+      "description": "O sistema deve permitir visualizar proxima_dose",
+      "priority": "medium",
+      "type": "functional"
+    },
+    {
+      "id": "FR-104",
+      "description": "O sistema deve permitir editar proxima_dose",
+      "priority": "medium",
+      "type": "functional"
+    },
+    {
+      "id": "FR-105",
+      "description": "O sistema deve permitir excluir proxima_dose",
+      "priority": "low",
+      "type": "functional"
+    },
+    {
+      "id": "FR-106",
+      "description": "O sistema deve permitir cadastrar lote",
+      "priority": "high",
+      "type": "functional"
+    },
+    {
+      "id": "FR-107",
+      "description": "O sistema deve permitir listar lote",
+      "priority": "medium",
+      "type": "functional"
+    },
+    {
+      "id": "FR-108",
+      "description": "O sistema deve permitir visualizar lote",
+      "priority": "medium",
+      "type": "functional"
+    },
+    {
+      "id": "FR-109",
+      "description": "O sistema deve permitir editar lote",
+      "priority": "medium",
+      "type": "functional"
+    },
+    {
+      "id": "FR-110",
+      "description": "O sistema deve permitir excluir lote",
+      "priority": "low",
+      "type": "functional"
+    },
+    {
+      "id": "FR-111",
+      "description": "O sistema deve permitir cadastrar observacoes",
+      "priority": "high",
+      "type": "functional"
+    },
+    {
+      "id": "FR-112",
+      "description": "O sistema deve permitir listar observacoes",
+      "priority": "medium",
+      "type": "functional"
+    },
+    {
+      "id": "FR-113",
+      "description": "O sistema deve permitir visualizar observacoes",
+      "priority": "medium",
+      "type": "functional"
+    },
+    {
+      "id": "FR-114",
+      "description": "O sistema deve permitir editar observacoes",
+      "priority": "medium",
+      "type": "functional"
+    },
+    {
+      "id": "FR-115",
+      "description": "O sistema deve permitir excluir observacoes",
+      "priority": "low",
+      "type": "functional"
+    },
+    {
+      "id": "FR-116",
+      "description": "O sistema deve permitir cadastrar veterinario_opcional",
+      "priority": "high",
+      "type": "functional"
+    },
+    {
+      "id": "FR-117",
+      "description": "O sistema deve permitir listar veterinario_opcional",
+      "priority": "medium",
+      "type": "functional"
+    },
+    {
+      "id": "FR-118",
+      "description": "O sistema deve permitir visualizar veterinario_opcional",
+      "priority": "medium",
+      "type": "functional"
+    },
+    {
+      "id": "FR-119",
+      "description": "O sistema deve permitir editar veterinario_opcional",
+      "priority": "medium",
+      "type": "functional"
+    },
+    {
+      "id": "FR-120",
+      "description": "O sistema deve permitir excluir veterinario_opcional",
+      "priority": "low",
+      "type": "functional"
+    },
+    {
+      "id": "FR-121",
+      "description": "O sistema deve permitir cadastrar servico",
+      "priority": "high",
+      "type": "functional"
+    },
+    {
+      "id": "FR-122",
+      "description": "O sistema deve permitir listar servico",
+      "priority": "medium",
+      "type": "functional"
+    },
+    {
+      "id": "FR-123",
+      "description": "O sistema deve permitir visualizar servico",
+      "priority": "medium",
+      "type": "functional"
+    },
+    {
+      "id": "FR-124",
+      "description": "O sistema deve permitir editar servico",
+      "priority": "medium",
+      "type": "functional"
+    },
+    {
+      "id": "FR-125",
+      "description": "O sistema deve permitir excluir servico",
+      "priority": "low",
+      "type": "functional"
+    },
+    {
+      "id": "FR-126",
+      "description": "O sistema deve permitir cadastrar statu",
+      "priority": "high",
+      "type": "functional"
+    },
+    {
+      "id": "FR-127",
+      "description": "O sistema deve permitir listar statu",
+      "priority": "medium",
+      "type": "functional"
+    },
+    {
+      "id": "FR-128",
+      "description": "O sistema deve permitir visualizar statu",
+      "priority": "medium",
+      "type": "functional"
+    },
+    {
+      "id": "FR-129",
+      "description": "O sistema deve permitir editar statu",
+      "priority": "medium",
+      "type": "functional"
+    },
+    {
+      "id": "FR-130",
+      "description": "O sistema deve permitir excluir statu",
+      "priority": "low",
+      "type": "functional"
+    },
+    {
+      "id": "FR-131",
+      "description": "O sistema deve permitir cadastrar data_regras_nao_pode_ter_atendimento_sem_pet",
+      "priority": "high",
+      "type": "functional"
+    },
+    {
+      "id": "FR-132",
+      "description": "O sistema deve permitir listar data_regras_nao_pode_ter_atendimento_sem_pet",
+      "priority": "medium",
+      "type": "functional"
+    },
+    {
+      "id": "FR-133",
+      "description": "O sistema deve permitir visualizar data_regras_nao_pode_ter_atendimento_sem_pet",
+      "priority": "medium",
+      "type": "functional"
+    },
+    {
+      "id": "FR-134",
+      "description": "O sistema deve permitir editar data_regras_nao_pode_ter_atendimento_sem_pet",
+      "priority": "medium",
+      "type": "functional"
+    },
+    {
+      "id": "FR-135",
+      "description": "O sistema deve permitir excluir data_regras_nao_pode_ter_atendimento_sem_pet",
+      "priority": "low",
+      "type": "functional"
+    },
+    {
+      "id": "FR-136",
+      "description": "O sistema deve permitir cadastrar sem_veterinario",
+      "priority": "high",
+      "type": "functional"
+    },
+    {
+      "id": "FR-137",
+      "description": "O sistema deve permitir listar sem_veterinario",
+      "priority": "medium",
+      "type": "functional"
+    },
+    {
+      "id": "FR-138",
+      "description": "O sistema deve permitir visualizar sem_veterinario",
+      "priority": "medium",
+      "type": "functional"
+    },
+    {
+      "id": "FR-139",
+      "description": "O sistema deve permitir editar sem_veterinario",
+      "priority": "medium",
+      "type": "functional"
+    },
+    {
+      "id": "FR-140",
+      "description": "O sistema deve permitir excluir sem_veterinario",
+      "priority": "low",
+      "type": "functional"
+    },
+    {
+      "id": "FR-141",
+      "description": "O sistema deve permitir cadastrar cadastrar_pet",
+      "priority": "high",
+      "type": "functional"
+    },
+    {
+      "id": "FR-142",
+      "description": "O sistema deve permitir listar cadastrar_pet",
+      "priority": "medium",
+      "type": "functional"
+    },
+    {
+      "id": "FR-143",
+      "description": "O sistema deve permitir visualizar cadastrar_pet",
+      "priority": "medium",
+      "type": "functional"
+    },
+    {
+      "id": "FR-144",
+      "description": "O sistema deve permitir editar cadastrar_pet",
+      "priority": "medium",
+      "type": "functional"
+    },
+    {
+      "id": "FR-145",
+      "description": "O sistema deve permitir excluir cadastrar_pet",
+      "priority": "low",
+      "type": "functional"
+    },
+    {
+      "id": "FR-146",
+      "description": "O sistema deve permitir cadastrar clinica",
+      "priority": "high",
+      "type": "functional"
+    },
+    {
+      "id": "FR-147",
+      "description": "O sistema deve permitir listar clinica",
+      "priority": "medium",
+      "type": "functional"
+    },
+    {
+      "id": "FR-148",
+      "description": "O sistema deve permitir visualizar clinica",
+      "priority": "medium",
+      "type": "functional"
+    },
+    {
+      "id": "FR-149",
+      "description": "O sistema deve permitir editar clinica",
+      "priority": "medium",
+      "type": "functional"
+    },
+    {
+      "id": "FR-150",
+      "description": "O sistema deve permitir excluir clinica",
+      "priority": "low",
+      "type": "functional"
+    }
+  ],
+  "meta": {
+    "project_name": "Sistema Petclinic"
+  },
+  "data_requirements": [
+    {
+      "entity": "quero_um_sistema_web_para_controle_de_clinica_veterinaria",
+      "fields": [
+        {
+          "name": "clinica_pet",
+          "type": "string",
+          "required": true
+        }
+      ]
+    },
+    {
+      "entity": "preciso_cadastrar_tutor",
+      "fields": [
+        {
+          "name": "nome",
+          "type": "string",
+          "required": true
+        },
+        {
+          "name": "cpf",
+          "type": "string",
+          "required": true,
+          "unique": true
+        },
+        {
+          "name": "telefone",
+          "type": "string",
+          "required": false
+        },
+        {
+          "name": "email",
+          "type": "string",
+          "required": true,
+          "unique": true
+        },
+        {
+          "name": "endereco",
+          "type": "string",
+          "required": true
+        }
+      ]
+    },
+    {
+      "entity": "pet",
+      "fields": [
+        {
+          "name": "nome",
+          "type": "string",
+          "required": true
+        },
+        {
+          "name": "especie_id",
+          "type": "uuid",
+          "required": true,
+          "unique": false
+        },
+        {
+          "name": "raca_id",
+          "type": "uuid",
+          "required": true,
+          "unique": false
+        },
+        {
+          "name": "sexo_id",
+          "type": "uuid",
+          "required": true,
+          "unique": false
+        },
+        {
+          "name": "data_nascimento",
+          "type": "date",
+          "required": true
+        },
+        {
+          "name": "peso",
+          "type": "decimal",
+          "required": false
+        },
+        {
+          "name": "observacoes",
+          "type": "string",
+          "required": true
+        },
+        {
+          "name": "tutor_id",
+          "type": "uuid",
+          "required": true,
+          "unique": false
+        }
+      ]
+    },
+    {
+      "entity": "veterinario",
+      "fields": [
+        {
+          "name": "nome",
+          "type": "string",
+          "required": true
+        },
+        {
+          "name": "crmv_id",
+          "type": "uuid",
+          "required": true,
+          "unique": false
+        },
+        {
+          "name": "especialidade_id",
+          "type": "uuid",
+          "required": true,
+          "unique": false
+        },
+        {
+          "name": "telefone",
+          "type": "string",
+          "required": false
+        },
+        {
+          "name": "email",
+          "type": "string",
+          "required": true,
+          "unique": true
+        }
+      ]
+    },
+    {
+      "entity": "consulta",
+      "fields": [
+        {
+          "name": "data",
+          "type": "date",
+          "required": true
+        },
+        {
+          "name": "hora",
+          "type": "time",
+          "required": true
+        },
+        {
+          "name": "pet_id",
+          "type": "uuid",
+          "required": true,
+          "unique": false
+        },
+        {
+          "name": "veterinario_id",
+          "type": "uuid",
+          "required": true,
+          "unique": false
+        },
+        {
+          "name": "motivo_id",
+          "type": "uuid",
+          "required": true,
+          "unique": false
+        },
+        {
+          "name": "anotacao_id",
+          "type": "uuid",
+          "required": true,
+          "unique": false
+        },
+        {
+          "name": "diagnostico_id",
+          "type": "uuid",
+          "required": true,
+          "unique": false
+        },
+        {
+          "name": "prescricao_id",
+          "type": "uuid",
+          "required": true,
+          "unique": false
+        },
+        {
+          "name": "statu_id",
+          "type": "uuid",
+          "required": true,
+          "unique": false
+        }
+      ]
+    },
+    {
+      "entity": "vacina",
+      "fields": [
+        {
+          "name": "pet_id",
+          "type": "uuid",
+          "required": true,
+          "unique": false
+        },
+        {
+          "name": "vacina",
+          "type": "string",
+          "required": true
+        },
+        {
+          "name": "data_aplicacao_id",
+          "type": "uuid",
+          "required": true,
+          "unique": false
+        },
+        {
+          "name": "proxima_dose_id",
+          "type": "uuid",
+          "required": true,
+          "unique": false
+        },
+        {
+          "name": "lote_id",
+          "type": "uuid",
+          "required": true,
+          "unique": false
+        },
+        {
+          "name": "observacoes",
+          "type": "string",
+          "required": true
+        }
+      ]
+    },
+    {
+      "entity": "agendamento",
+      "fields": [
+        {
+          "name": "data",
+          "type": "date",
+          "required": true
+        },
+        {
+          "name": "hora",
+          "type": "time",
+          "required": true
+        },
+        {
+          "name": "pet_id",
+          "type": "uuid",
+          "required": true,
+          "unique": false
+        },
+        {
+          "name": "veterinario_opcional_id",
+          "type": "uuid",
+          "required": true,
+          "unique": false
+        },
+        {
+          "name": "servico_id",
+          "type": "uuid",
+          "required": true,
+          "unique": false
+        },
+        {
+          "name": "statu_id",
+          "type": "uuid",
+          "required": true,
+          "unique": false
+        }
+      ]
+    },
+    {
+      "entity": "e_pagamento",
+      "fields": [
+        {
+          "name": "atendimento",
+          "type": "string",
+          "required": true
+        },
+        {
+          "name": "forma_pagamento",
+          "type": "string",
+          "required": true
+        },
+        {
+          "name": "valor",
+          "type": "decimal",
+          "required": true
+        },
+        {
+          "name": "statu_id",
+          "type": "uuid",
+          "required": true,
+          "unique": false
+        },
+        {
+          "name": "data",
+          "type": "date",
+          "required": true
+        }
+      ]
+    },
+    {
+      "entity": "dashboard_inicial_com_atalho",
+      "fields": [
+        {
+          "name": "novo_agendamento",
+          "type": "string",
+          "required": true
+        },
+        {
+          "name": "novo_atendimento",
+          "type": "string",
+          "required": true
+        },
+        {
+          "name": "cadastrar_tutor",
+          "type": "string",
+          "required": true
+        },
+        {
+          "name": "cadastrar_pet_id",
+          "type": "uuid",
+          "required": true,
+          "unique": false
+        }
+      ]
+    },
+    {
+      "entity": "especie",
+      "fields": []
+    },
+    {
+      "entity": "raca",
+      "fields": []
+    },
+    {
+      "entity": "sexo",
+      "fields": []
+    },
+    {
+      "entity": "tutor",
+      "fields": []
+    },
+    {
+      "entity": "crmv",
+      "fields": []
+    },
+    {
+      "entity": "especialidade",
+      "fields": []
+    },
+    {
+      "entity": "motivo",
+      "fields": []
+    },
+    {
+      "entity": "anotacao",
+      "fields": []
+    },
+    {
+      "entity": "diagnostico",
+      "fields": []
+    },
+    {
+      "entity": "prescricao",
+      "fields": []
+    },
+    {
+      "entity": "data_aplicacao",
+      "fields": []
+    },
+    {
+      "entity": "proxima_dose",
+      "fields": []
+    },
+    {
+      "entity": "lote",
+      "fields": []
+    },
+    {
+      "entity": "observacoes",
+      "fields": []
+    },
+    {
+      "entity": "veterinario_opcional",
+      "fields": []
+    },
+    {
+      "entity": "servico",
+      "fields": []
+    },
+    {
+      "entity": "statu",
+      "fields": []
+    },
+    {
+      "entity": "data_regras_nao_pode_ter_atendimento_sem_pet",
+      "fields": []
+    },
+    {
+      "entity": "sem_veterinario",
+      "fields": []
+    },
+    {
+      "entity": "cadastrar_pet",
+      "fields": []
+    },
+    {
+      "entity": "clinica",
+      "fields": []
+    }
+  ],
+  "relations": [
+    {
+      "from": "pet",
+      "to": "especie",
+      "type": "many_to_one",
+      "field": "especie_id"
+    },
+    {
+      "from": "pet",
+      "to": "raca",
+      "type": "many_to_one",
+      "field": "raca_id"
+    },
+    {
+      "from": "pet",
+      "to": "sexo",
+      "type": "many_to_one",
+      "field": "sexo_id"
+    },
+    {
+      "from": "pet",
+      "to": "tutor",
+      "type": "many_to_one",
+      "field": "tutor_id"
+    },
+    {
+      "from": "veterinario",
+      "to": "crmv",
+      "type": "many_to_one",
+      "field": "crmv_id"
+    },
+    {
+      "from": "veterinario",
+      "to": "especialidade",
+      "type": "many_to_one",
+      "field": "especialidade_id"
+    },
+    {
+      "from": "consulta",
+      "to": "pet",
+      "type": "many_to_one",
+      "field": "pet_id"
+    },
+    {
+      "from": "consulta",
+      "to": "veterinario",
+      "type": "many_to_one",
+      "field": "veterinario_id"
+    },
+    {
+      "from": "consulta",
+      "to": "motivo",
+      "type": "many_to_one",
+      "field": "motivo_id"
+    },
+    {
+      "from": "consulta",
+      "to": "anotacao",
+      "type": "many_to_one",
+      "field": "anotacao_id"
+    },
+    {
+      "from": "consulta",
+      "to": "diagnostico",
+      "type": "many_to_one",
+      "field": "diagnostico_id"
+    },
+    {
+      "from": "consulta",
+      "to": "prescricao",
+      "type": "many_to_one",
+      "field": "prescricao_id"
+    },
+    {
+      "from": "consulta",
+      "to": "statu",
+      "type": "many_to_one",
+      "field": "statu_id"
+    },
+    {
+      "from": "vacina",
+      "to": "pet",
+      "type": "many_to_one",
+      "field": "pet_id"
+    },
+    {
+      "from": "vacina",
+      "to": "data_aplicacao",
+      "type": "many_to_one",
+      "field": "data_aplicacao_id"
+    },
+    {
+      "from": "vacina",
+      "to": "proxima_dose",
+      "type": "many_to_one",
+      "field": "proxima_dose_id"
+    },
+    {
+      "from": "vacina",
+      "to": "lote",
+      "type": "many_to_one",
+      "field": "lote_id"
+    },
+    {
+      "from": "agendamento",
+      "to": "pet",
+      "type": "many_to_one",
+      "field": "pet_id"
+    },
+    {
+      "from": "agendamento",
+      "to": "veterinario_opcional",
+      "type": "many_to_one",
+      "field": "veterinario_opcional_id"
+    },
+    {
+      "from": "agendamento",
+      "to": "servico",
+      "type": "many_to_one",
+      "field": "servico_id"
+    },
+    {
+      "from": "agendamento",
+      "to": "statu",
+      "type": "many_to_one",
+      "field": "statu_id"
+    },
+    {
+      "from": "e_pagamento",
+      "to": "statu",
+      "type": "many_to_one",
+      "field": "statu_id"
+    },
+    {
+      "from": "dashboard_inicial_com_atalho",
+      "to": "cadastrar_pet",
+      "type": "many_to_one",
+      "field": "cadastrar_pet_id"
+    }
+  ],
+  "business_rules": [],
+  "non_functional_requirements": {
+    "security": {
+      "auth_required": true,
+      "audit_log_required": false
+    }
+  },
+  "metadata": {
+    "created_at": "2026-01-04T18:43:08.574767",
+    "language": "pt-BR",
+    "actors": [
+      {
+        "id": "admin",
+        "name": "Administrador",
+        "description": "Usuário administrador do sistema"
+      }
+    ],
+    "summary": "Quero um sistema web para controle de clínica veterinária (clínica pet)",
+    "open_questions": [
+      "Autenticação é necessária? Qual tipo (login/senha, OAuth, SSO)?",
+      "Quais são as principais entidades/recursos do sistema?",
+      "Existem regras de permissão específicas por perfil?"
+    ],
+    "warnings": [
+      "fields_missing_for_entity:especie",
+      "fields_missing_for_entity:raca",
+      "fields_missing_for_entity:sexo",
+      "fields_missing_for_entity:tutor",
+      "fields_missing_for_entity:crmv",
+      "fields_missing_for_entity:especialidade",
+      "fields_missing_for_entity:pet",
+      "fields_missing_for_entity:veterinario",
+      "fields_missing_for_entity:motivo",
+      "fields_missing_for_entity:anotacao",
+      "fields_missing_for_entity:diagnostico",
+      "fields_missing_for_entity:prescricao",
+      "fields_missing_for_entity:vacina",
+      "fields_missing_for_entity:data_aplicacao",
+      "fields_missing_for_entity:proxima_dose",
+      "fields_missing_for_entity:lote",
+      "fields_missing_for_entity:observacoes",
+      "fields_missing_for_entity:pet",
+      "fields_missing_for_entity:veterinario_opcional",
+      "fields_missing_for_entity:servico",
+      "fields_missing_for_entity:statu",
+      "fields_missing_for_entity:data_regras_nao_pode_ter_atendimento_sem_pet",
+      "fields_missing_for_entity:sem_veterinario",
+      "fields_missing_for_entity:tutor",
+      "fields_missing_for_entity:cadastrar_pet",
+      "fields_missing_for_entity:clinica"
+    ],
+    "generation_mode": "MINIGRAMMAR"
+  }
+}

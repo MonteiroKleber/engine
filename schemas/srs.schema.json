@@ -1,0 +1,56 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "srs.schema.json",
+  "title": "Software Requirements Specification",
+  "type": "object",
+  "required": ["id", "title", "requirements"],
+  "properties": {
+    "id": {
+      "type": "string",
+      "description": "Identificador único do SRS"
+    },
+    "title": {
+      "type": "string",
+      "description": "Título do documento SRS"
+    },
+    "version": {
+      "type": "string",
+      "description": "Versão do documento"
+    },
+    "requirements": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "description", "priority"],
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "priority": {
+            "type": "string",
+            "enum": ["high", "medium", "low"]
+          },
+          "type": {
+            "type": "string",
+            "enum": ["functional", "non-functional"]
+          }
+        }
+      }
+    },
+    "metadata": {
+      "type": "object",
+      "properties": {
+        "created_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "language": {
+          "type": "string"
+        }
+      }
+    }
+  }
+}

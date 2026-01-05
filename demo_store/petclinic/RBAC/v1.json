@@ -1,0 +1,72 @@
+{
+  "roles": [
+    "authenticated",
+    "admin"
+  ],
+  "permissions": [
+    {
+      "operation_id": "listPagamento",
+      "required_role": "authenticated"
+    },
+    {
+      "operation_id": "createPagamento",
+      "required_role": "authenticated"
+    },
+    {
+      "operation_id": "getPagamento",
+      "required_role": "authenticated"
+    },
+    {
+      "operation_id": "updatePagamento",
+      "required_role": "authenticated"
+    },
+    {
+      "operation_id": "deletePagamento",
+      "required_role": "authenticated"
+    },
+    {
+      "operation_id": "listServiço",
+      "required_role": "authenticated"
+    },
+    {
+      "operation_id": "createServiço",
+      "required_role": "authenticated"
+    },
+    {
+      "operation_id": "getServiço",
+      "required_role": "authenticated"
+    },
+    {
+      "operation_id": "updateServiço",
+      "required_role": "authenticated"
+    },
+    {
+      "operation_id": "deleteServiço",
+      "required_role": "authenticated"
+    },
+    {
+      "operation_id": "listNota",
+      "required_role": "authenticated"
+    },
+    {
+      "operation_id": "createNota",
+      "required_role": "authenticated"
+    },
+    {
+      "operation_id": "getNota",
+      "required_role": "authenticated"
+    },
+    {
+      "operation_id": "updateNota",
+      "required_role": "authenticated"
+    },
+    {
+      "operation_id": "deleteNota",
+      "required_role": "authenticated"
+    }
+  ],
+  "meta": {
+    "created_at": "2026-01-04T16:26:27.837675",
+    "version": "1.0.0"
+  }
+}

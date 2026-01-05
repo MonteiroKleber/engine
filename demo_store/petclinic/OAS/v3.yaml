@@ -1,0 +1,3123 @@
+openapi: 3.0.0
+info:
+  title: Sistema Petclinic API
+  version: 1.0.0
+  description: API gerada automaticamente para Sistema Petclinic
+paths:
+  /api/quero_um_sistema_web_para_controle_de_clinica_veterinarias:
+    get:
+      operationId: listQuero_um_sistema_web_para_controle_de_clinica_veterinaria
+      tags:
+      - Quero_um_sistema_web_para_controle_de_clinica_veterinaria
+      summary: Listar quero_um_sistema_web_para_controle_de_clinica_veterinarias
+      responses:
+        '200':
+          description: Lista de quero_um_sistema_web_para_controle_de_clinica_veterinarias
+        '400':
+          description: Bad Request
+        '500':
+          description: Internal Server Error
+    post:
+      operationId: createQuero_um_sistema_web_para_controle_de_clinica_veterinaria
+      tags:
+      - Quero_um_sistema_web_para_controle_de_clinica_veterinaria
+      summary: Criar quero_um_sistema_web_para_controle_de_clinica_veterinaria
+      responses:
+        '201':
+          description: Quero_um_sistema_web_para_controle_de_clinica_veterinaria criado
+        '400':
+          description: Bad Request
+        '500':
+          description: Internal Server Error
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Quero_um_sistema_web_para_controle_de_clinica_veterinaria'
+  /api/quero_um_sistema_web_para_controle_de_clinica_veterinarias/{id}:
+    get:
+      operationId: getQuero_um_sistema_web_para_controle_de_clinica_veterinaria
+      tags:
+      - Quero_um_sistema_web_para_controle_de_clinica_veterinaria
+      summary: Obter quero_um_sistema_web_para_controle_de_clinica_veterinaria por
+        ID
+      responses:
+        '200':
+          description: Detalhes do quero_um_sistema_web_para_controle_de_clinica_veterinaria
+        '400':
+          description: Bad Request
+        '500':
+          description: Internal Server Error
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+    put:
+      operationId: updateQuero_um_sistema_web_para_controle_de_clinica_veterinaria
+      tags:
+      - Quero_um_sistema_web_para_controle_de_clinica_veterinaria
+      summary: Atualizar quero_um_sistema_web_para_controle_de_clinica_veterinaria
+      responses:
+        '200':
+          description: Quero_um_sistema_web_para_controle_de_clinica_veterinaria atualizado
+        '400':
+          description: Bad Request
+        '500':
+          description: Internal Server Error
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Quero_um_sistema_web_para_controle_de_clinica_veterinaria'
+    delete:
+      operationId: deleteQuero_um_sistema_web_para_controle_de_clinica_veterinaria
+      tags:
+      - Quero_um_sistema_web_para_controle_de_clinica_veterinaria
+      summary: Deletar quero_um_sistema_web_para_controle_de_clinica_veterinaria
+      responses:
+        '200':
+          description: Quero_um_sistema_web_para_controle_de_clinica_veterinaria deletado
+        '400':
+          description: Bad Request
+        '500':
+          description: Internal Server Error
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+  /api/preciso_cadastrar_tutors:
+    get:
+      operationId: listPreciso_cadastrar_tutor
+      tags:
+      - Preciso_cadastrar_tutor
+      summary: Listar preciso_cadastrar_tutors
+      responses:
+        '200':
+          description: Lista de preciso_cadastrar_tutors
+        '400':
+          description: Bad Request
+        '500':
+          description: Internal Server Error
+    post:
+      operationId: createPreciso_cadastrar_tutor
+      tags:
+      - Preciso_cadastrar_tutor
+      summary: Criar preciso_cadastrar_tutor
+      responses:
+        '201':
+          description: Preciso_cadastrar_tutor criado
+        '400':
+          description: Bad Request
+        '500':
+          description: Internal Server Error
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Preciso_cadastrar_tutor'
+  /api/preciso_cadastrar_tutors/{id}:
+    get:
+      operationId: getPreciso_cadastrar_tutor
+      tags:
+      - Preciso_cadastrar_tutor
+      summary: Obter preciso_cadastrar_tutor por ID
+      responses:
+        '200':
+          description: Detalhes do preciso_cadastrar_tutor
+        '400':
+          description: Bad Request
+        '500':
+          description: Internal Server Error
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+    put:
+      operationId: updatePreciso_cadastrar_tutor
+      tags:
+      - Preciso_cadastrar_tutor
+      summary: Atualizar preciso_cadastrar_tutor
+      responses:
+        '200':
+          description: Preciso_cadastrar_tutor atualizado
+        '400':
+          description: Bad Request
+        '500':
+          description: Internal Server Error
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Preciso_cadastrar_tutor'
+    delete:
+      operationId: deletePreciso_cadastrar_tutor
+      tags:
+      - Preciso_cadastrar_tutor
+      summary: Deletar preciso_cadastrar_tutor
+      responses:
+        '200':
+          description: Preciso_cadastrar_tutor deletado
+        '400':
+          description: Bad Request
+        '500':
+          description: Internal Server Error
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+  /api/pets:
+    get:
+      operationId: listPet
+      tags:
+      - Pet
+      summary: Listar pets
+      responses:
+        '200':
+          description: Lista de pets
+        '400':
+          description: Bad Request
+        '500':
+          description: Internal Server Error
+    post:
+      operationId: createPet
+      tags:
+      - Pet
+      summary: Criar pet
+      responses:
+        '201':
+          description: Pet criado
+        '400':
+          description: Bad Request
+        '500':
+          description: Internal Server Error
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Pet'
+  /api/pets/{id}:
+    get:
+      operationId: getPet
+      tags:
+      - Pet
+      summary: Obter pet por ID
+      responses:
+        '200':
+          description: Detalhes do pet
+        '400':
+          description: Bad Request
+        '500':
+          description: Internal Server Error
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+    put:
+      operationId: updatePet
+      tags:
+      - Pet
+      summary: Atualizar pet
+      responses:
+        '200':
+          description: Pet atualizado
+        '400':
+          description: Bad Request
+        '500':
+          description: Internal Server Error
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Pet'
+    delete:
+      operationId: deletePet
+      tags:
+      - Pet
+      summary: Deletar pet
+      responses:
+        '200':
+          description: Pet deletado
+        '400':
+          description: Bad Request
+        '500':
+          description: Internal Server Error
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+  /api/veterinarios:
+    get:
+      operationId: listVeterinario
+      tags:
+      - Veterinario
+      summary: Listar veterinarios
+      responses:
+        '200':
+          description: Lista de veterinarios
+        '400':
+          description: Bad Request
+        '500':
+          description: Internal Server Error
+    post:
+      operationId: createVeterinario
+      tags:
+      - Veterinario
+      summary: Criar veterinario
+      responses:
+        '201':
+          description: Veterinario criado
+        '400':
+          description: Bad Request
+        '500':
+          description: Internal Server Error
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Veterinario'
+  /api/veterinarios/{id}:
+    get:
+      operationId: getVeterinario
+      tags:
+      - Veterinario
+      summary: Obter veterinario por ID
+      responses:
+        '200':
+          description: Detalhes do veterinario
+        '400':
+          description: Bad Request
+        '500':
+          description: Internal Server Error
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+    put:
+      operationId: updateVeterinario
+      tags:
+      - Veterinario
+      summary: Atualizar veterinario
+      responses:
+        '200':
+          description: Veterinario atualizado
+        '400':
+          description: Bad Request
+        '500':
+          description: Internal Server Error
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Veterinario'
+    delete:
+      operationId: deleteVeterinario
+      tags:
+      - Veterinario
+      summary: Deletar veterinario
+      responses:
+        '200':
+          description: Veterinario deletado
+        '400':
+          description: Bad Request
+        '500':
+          description: Internal Server Error
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+  /api/consultas:
+    get:
+      operationId: listConsulta
+      tags:
+      - Consulta
+      summary: Listar consultas
+      responses:
+        '200':
+          description: Lista de consultas
+        '400':
+          description: Bad Request
+        '500':
+          description: Internal Server Error
+    post:
+      operationId: createConsulta
+      tags:
+      - Consulta
+      summary: Criar consulta
+      responses:
+        '201':
+          description: Consulta criado
+        '400':
+          description: Bad Request
+        '500':
+          description: Internal Server Error
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Consulta'
+  /api/consultas/{id}:
+    get:
+      operationId: getConsulta
+      tags:
+      - Consulta
+      summary: Obter consulta por ID
+      responses:
+        '200':
+          description: Detalhes do consulta
+        '400':
+          description: Bad Request
+        '500':
+          description: Internal Server Error
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+    put:
+      operationId: updateConsulta
+      tags:
+      - Consulta
+      summary: Atualizar consulta
+      responses:
+        '200':
+          description: Consulta atualizado
+        '400':
+          description: Bad Request
+        '500':
+          description: Internal Server Error
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Consulta'
+    delete:
+      operationId: deleteConsulta
+      tags:
+      - Consulta
+      summary: Deletar consulta
+      responses:
+        '200':
+          description: Consulta deletado
+        '400':
+          description: Bad Request
+        '500':
+          description: Internal Server Error
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+  /api/vacinas:
+    get:
+      operationId: listVacina
+      tags:
+      - Vacina
+      summary: Listar vacinas
+      responses:
+        '200':
+          description: Lista de vacinas
+        '400':
+          description: Bad Request
+        '500':
+          description: Internal Server Error
+    post:
+      operationId: createVacina
+      tags:
+      - Vacina
+      summary: Criar vacina
+      responses:
+        '201':
+          description: Vacina criado
+        '400':
+          description: Bad Request
+        '500':
+          description: Internal Server Error
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Vacina'
+  /api/vacinas/{id}:
+    get:
+      operationId: getVacina
+      tags:
+      - Vacina
+      summary: Obter vacina por ID
+      responses:
+        '200':
+          description: Detalhes do vacina
+        '400':
+          description: Bad Request
+        '500':
+          description: Internal Server Error
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+    put:
+      operationId: updateVacina
+      tags:
+      - Vacina
+      summary: Atualizar vacina
+      responses:
+        '200':
+          description: Vacina atualizado
+        '400':
+          description: Bad Request
+        '500':
+          description: Internal Server Error
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Vacina'
+    delete:
+      operationId: deleteVacina
+      tags:
+      - Vacina
+      summary: Deletar vacina
+      responses:
+        '200':
+          description: Vacina deletado
+        '400':
+          description: Bad Request
+        '500':
+          description: Internal Server Error
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+  /api/agendamentos:
+    get:
+      operationId: listAgendamento
+      tags:
+      - Agendamento
+      summary: Listar agendamentos
+      responses:
+        '200':
+          description: Lista de agendamentos
+        '400':
+          description: Bad Request
+        '500':
+          description: Internal Server Error
+    post:
+      operationId: createAgendamento
+      tags:
+      - Agendamento
+      summary: Criar agendamento
+      responses:
+        '201':
+          description: Agendamento criado
+        '400':
+          description: Bad Request
+        '500':
+          description: Internal Server Error
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Agendamento'
+  /api/agendamentos/{id}:
+    get:
+      operationId: getAgendamento
+      tags:
+      - Agendamento
+      summary: Obter agendamento por ID
+      responses:
+        '200':
+          description: Detalhes do agendamento
+        '400':
+          description: Bad Request
+        '500':
+          description: Internal Server Error
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+    put:
+      operationId: updateAgendamento
+      tags:
+      - Agendamento
+      summary: Atualizar agendamento
+      responses:
+        '200':
+          description: Agendamento atualizado
+        '400':
+          description: Bad Request
+        '500':
+          description: Internal Server Error
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Agendamento'
+    delete:
+      operationId: deleteAgendamento
+      tags:
+      - Agendamento
+      summary: Deletar agendamento
+      responses:
+        '200':
+          description: Agendamento deletado
+        '400':
+          description: Bad Request
+        '500':
+          description: Internal Server Error
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+  /api/e_pagamentos:
+    get:
+      operationId: listE_pagamento
+      tags:
+      - E_pagamento
+      summary: Listar e_pagamentos
+      responses:
+        '200':
+          description: Lista de e_pagamentos
+        '400':
+          description: Bad Request
+        '500':
+          description: Internal Server Error
+    post:
+      operationId: createE_pagamento
+      tags:
+      - E_pagamento
+      summary: Criar e_pagamento
+      responses:
+        '201':
+          description: E_pagamento criado
+        '400':
+          description: Bad Request
+        '500':
+          description: Internal Server Error
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/E_pagamento'
+  /api/e_pagamentos/{id}:
+    get:
+      operationId: getE_pagamento
+      tags:
+      - E_pagamento
+      summary: Obter e_pagamento por ID
+      responses:
+        '200':
+          description: Detalhes do e_pagamento
+        '400':
+          description: Bad Request
+        '500':
+          description: Internal Server Error
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+    put:
+      operationId: updateE_pagamento
+      tags:
+      - E_pagamento
+      summary: Atualizar e_pagamento
+      responses:
+        '200':
+          description: E_pagamento atualizado
+        '400':
+          description: Bad Request
+        '500':
+          description: Internal Server Error
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/E_pagamento'
+    delete:
+      operationId: deleteE_pagamento
+      tags:
+      - E_pagamento
+      summary: Deletar e_pagamento
+      responses:
+        '200':
+          description: E_pagamento deletado
+        '400':
+          description: Bad Request
+        '500':
+          description: Internal Server Error
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+  /api/dashboard_inicial_com_atalhos:
+    get:
+      operationId: listDashboard_inicial_com_atalho
+      tags:
+      - Dashboard_inicial_com_atalho
+      summary: Listar dashboard_inicial_com_atalhos
+      responses:
+        '200':
+          description: Lista de dashboard_inicial_com_atalhos
+        '400':
+          description: Bad Request
+        '500':
+          description: Internal Server Error
+    post:
+      operationId: createDashboard_inicial_com_atalho
+      tags:
+      - Dashboard_inicial_com_atalho
+      summary: Criar dashboard_inicial_com_atalho
+      responses:
+        '201':
+          description: Dashboard_inicial_com_atalho criado
+        '400':
+          description: Bad Request
+        '500':
+          description: Internal Server Error
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Dashboard_inicial_com_atalho'
+  /api/dashboard_inicial_com_atalhos/{id}:
+    get:
+      operationId: getDashboard_inicial_com_atalho
+      tags:
+      - Dashboard_inicial_com_atalho
+      summary: Obter dashboard_inicial_com_atalho por ID
+      responses:
+        '200':
+          description: Detalhes do dashboard_inicial_com_atalho
+        '400':
+          description: Bad Request
+        '500':
+          description: Internal Server Error
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+    put:
+      operationId: updateDashboard_inicial_com_atalho
+      tags:
+      - Dashboard_inicial_com_atalho
+      summary: Atualizar dashboard_inicial_com_atalho
+      responses:
+        '200':
+          description: Dashboard_inicial_com_atalho atualizado
+        '400':
+          description: Bad Request
+        '500':
+          description: Internal Server Error
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Dashboard_inicial_com_atalho'
+    delete:
+      operationId: deleteDashboard_inicial_com_atalho
+      tags:
+      - Dashboard_inicial_com_atalho
+      summary: Deletar dashboard_inicial_com_atalho
+      responses:
+        '200':
+          description: Dashboard_inicial_com_atalho deletado
+        '400':
+          description: Bad Request
+        '500':
+          description: Internal Server Error
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+  /api/especies:
+    get:
+      operationId: listEspecie
+      tags:
+      - Especie
+      summary: Listar especies
+      responses:
+        '200':
+          description: Lista de especies
+        '400':
+          description: Bad Request
+        '500':
+          description: Internal Server Error
+    post:
+      operationId: createEspecie
+      tags:
+      - Especie
+      summary: Criar especie
+      responses:
+        '201':
+          description: Especie criado
+        '400':
+          description: Bad Request
+        '500':
+          description: Internal Server Error
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Especie'
+  /api/especies/{id}:
+    get:
+      operationId: getEspecie
+      tags:
+      - Especie
+      summary: Obter especie por ID
+      responses:
+        '200':
+          description: Detalhes do especie
+        '400':
+          description: Bad Request
+        '500':
+          description: Internal Server Error
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+    put:
+      operationId: updateEspecie
+      tags:
+      - Especie
+      summary: Atualizar especie
+      responses:
+        '200':
+          description: Especie atualizado
+        '400':
+          description: Bad Request
+        '500':
+          description: Internal Server Error
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Especie'
+    delete:
+      operationId: deleteEspecie
+      tags:
+      - Especie
+      summary: Deletar especie
+      responses:
+        '200':
+          description: Especie deletado
+        '400':
+          description: Bad Request
+        '500':
+          description: Internal Server Error
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+  /api/racas:
+    get:
+      operationId: listRaca
+      tags:
+      - Raca
+      summary: Listar racas
+      responses:
+        '200':
+          description: Lista de racas
+        '400':
+          description: Bad Request
+        '500':
+          description: Internal Server Error
+    post:
+      operationId: createRaca
+      tags:
+      - Raca
+      summary: Criar raca
+      responses:
+        '201':
+          description: Raca criado
+        '400':
+          description: Bad Request
+        '500':
+          description: Internal Server Error
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Raca'
+  /api/racas/{id}:
+    get:
+      operationId: getRaca
+      tags:
+      - Raca
+      summary: Obter raca por ID
+      responses:
+        '200':
+          description: Detalhes do raca
+        '400':
+          description: Bad Request
+        '500':
+          description: Internal Server Error
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+    put:
+      operationId: updateRaca
+      tags:
+      - Raca
+      summary: Atualizar raca
+      responses:
+        '200':
+          description: Raca atualizado
+        '400':
+          description: Bad Request
+        '500':
+          description: Internal Server Error
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Raca'
+    delete:
+      operationId: deleteRaca
+      tags:
+      - Raca
+      summary: Deletar raca
+      responses:
+        '200':
+          description: Raca deletado
+        '400':
+          description: Bad Request
+        '500':
+          description: Internal Server Error
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+  /api/sexos:
+    get:
+      operationId: listSexo
+      tags:
+      - Sexo
+      summary: Listar sexos
+      responses:
+        '200':
+          description: Lista de sexos
+        '400':
+          description: Bad Request
+        '500':
+          description: Internal Server Error
+    post:
+      operationId: createSexo
+      tags:
+      - Sexo
+      summary: Criar sexo
+      responses:
+        '201':
+          description: Sexo criado
+        '400':
+          description: Bad Request
+        '500':
+          description: Internal Server Error
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Sexo'
+  /api/sexos/{id}:
+    get:
+      operationId: getSexo
+      tags:
+      - Sexo
+      summary: Obter sexo por ID
+      responses:
+        '200':
+          description: Detalhes do sexo
+        '400':
+          description: Bad Request
+        '500':
+          description: Internal Server Error
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+    put:
+      operationId: updateSexo
+      tags:
+      - Sexo
+      summary: Atualizar sexo
+      responses:
+        '200':
+          description: Sexo atualizado
+        '400':
+          description: Bad Request
+        '500':
+          description: Internal Server Error
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Sexo'
+    delete:
+      operationId: deleteSexo
+      tags:
+      - Sexo
+      summary: Deletar sexo
+      responses:
+        '200':
+          description: Sexo deletado
+        '400':
+          description: Bad Request
+        '500':
+          description: Internal Server Error
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+  /api/tutors:
+    get:
+      operationId: listTutor
+      tags:
+      - Tutor
+      summary: Listar tutors
+      responses:
+        '200':
+          description: Lista de tutors
+        '400':
+          description: Bad Request
+        '500':
+          description: Internal Server Error
+    post:
+      operationId: createTutor
+      tags:
+      - Tutor
+      summary: Criar tutor
+      responses:
+        '201':
+          description: Tutor criado
+        '400':
+          description: Bad Request
+        '500':
+          description: Internal Server Error
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Tutor'
+  /api/tutors/{id}:
+    get:
+      operationId: getTutor
+      tags:
+      - Tutor
+      summary: Obter tutor por ID
+      responses:
+        '200':
+          description: Detalhes do tutor
+        '400':
+          description: Bad Request
+        '500':
+          description: Internal Server Error
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+    put:
+      operationId: updateTutor
+      tags:
+      - Tutor
+      summary: Atualizar tutor
+      responses:
+        '200':
+          description: Tutor atualizado
+        '400':
+          description: Bad Request
+        '500':
+          description: Internal Server Error
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Tutor'
+    delete:
+      operationId: deleteTutor
+      tags:
+      - Tutor
+      summary: Deletar tutor
+      responses:
+        '200':
+          description: Tutor deletado
+        '400':
+          description: Bad Request
+        '500':
+          description: Internal Server Error
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+  /api/crmvs:
+    get:
+      operationId: listCrmv
+      tags:
+      - Crmv
+      summary: Listar crmvs
+      responses:
+        '200':
+          description: Lista de crmvs
+        '400':
+          description: Bad Request
+        '500':
+          description: Internal Server Error
+    post:
+      operationId: createCrmv
+      tags:
+      - Crmv
+      summary: Criar crmv
+      responses:
+        '201':
+          description: Crmv criado
+        '400':
+          description: Bad Request
+        '500':
+          description: Internal Server Error
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Crmv'
+  /api/crmvs/{id}:
+    get:
+      operationId: getCrmv
+      tags:
+      - Crmv
+      summary: Obter crmv por ID
+      responses:
+        '200':
+          description: Detalhes do crmv
+        '400':
+          description: Bad Request
+        '500':
+          description: Internal Server Error
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+    put:
+      operationId: updateCrmv
+      tags:
+      - Crmv
+      summary: Atualizar crmv
+      responses:
+        '200':
+          description: Crmv atualizado
+        '400':
+          description: Bad Request
+        '500':
+          description: Internal Server Error
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Crmv'
+    delete:
+      operationId: deleteCrmv
+      tags:
+      - Crmv
+      summary: Deletar crmv
+      responses:
+        '200':
+          description: Crmv deletado
+        '400':
+          description: Bad Request
+        '500':
+          description: Internal Server Error
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+  /api/especialidades:
+    get:
+      operationId: listEspecialidade
+      tags:
+      - Especialidade
+      summary: Listar especialidades
+      responses:
+        '200':
+          description: Lista de especialidades
+        '400':
+          description: Bad Request
+        '500':
+          description: Internal Server Error
+    post:
+      operationId: createEspecialidade
+      tags:
+      - Especialidade
+      summary: Criar especialidade
+      responses:
+        '201':
+          description: Especialidade criado
+        '400':
+          description: Bad Request
+        '500':
+          description: Internal Server Error
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Especialidade'
+  /api/especialidades/{id}:
+    get:
+      operationId: getEspecialidade
+      tags:
+      - Especialidade
+      summary: Obter especialidade por ID
+      responses:
+        '200':
+          description: Detalhes do especialidade
+        '400':
+          description: Bad Request
+        '500':
+          description: Internal Server Error
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+    put:
+      operationId: updateEspecialidade
+      tags:
+      - Especialidade
+      summary: Atualizar especialidade
+      responses:
+        '200':
+          description: Especialidade atualizado
+        '400':
+          description: Bad Request
+        '500':
+          description: Internal Server Error
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Especialidade'
+    delete:
+      operationId: deleteEspecialidade
+      tags:
+      - Especialidade
+      summary: Deletar especialidade
+      responses:
+        '200':
+          description: Especialidade deletado
+        '400':
+          description: Bad Request
+        '500':
+          description: Internal Server Error
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+  /api/motivos:
+    get:
+      operationId: listMotivo
+      tags:
+      - Motivo
+      summary: Listar motivos
+      responses:
+        '200':
+          description: Lista de motivos
+        '400':
+          description: Bad Request
+        '500':
+          description: Internal Server Error
+    post:
+      operationId: createMotivo
+      tags:
+      - Motivo
+      summary: Criar motivo
+      responses:
+        '201':
+          description: Motivo criado
+        '400':
+          description: Bad Request
+        '500':
+          description: Internal Server Error
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Motivo'
+  /api/motivos/{id}:
+    get:
+      operationId: getMotivo
+      tags:
+      - Motivo
+      summary: Obter motivo por ID
+      responses:
+        '200':
+          description: Detalhes do motivo
+        '400':
+          description: Bad Request
+        '500':
+          description: Internal Server Error
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+    put:
+      operationId: updateMotivo
+      tags:
+      - Motivo
+      summary: Atualizar motivo
+      responses:
+        '200':
+          description: Motivo atualizado
+        '400':
+          description: Bad Request
+        '500':
+          description: Internal Server Error
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Motivo'
+    delete:
+      operationId: deleteMotivo
+      tags:
+      - Motivo
+      summary: Deletar motivo
+      responses:
+        '200':
+          description: Motivo deletado
+        '400':
+          description: Bad Request
+        '500':
+          description: Internal Server Error
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+  /api/anotacaos:
+    get:
+      operationId: listAnotacao
+      tags:
+      - Anotacao
+      summary: Listar anotacaos
+      responses:
+        '200':
+          description: Lista de anotacaos
+        '400':
+          description: Bad Request
+        '500':
+          description: Internal Server Error
+    post:
+      operationId: createAnotacao
+      tags:
+      - Anotacao
+      summary: Criar anotacao
+      responses:
+        '201':
+          description: Anotacao criado
+        '400':
+          description: Bad Request
+        '500':
+          description: Internal Server Error
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Anotacao'
+  /api/anotacaos/{id}:
+    get:
+      operationId: getAnotacao
+      tags:
+      - Anotacao
+      summary: Obter anotacao por ID
+      responses:
+        '200':
+          description: Detalhes do anotacao
+        '400':
+          description: Bad Request
+        '500':
+          description: Internal Server Error
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+    put:
+      operationId: updateAnotacao
+      tags:
+      - Anotacao
+      summary: Atualizar anotacao
+      responses:
+        '200':
+          description: Anotacao atualizado
+        '400':
+          description: Bad Request
+        '500':
+          description: Internal Server Error
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Anotacao'
+    delete:
+      operationId: deleteAnotacao
+      tags:
+      - Anotacao
+      summary: Deletar anotacao
+      responses:
+        '200':
+          description: Anotacao deletado
+        '400':
+          description: Bad Request
+        '500':
+          description: Internal Server Error
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+  /api/diagnosticos:
+    get:
+      operationId: listDiagnostico
+      tags:
+      - Diagnostico
+      summary: Listar diagnosticos
+      responses:
+        '200':
+          description: Lista de diagnosticos
+        '400':
+          description: Bad Request
+        '500':
+          description: Internal Server Error
+    post:
+      operationId: createDiagnostico
+      tags:
+      - Diagnostico
+      summary: Criar diagnostico
+      responses:
+        '201':
+          description: Diagnostico criado
+        '400':
+          description: Bad Request
+        '500':
+          description: Internal Server Error
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Diagnostico'
+  /api/diagnosticos/{id}:
+    get:
+      operationId: getDiagnostico
+      tags:
+      - Diagnostico
+      summary: Obter diagnostico por ID
+      responses:
+        '200':
+          description: Detalhes do diagnostico
+        '400':
+          description: Bad Request
+        '500':
+          description: Internal Server Error
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+    put:
+      operationId: updateDiagnostico
+      tags:
+      - Diagnostico
+      summary: Atualizar diagnostico
+      responses:
+        '200':
+          description: Diagnostico atualizado
+        '400':
+          description: Bad Request
+        '500':
+          description: Internal Server Error
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Diagnostico'
+    delete:
+      operationId: deleteDiagnostico
+      tags:
+      - Diagnostico
+      summary: Deletar diagnostico
+      responses:
+        '200':
+          description: Diagnostico deletado
+        '400':
+          description: Bad Request
+        '500':
+          description: Internal Server Error
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+  /api/prescricaos:
+    get:
+      operationId: listPrescricao
+      tags:
+      - Prescricao
+      summary: Listar prescricaos
+      responses:
+        '200':
+          description: Lista de prescricaos
+        '400':
+          description: Bad Request
+        '500':
+          description: Internal Server Error
+    post:
+      operationId: createPrescricao
+      tags:
+      - Prescricao
+      summary: Criar prescricao
+      responses:
+        '201':
+          description: Prescricao criado
+        '400':
+          description: Bad Request
+        '500':
+          description: Internal Server Error
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Prescricao'
+  /api/prescricaos/{id}:
+    get:
+      operationId: getPrescricao
+      tags:
+      - Prescricao
+      summary: Obter prescricao por ID
+      responses:
+        '200':
+          description: Detalhes do prescricao
+        '400':
+          description: Bad Request
+        '500':
+          description: Internal Server Error
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+    put:
+      operationId: updatePrescricao
+      tags:
+      - Prescricao
+      summary: Atualizar prescricao
+      responses:
+        '200':
+          description: Prescricao atualizado
+        '400':
+          description: Bad Request
+        '500':
+          description: Internal Server Error
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Prescricao'
+    delete:
+      operationId: deletePrescricao
+      tags:
+      - Prescricao
+      summary: Deletar prescricao
+      responses:
+        '200':
+          description: Prescricao deletado
+        '400':
+          description: Bad Request
+        '500':
+          description: Internal Server Error
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+  /api/data_aplicacaos:
+    get:
+      operationId: listData_aplicacao
+      tags:
+      - Data_aplicacao
+      summary: Listar data_aplicacaos
+      responses:
+        '200':
+          description: Lista de data_aplicacaos
+        '400':
+          description: Bad Request
+        '500':
+          description: Internal Server Error
+    post:
+      operationId: createData_aplicacao
+      tags:
+      - Data_aplicacao
+      summary: Criar data_aplicacao
+      responses:
+        '201':
+          description: Data_aplicacao criado
+        '400':
+          description: Bad Request
+        '500':
+          description: Internal Server Error
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Data_aplicacao'
+  /api/data_aplicacaos/{id}:
+    get:
+      operationId: getData_aplicacao
+      tags:
+      - Data_aplicacao
+      summary: Obter data_aplicacao por ID
+      responses:
+        '200':
+          description: Detalhes do data_aplicacao
+        '400':
+          description: Bad Request
+        '500':
+          description: Internal Server Error
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+    put:
+      operationId: updateData_aplicacao
+      tags:
+      - Data_aplicacao
+      summary: Atualizar data_aplicacao
+      responses:
+        '200':
+          description: Data_aplicacao atualizado
+        '400':
+          description: Bad Request
+        '500':
+          description: Internal Server Error
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Data_aplicacao'
+    delete:
+      operationId: deleteData_aplicacao
+      tags:
+      - Data_aplicacao
+      summary: Deletar data_aplicacao
+      responses:
+        '200':
+          description: Data_aplicacao deletado
+        '400':
+          description: Bad Request
+        '500':
+          description: Internal Server Error
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+  /api/proxima_doses:
+    get:
+      operationId: listProxima_dose
+      tags:
+      - Proxima_dose
+      summary: Listar proxima_doses
+      responses:
+        '200':
+          description: Lista de proxima_doses
+        '400':
+          description: Bad Request
+        '500':
+          description: Internal Server Error
+    post:
+      operationId: createProxima_dose
+      tags:
+      - Proxima_dose
+      summary: Criar proxima_dose
+      responses:
+        '201':
+          description: Proxima_dose criado
+        '400':
+          description: Bad Request
+        '500':
+          description: Internal Server Error
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Proxima_dose'
+  /api/proxima_doses/{id}:
+    get:
+      operationId: getProxima_dose
+      tags:
+      - Proxima_dose
+      summary: Obter proxima_dose por ID
+      responses:
+        '200':
+          description: Detalhes do proxima_dose
+        '400':
+          description: Bad Request
+        '500':
+          description: Internal Server Error
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+    put:
+      operationId: updateProxima_dose
+      tags:
+      - Proxima_dose
+      summary: Atualizar proxima_dose
+      responses:
+        '200':
+          description: Proxima_dose atualizado
+        '400':
+          description: Bad Request
+        '500':
+          description: Internal Server Error
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Proxima_dose'
+    delete:
+      operationId: deleteProxima_dose
+      tags:
+      - Proxima_dose
+      summary: Deletar proxima_dose
+      responses:
+        '200':
+          description: Proxima_dose deletado
+        '400':
+          description: Bad Request
+        '500':
+          description: Internal Server Error
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+  /api/lotes:
+    get:
+      operationId: listLote
+      tags:
+      - Lote
+      summary: Listar lotes
+      responses:
+        '200':
+          description: Lista de lotes
+        '400':
+          description: Bad Request
+        '500':
+          description: Internal Server Error
+    post:
+      operationId: createLote
+      tags:
+      - Lote
+      summary: Criar lote
+      responses:
+        '201':
+          description: Lote criado
+        '400':
+          description: Bad Request
+        '500':
+          description: Internal Server Error
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Lote'
+  /api/lotes/{id}:
+    get:
+      operationId: getLote
+      tags:
+      - Lote
+      summary: Obter lote por ID
+      responses:
+        '200':
+          description: Detalhes do lote
+        '400':
+          description: Bad Request
+        '500':
+          description: Internal Server Error
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+    put:
+      operationId: updateLote
+      tags:
+      - Lote
+      summary: Atualizar lote
+      responses:
+        '200':
+          description: Lote atualizado
+        '400':
+          description: Bad Request
+        '500':
+          description: Internal Server Error
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Lote'
+    delete:
+      operationId: deleteLote
+      tags:
+      - Lote
+      summary: Deletar lote
+      responses:
+        '200':
+          description: Lote deletado
+        '400':
+          description: Bad Request
+        '500':
+          description: Internal Server Error
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+  /api/observacoeses:
+    get:
+      operationId: listObservacoes
+      tags:
+      - Observacoes
+      summary: Listar observacoeses
+      responses:
+        '200':
+          description: Lista de observacoeses
+        '400':
+          description: Bad Request
+        '500':
+          description: Internal Server Error
+    post:
+      operationId: createObservacoes
+      tags:
+      - Observacoes
+      summary: Criar observacoes
+      responses:
+        '201':
+          description: Observacoes criado
+        '400':
+          description: Bad Request
+        '500':
+          description: Internal Server Error
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Observacoes'
+  /api/observacoeses/{id}:
+    get:
+      operationId: getObservacoes
+      tags:
+      - Observacoes
+      summary: Obter observacoes por ID
+      responses:
+        '200':
+          description: Detalhes do observacoes
+        '400':
+          description: Bad Request
+        '500':
+          description: Internal Server Error
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+    put:
+      operationId: updateObservacoes
+      tags:
+      - Observacoes
+      summary: Atualizar observacoes
+      responses:
+        '200':
+          description: Observacoes atualizado
+        '400':
+          description: Bad Request
+        '500':
+          description: Internal Server Error
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Observacoes'
+    delete:
+      operationId: deleteObservacoes
+      tags:
+      - Observacoes
+      summary: Deletar observacoes
+      responses:
+        '200':
+          description: Observacoes deletado
+        '400':
+          description: Bad Request
+        '500':
+          description: Internal Server Error
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+  /api/veterinario_opcionals:
+    get:
+      operationId: listVeterinario_opcional
+      tags:
+      - Veterinario_opcional
+      summary: Listar veterinario_opcionals
+      responses:
+        '200':
+          description: Lista de veterinario_opcionals
+        '400':
+          description: Bad Request
+        '500':
+          description: Internal Server Error
+    post:
+      operationId: createVeterinario_opcional
+      tags:
+      - Veterinario_opcional
+      summary: Criar veterinario_opcional
+      responses:
+        '201':
+          description: Veterinario_opcional criado
+        '400':
+          description: Bad Request
+        '500':
+          description: Internal Server Error
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Veterinario_opcional'
+  /api/veterinario_opcionals/{id}:
+    get:
+      operationId: getVeterinario_opcional
+      tags:
+      - Veterinario_opcional
+      summary: Obter veterinario_opcional por ID
+      responses:
+        '200':
+          description: Detalhes do veterinario_opcional
+        '400':
+          description: Bad Request
+        '500':
+          description: Internal Server Error
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+    put:
+      operationId: updateVeterinario_opcional
+      tags:
+      - Veterinario_opcional
+      summary: Atualizar veterinario_opcional
+      responses:
+        '200':
+          description: Veterinario_opcional atualizado
+        '400':
+          description: Bad Request
+        '500':
+          description: Internal Server Error
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Veterinario_opcional'
+    delete:
+      operationId: deleteVeterinario_opcional
+      tags:
+      - Veterinario_opcional
+      summary: Deletar veterinario_opcional
+      responses:
+        '200':
+          description: Veterinario_opcional deletado
+        '400':
+          description: Bad Request
+        '500':
+          description: Internal Server Error
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+  /api/servicos:
+    get:
+      operationId: listServico
+      tags:
+      - Servico
+      summary: Listar servicos
+      responses:
+        '200':
+          description: Lista de servicos
+        '400':
+          description: Bad Request
+        '500':
+          description: Internal Server Error
+    post:
+      operationId: createServico
+      tags:
+      - Servico
+      summary: Criar servico
+      responses:
+        '201':
+          description: Servico criado
+        '400':
+          description: Bad Request
+        '500':
+          description: Internal Server Error
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Servico'
+  /api/servicos/{id}:
+    get:
+      operationId: getServico
+      tags:
+      - Servico
+      summary: Obter servico por ID
+      responses:
+        '200':
+          description: Detalhes do servico
+        '400':
+          description: Bad Request
+        '500':
+          description: Internal Server Error
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+    put:
+      operationId: updateServico
+      tags:
+      - Servico
+      summary: Atualizar servico
+      responses:
+        '200':
+          description: Servico atualizado
+        '400':
+          description: Bad Request
+        '500':
+          description: Internal Server Error
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Servico'
+    delete:
+      operationId: deleteServico
+      tags:
+      - Servico
+      summary: Deletar servico
+      responses:
+        '200':
+          description: Servico deletado
+        '400':
+          description: Bad Request
+        '500':
+          description: Internal Server Error
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+  /api/status:
+    get:
+      operationId: listStatu
+      tags:
+      - Statu
+      summary: Listar status
+      responses:
+        '200':
+          description: Lista de status
+        '400':
+          description: Bad Request
+        '500':
+          description: Internal Server Error
+    post:
+      operationId: createStatu
+      tags:
+      - Statu
+      summary: Criar statu
+      responses:
+        '201':
+          description: Statu criado
+        '400':
+          description: Bad Request
+        '500':
+          description: Internal Server Error
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Statu'
+  /api/status/{id}:
+    get:
+      operationId: getStatu
+      tags:
+      - Statu
+      summary: Obter statu por ID
+      responses:
+        '200':
+          description: Detalhes do statu
+        '400':
+          description: Bad Request
+        '500':
+          description: Internal Server Error
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+    put:
+      operationId: updateStatu
+      tags:
+      - Statu
+      summary: Atualizar statu
+      responses:
+        '200':
+          description: Statu atualizado
+        '400':
+          description: Bad Request
+        '500':
+          description: Internal Server Error
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Statu'
+    delete:
+      operationId: deleteStatu
+      tags:
+      - Statu
+      summary: Deletar statu
+      responses:
+        '200':
+          description: Statu deletado
+        '400':
+          description: Bad Request
+        '500':
+          description: Internal Server Error
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+  /api/data_regras_nao_pode_ter_atendimento_sem_pets:
+    get:
+      operationId: listData_regras_nao_pode_ter_atendimento_sem_pet
+      tags:
+      - Data_regras_nao_pode_ter_atendimento_sem_pet
+      summary: Listar data_regras_nao_pode_ter_atendimento_sem_pets
+      responses:
+        '200':
+          description: Lista de data_regras_nao_pode_ter_atendimento_sem_pets
+        '400':
+          description: Bad Request
+        '500':
+          description: Internal Server Error
+    post:
+      operationId: createData_regras_nao_pode_ter_atendimento_sem_pet
+      tags:
+      - Data_regras_nao_pode_ter_atendimento_sem_pet
+      summary: Criar data_regras_nao_pode_ter_atendimento_sem_pet
+      responses:
+        '201':
+          description: Data_regras_nao_pode_ter_atendimento_sem_pet criado
+        '400':
+          description: Bad Request
+        '500':
+          description: Internal Server Error
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Data_regras_nao_pode_ter_atendimento_sem_pet'
+  /api/data_regras_nao_pode_ter_atendimento_sem_pets/{id}:
+    get:
+      operationId: getData_regras_nao_pode_ter_atendimento_sem_pet
+      tags:
+      - Data_regras_nao_pode_ter_atendimento_sem_pet
+      summary: Obter data_regras_nao_pode_ter_atendimento_sem_pet por ID
+      responses:
+        '200':
+          description: Detalhes do data_regras_nao_pode_ter_atendimento_sem_pet
+        '400':
+          description: Bad Request
+        '500':
+          description: Internal Server Error
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+    put:
+      operationId: updateData_regras_nao_pode_ter_atendimento_sem_pet
+      tags:
+      - Data_regras_nao_pode_ter_atendimento_sem_pet
+      summary: Atualizar data_regras_nao_pode_ter_atendimento_sem_pet
+      responses:
+        '200':
+          description: Data_regras_nao_pode_ter_atendimento_sem_pet atualizado
+        '400':
+          description: Bad Request
+        '500':
+          description: Internal Server Error
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Data_regras_nao_pode_ter_atendimento_sem_pet'
+    delete:
+      operationId: deleteData_regras_nao_pode_ter_atendimento_sem_pet
+      tags:
+      - Data_regras_nao_pode_ter_atendimento_sem_pet
+      summary: Deletar data_regras_nao_pode_ter_atendimento_sem_pet
+      responses:
+        '200':
+          description: Data_regras_nao_pode_ter_atendimento_sem_pet deletado
+        '400':
+          description: Bad Request
+        '500':
+          description: Internal Server Error
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+  /api/sem_veterinarios:
+    get:
+      operationId: listSem_veterinario
+      tags:
+      - Sem_veterinario
+      summary: Listar sem_veterinarios
+      responses:
+        '200':
+          description: Lista de sem_veterinarios
+        '400':
+          description: Bad Request
+        '500':
+          description: Internal Server Error
+    post:
+      operationId: createSem_veterinario
+      tags:
+      - Sem_veterinario
+      summary: Criar sem_veterinario
+      responses:
+        '201':
+          description: Sem_veterinario criado
+        '400':
+          description: Bad Request
+        '500':
+          description: Internal Server Error
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Sem_veterinario'
+  /api/sem_veterinarios/{id}:
+    get:
+      operationId: getSem_veterinario
+      tags:
+      - Sem_veterinario
+      summary: Obter sem_veterinario por ID
+      responses:
+        '200':
+          description: Detalhes do sem_veterinario
+        '400':
+          description: Bad Request
+        '500':
+          description: Internal Server Error
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+    put:
+      operationId: updateSem_veterinario
+      tags:
+      - Sem_veterinario
+      summary: Atualizar sem_veterinario
+      responses:
+        '200':
+          description: Sem_veterinario atualizado
+        '400':
+          description: Bad Request
+        '500':
+          description: Internal Server Error
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Sem_veterinario'
+    delete:
+      operationId: deleteSem_veterinario
+      tags:
+      - Sem_veterinario
+      summary: Deletar sem_veterinario
+      responses:
+        '200':
+          description: Sem_veterinario deletado
+        '400':
+          description: Bad Request
+        '500':
+          description: Internal Server Error
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+  /api/cadastrar_pets:
+    get:
+      operationId: listCadastrar_pet
+      tags:
+      - Cadastrar_pet
+      summary: Listar cadastrar_pets
+      responses:
+        '200':
+          description: Lista de cadastrar_pets
+        '400':
+          description: Bad Request
+        '500':
+          description: Internal Server Error
+    post:
+      operationId: createCadastrar_pet
+      tags:
+      - Cadastrar_pet
+      summary: Criar cadastrar_pet
+      responses:
+        '201':
+          description: Cadastrar_pet criado
+        '400':
+          description: Bad Request
+        '500':
+          description: Internal Server Error
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Cadastrar_pet'
+  /api/cadastrar_pets/{id}:
+    get:
+      operationId: getCadastrar_pet
+      tags:
+      - Cadastrar_pet
+      summary: Obter cadastrar_pet por ID
+      responses:
+        '200':
+          description: Detalhes do cadastrar_pet
+        '400':
+          description: Bad Request
+        '500':
+          description: Internal Server Error
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+    put:
+      operationId: updateCadastrar_pet
+      tags:
+      - Cadastrar_pet
+      summary: Atualizar cadastrar_pet
+      responses:
+        '200':
+          description: Cadastrar_pet atualizado
+        '400':
+          description: Bad Request
+        '500':
+          description: Internal Server Error
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Cadastrar_pet'
+    delete:
+      operationId: deleteCadastrar_pet
+      tags:
+      - Cadastrar_pet
+      summary: Deletar cadastrar_pet
+      responses:
+        '200':
+          description: Cadastrar_pet deletado
+        '400':
+          description: Bad Request
+        '500':
+          description: Internal Server Error
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+  /api/clinicas:
+    get:
+      operationId: listClinica
+      tags:
+      - Clinica
+      summary: Listar clinicas
+      responses:
+        '200':
+          description: Lista de clinicas
+        '400':
+          description: Bad Request
+        '500':
+          description: Internal Server Error
+    post:
+      operationId: createClinica
+      tags:
+      - Clinica
+      summary: Criar clinica
+      responses:
+        '201':
+          description: Clinica criado
+        '400':
+          description: Bad Request
+        '500':
+          description: Internal Server Error
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Clinica'
+  /api/clinicas/{id}:
+    get:
+      operationId: getClinica
+      tags:
+      - Clinica
+      summary: Obter clinica por ID
+      responses:
+        '200':
+          description: Detalhes do clinica
+        '400':
+          description: Bad Request
+        '500':
+          description: Internal Server Error
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+    put:
+      operationId: updateClinica
+      tags:
+      - Clinica
+      summary: Atualizar clinica
+      responses:
+        '200':
+          description: Clinica atualizado
+        '400':
+          description: Bad Request
+        '500':
+          description: Internal Server Error
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Clinica'
+    delete:
+      operationId: deleteClinica
+      tags:
+      - Clinica
+      summary: Deletar clinica
+      responses:
+        '200':
+          description: Clinica deletado
+        '400':
+          description: Bad Request
+        '500':
+          description: Internal Server Error
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+components:
+  schemas:
+    Quero_um_sistema_web_para_controle_de_clinica_veterinaria:
+      type: object
+      properties:
+        id:
+          type: string
+        clinica_pet:
+          type: string
+      required:
+      - id
+      - clinica_pet
+    Preciso_cadastrar_tutor:
+      type: object
+      properties:
+        id:
+          type: string
+        nome:
+          type: string
+        cpf:
+          type: string
+        telefone:
+          type: string
+        email:
+          type: string
+        endereco:
+          type: string
+      required:
+      - id
+      - nome
+      - cpf
+      - email
+      - endereco
+    Pet:
+      type: object
+      properties:
+        id:
+          type: string
+        nome:
+          type: string
+        especie_id:
+          type: string
+        raca_id:
+          type: string
+        sexo_id:
+          type: string
+        data_nascimento:
+          type: string
+        peso:
+          type: string
+        observacoes:
+          type: string
+        tutor_id:
+          type: string
+      required:
+      - id
+      - nome
+      - especie_id
+      - raca_id
+      - sexo_id
+      - data_nascimento
+      - observacoes
+      - tutor_id
+    Veterinario:
+      type: object
+      properties:
+        id:
+          type: string
+        nome:
+          type: string
+        crmv_id:
+          type: string
+        especialidade_id:
+          type: string
+        telefone:
+          type: string
+        email:
+          type: string
+      required:
+      - id
+      - nome
+      - crmv_id
+      - especialidade_id
+      - email
+    Consulta:
+      type: object
+      properties:
+        id:
+          type: string
+        data:
+          type: string
+        hora:
+          type: string
+        pet_id:
+          type: string
+        veterinario_id:
+          type: string
+        motivo_id:
+          type: string
+        anotacao_id:
+          type: string
+        diagnostico_id:
+          type: string
+        prescricao_id:
+          type: string
+        statu_id:
+          type: string
+      required:
+      - id
+      - data
+      - hora
+      - pet_id
+      - veterinario_id
+      - motivo_id
+      - anotacao_id
+      - diagnostico_id
+      - prescricao_id
+      - statu_id
+    Vacina:
+      type: object
+      properties:
+        id:
+          type: string
+        pet_id:
+          type: string
+        vacina:
+          type: string
+        data_aplicacao_id:
+          type: string
+        proxima_dose_id:
+          type: string
+        lote_id:
+          type: string
+        observacoes:
+          type: string
+      required:
+      - id
+      - pet_id
+      - vacina
+      - data_aplicacao_id
+      - proxima_dose_id
+      - lote_id
+      - observacoes
+    Agendamento:
+      type: object
+      properties:
+        id:
+          type: string
+        data:
+          type: string
+        hora:
+          type: string
+        pet_id:
+          type: string
+        veterinario_opcional_id:
+          type: string
+        servico_id:
+          type: string
+        statu_id:
+          type: string
+      required:
+      - id
+      - data
+      - hora
+      - pet_id
+      - veterinario_opcional_id
+      - servico_id
+      - statu_id
+    E_pagamento:
+      type: object
+      properties:
+        id:
+          type: string
+        atendimento:
+          type: string
+        forma_pagamento:
+          type: string
+        valor:
+          type: string
+        statu_id:
+          type: string
+        data:
+          type: string
+      required:
+      - id
+      - atendimento
+      - forma_pagamento
+      - valor
+      - statu_id
+      - data
+    Dashboard_inicial_com_atalho:
+      type: object
+      properties:
+        id:
+          type: string
+        novo_agendamento:
+          type: string
+        novo_atendimento:
+          type: string
+        cadastrar_tutor:
+          type: string
+        cadastrar_pet_id:
+          type: string
+      required:
+      - id
+      - novo_agendamento
+      - novo_atendimento
+      - cadastrar_tutor
+      - cadastrar_pet_id
+    Especie:
+      type: object
+      properties:
+        id:
+          type: string
+      required:
+      - id
+    Raca:
+      type: object
+      properties:
+        id:
+          type: string
+      required:
+      - id
+    Sexo:
+      type: object
+      properties:
+        id:
+          type: string
+      required:
+      - id
+    Tutor:
+      type: object
+      properties:
+        id:
+          type: string
+      required:
+      - id
+    Crmv:
+      type: object
+      properties:
+        id:
+          type: string
+      required:
+      - id
+    Especialidade:
+      type: object
+      properties:
+        id:
+          type: string
+      required:
+      - id
+    Motivo:
+      type: object
+      properties:
+        id:
+          type: string
+      required:
+      - id
+    Anotacao:
+      type: object
+      properties:
+        id:
+          type: string
+      required:
+      - id
+    Diagnostico:
+      type: object
+      properties:
+        id:
+          type: string
+      required:
+      - id
+    Prescricao:
+      type: object
+      properties:
+        id:
+          type: string
+      required:
+      - id
+    Data_aplicacao:
+      type: object
+      properties:
+        id:
+          type: string
+      required:
+      - id
+    Proxima_dose:
+      type: object
+      properties:
+        id:
+          type: string
+      required:
+      - id
+    Lote:
+      type: object
+      properties:
+        id:
+          type: string
+      required:
+      - id
+    Observacoes:
+      type: object
+      properties:
+        id:
+          type: string
+      required:
+      - id
+    Veterinario_opcional:
+      type: object
+      properties:
+        id:
+          type: string
+      required:
+      - id
+    Servico:
+      type: object
+      properties:
+        id:
+          type: string
+      required:
+      - id
+    Statu:
+      type: object
+      properties:
+        id:
+          type: string
+      required:
+      - id
+    Data_regras_nao_pode_ter_atendimento_sem_pet:
+      type: object
+      properties:
+        id:
+          type: string
+      required:
+      - id
+    Sem_veterinario:
+      type: object
+      properties:
+        id:
+          type: string
+      required:
+      - id
+    Cadastrar_pet:
+      type: object
+      properties:
+        id:
+          type: string
+      required:
+      - id
+    Clinica:
+      type: object
+      properties:
+        id:
+          type: string
+      required:
+      - id

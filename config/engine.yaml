@@ -1,0 +1,6 @@
+store_root: ./store_data
+project_default_language: pt-BR
+
+intake:
+  max_questions_per_round: 7
+  blueprint_confidence_threshold: 0.85

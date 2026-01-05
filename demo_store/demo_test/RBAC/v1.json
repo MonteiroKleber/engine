@@ -1,0 +1,32 @@
+{
+  "roles": [
+    "authenticated",
+    "admin"
+  ],
+  "permissions": [
+    {
+      "operation_id": "listRecursos",
+      "required_role": "authenticated"
+    },
+    {
+      "operation_id": "createRecursos",
+      "required_role": "authenticated"
+    },
+    {
+      "operation_id": "getRecursos",
+      "required_role": "authenticated"
+    },
+    {
+      "operation_id": "updateRecursos",
+      "required_role": "authenticated"
+    },
+    {
+      "operation_id": "deleteRecursos",
+      "required_role": "authenticated"
+    }
+  ],
+  "meta": {
+    "created_at": "2026-01-03T21:17:36.347614",
+    "version": "1.0.0"
+  }
+}

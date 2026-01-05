@@ -1,0 +1,491 @@
+{
+  "meta": {
+    "version": "v5",
+    "strategy": "PATCH_ONLY",
+    "ir_version": "v5",
+    "project_name": "Sistema Demo",
+    "created_at": "2026-01-03T23:08:25.960418"
+  },
+  "tasks": [
+    {
+      "id": "task_cnpj_api_client",
+      "title": "Create API client for Cnpj",
+      "order": 24,
+      "files": [
+        "frontend/src/api/client.ts"
+      ],
+      "acceptance": [
+        "Build frontend passes",
+        "API client has methods for Cnpj CRUD"
+      ],
+      "depends_on": [
+        "task_cnpj_frontend_pages"
+      ]
+    },
+    {
+      "id": "task_cnpj_controller",
+      "title": "Create REST Controller for Cnpj",
+      "order": 21,
+      "files": [
+        "backend/src/main/java/com/example/app/api/CnpjController.java"
+      ],
+      "acceptance": [
+        "Contract tests pass",
+        "All endpoints return correct status codes",
+        "Implements operations: listCnpj, createCnpj, getCnpj, updateCnpj, deleteCnpj"
+      ],
+      "depends_on": [
+        "task_cnpj_service"
+      ]
+    },
+    {
+      "id": "task_cnpj_frontend_pages",
+      "title": "Create frontend pages for Cnpj",
+      "order": 23,
+      "files": [
+        "frontend/src/pages/cnpj/List.tsx",
+        "frontend/src/pages/cnpj/New.tsx",
+        "frontend/src/pages/cnpj/Detail.tsx"
+      ],
+      "acceptance": [
+        "TypeScript typecheck passes",
+        "Pages render without errors"
+      ],
+      "depends_on": [
+        "task_cnpj_controller"
+      ]
+    },
+    {
+      "id": "task_cnpj_migration",
+      "title": "Create database migration for Cnpj",
+      "order": 17,
+      "files": [
+        "backend/src/main/resources/db/migration/V17__create_cnpj.sql"
+      ],
+      "acceptance": [
+        "Migration compiles without errors",
+        "Table cnpj exists in database"
+      ]
+    },
+    {
+      "id": "task_cnpj_model",
+      "title": "Create JPA Entity for Cnpj",
+      "order": 18,
+      "files": [
+        "backend/src/main/java/com/example/app/domain/Cnpj.java"
+      ],
+      "acceptance": [
+        "Build backend passes",
+        "Cnpj entity has all required fields"
+      ],
+      "depends_on": [
+        "task_cnpj_migration"
+      ]
+    },
+    {
+      "id": "task_cnpj_repository",
+      "title": "Create Repository for Cnpj",
+      "order": 19,
+      "files": [
+        "backend/src/main/java/com/example/app/repo/CnpjRepository.java"
+      ],
+      "acceptance": [
+        "Build backend passes",
+        "CnpjRepository extends JpaRepository"
+      ],
+      "depends_on": [
+        "task_cnpj_model"
+      ]
+    },
+    {
+      "id": "task_cnpj_security",
+      "title": "Configure security for Cnpj endpoints",
+      "order": 22,
+      "files": [
+        "backend/src/main/java/com/example/app/security/SecurityConfig.java"
+      ],
+      "acceptance": [
+        "Endpoints require authentication",
+        "RBAC roles are enforced"
+      ],
+      "depends_on": [
+        "task_cnpj_controller"
+      ]
+    },
+    {
+      "id": "task_cnpj_service",
+      "title": "Create Service for Cnpj",
+      "order": 20,
+      "files": [
+        "backend/src/main/java/com/example/app/service/CnpjService.java"
+      ],
+      "acceptance": [
+        "Build backend passes",
+        "CnpjService has CRUD methods"
+      ],
+      "depends_on": [
+        "task_cnpj_repository"
+      ]
+    },
+    {
+      "id": "task_empresa_api_client",
+      "title": "Create API client for Empresa",
+      "order": 8,
+      "files": [
+        "frontend/src/api/client.ts"
+      ],
+      "acceptance": [
+        "Build frontend passes",
+        "API client has methods for Empresa CRUD"
+      ],
+      "depends_on": [
+        "task_empresa_frontend_pages"
+      ]
+    },
+    {
+      "id": "task_empresa_controller",
+      "title": "Create REST Controller for Empresa",
+      "order": 5,
+      "files": [
+        "backend/src/main/java/com/example/app/api/EmpresaController.java"
+      ],
+      "acceptance": [
+        "Contract tests pass",
+        "All endpoints return correct status codes",
+        "Implements operations: listEmpresa, createEmpresa, getEmpresa, updateEmpresa, deleteEmpresa"
+      ],
+      "depends_on": [
+        "task_empresa_service"
+      ]
+    },
+    {
+      "id": "task_empresa_frontend_pages",
+      "title": "Create frontend pages for Empresa",
+      "order": 7,
+      "files": [
+        "frontend/src/pages/empresa/List.tsx",
+        "frontend/src/pages/empresa/New.tsx",
+        "frontend/src/pages/empresa/Detail.tsx"
+      ],
+      "acceptance": [
+        "TypeScript typecheck passes",
+        "Pages render without errors"
+      ],
+      "depends_on": [
+        "task_empresa_controller"
+      ]
+    },
+    {
+      "id": "task_empresa_migration",
+      "title": "Create database migration for Empresa",
+      "order": 1,
+      "files": [
+        "backend/src/main/resources/db/migration/V1__create_empresa.sql"
+      ],
+      "acceptance": [
+        "Migration compiles without errors",
+        "Table empresa exists in database"
+      ]
+    },
+    {
+      "id": "task_empresa_model",
+      "title": "Create JPA Entity for Empresa",
+      "order": 2,
+      "files": [
+        "backend/src/main/java/com/example/app/domain/Empresa.java"
+      ],
+      "acceptance": [
+        "Build backend passes",
+        "Empresa entity has all required fields"
+      ],
+      "depends_on": [
+        "task_empresa_migration"
+      ]
+    },
+    {
+      "id": "task_empresa_repository",
+      "title": "Create Repository for Empresa",
+      "order": 3,
+      "files": [
+        "backend/src/main/java/com/example/app/repo/EmpresaRepository.java"
+      ],
+      "acceptance": [
+        "Build backend passes",
+        "EmpresaRepository extends JpaRepository"
+      ],
+      "depends_on": [
+        "task_empresa_model"
+      ]
+    },
+    {
+      "id": "task_empresa_security",
+      "title": "Configure security for Empresa endpoints",
+      "order": 6,
+      "files": [
+        "backend/src/main/java/com/example/app/security/SecurityConfig.java"
+      ],
+      "acceptance": [
+        "Endpoints require authentication",
+        "RBAC roles are enforced"
+      ],
+      "depends_on": [
+        "task_empresa_controller"
+      ]
+    },
+    {
+      "id": "task_empresa_service",
+      "title": "Create Service for Empresa",
+      "order": 4,
+      "files": [
+        "backend/src/main/java/com/example/app/service/EmpresaService.java"
+      ],
+      "acceptance": [
+        "Build backend passes",
+        "EmpresaService has CRUD methods"
+      ],
+      "depends_on": [
+        "task_empresa_repository"
+      ]
+    },
+    {
+      "id": "task_endereco_api_client",
+      "title": "Create API client for Endereço",
+      "order": 16,
+      "files": [
+        "frontend/src/api/client.ts"
+      ],
+      "acceptance": [
+        "Build frontend passes",
+        "API client has methods for Endereço CRUD"
+      ],
+      "depends_on": [
+        "task_endereco_frontend_pages"
+      ]
+    },
+    {
+      "id": "task_endereco_controller",
+      "title": "Create REST Controller for Endereço",
+      "order": 13,
+      "files": [
+        "backend/src/main/java/com/example/app/api/EnderecoController.java"
+      ],
+      "acceptance": [
+        "Contract tests pass",
+        "All endpoints return correct status codes",
+        "Implements operations: listEndereço, createEndereço, getEndereço, updateEndereço, deleteEndereço"
+      ],
+      "depends_on": [
+        "task_endereco_service"
+      ]
+    },
+    {
+      "id": "task_endereco_frontend_pages",
+      "title": "Create frontend pages for Endereço",
+      "order": 15,
+      "files": [
+        "frontend/src/pages/endereco/List.tsx",
+        "frontend/src/pages/endereco/New.tsx",
+        "frontend/src/pages/endereco/Detail.tsx"
+      ],
+      "acceptance": [
+        "TypeScript typecheck passes",
+        "Pages render without errors"
+      ],
+      "depends_on": [
+        "task_endereco_controller"
+      ]
+    },
+    {
+      "id": "task_endereco_migration",
+      "title": "Create database migration for Endereço",
+      "order": 9,
+      "files": [
+        "backend/src/main/resources/db/migration/V9__create_endereco.sql"
+      ],
+      "acceptance": [
+        "Migration compiles without errors",
+        "Table endereco exists in database"
+      ]
+    },
+    {
+      "id": "task_endereco_model",
+      "title": "Create JPA Entity for Endereço",
+      "order": 10,
+      "files": [
+        "backend/src/main/java/com/example/app/domain/Endereco.java"
+      ],
+      "acceptance": [
+        "Build backend passes",
+        "Endereço entity has all required fields"
+      ],
+      "depends_on": [
+        "task_endereco_migration"
+      ]
+    },
+    {
+      "id": "task_endereco_repository",
+      "title": "Create Repository for Endereço",
+      "order": 11,
+      "files": [
+        "backend/src/main/java/com/example/app/repo/EnderecoRepository.java"
+      ],
+      "acceptance": [
+        "Build backend passes",
+        "EndereçoRepository extends JpaRepository"
+      ],
+      "depends_on": [
+        "task_endereco_model"
+      ]
+    },
+    {
+      "id": "task_endereco_security",
+      "title": "Configure security for Endereço endpoints",
+      "order": 14,
+      "files": [
+        "backend/src/main/java/com/example/app/security/SecurityConfig.java"
+      ],
+      "acceptance": [
+        "Endpoints require authentication",
+        "RBAC roles are enforced"
+      ],
+      "depends_on": [
+        "task_endereco_controller"
+      ]
+    },
+    {
+      "id": "task_endereco_service",
+      "title": "Create Service for Endereço",
+      "order": 12,
+      "files": [
+        "backend/src/main/java/com/example/app/service/EnderecoService.java"
+      ],
+      "acceptance": [
+        "Build backend passes",
+        "EndereçoService has CRUD methods"
+      ],
+      "depends_on": [
+        "task_endereco_repository"
+      ]
+    },
+    {
+      "id": "task_nome_api_client",
+      "title": "Create API client for Nome",
+      "order": 32,
+      "files": [
+        "frontend/src/api/client.ts"
+      ],
+      "acceptance": [
+        "Build frontend passes",
+        "API client has methods for Nome CRUD"
+      ],
+      "depends_on": [
+        "task_nome_frontend_pages"
+      ]
+    },
+    {
+      "id": "task_nome_controller",
+      "title": "Create REST Controller for Nome",
+      "order": 29,
+      "files": [
+        "backend/src/main/java/com/example/app/api/NomeController.java"
+      ],
+      "acceptance": [
+        "Contract tests pass",
+        "All endpoints return correct status codes",
+        "Implements operations: listNome, createNome, getNome, updateNome, deleteNome"
+      ],
+      "depends_on": [
+        "task_nome_service"
+      ]
+    },
+    {
+      "id": "task_nome_frontend_pages",
+      "title": "Create frontend pages for Nome",
+      "order": 31,
+      "files": [
+        "frontend/src/pages/nome/List.tsx",
+        "frontend/src/pages/nome/New.tsx",
+        "frontend/src/pages/nome/Detail.tsx"
+      ],
+      "acceptance": [
+        "TypeScript typecheck passes",
+        "Pages render without errors"
+      ],
+      "depends_on": [
+        "task_nome_controller"
+      ]
+    },
+    {
+      "id": "task_nome_migration",
+      "title": "Create database migration for Nome",
+      "order": 25,
+      "files": [
+        "backend/src/main/resources/db/migration/V25__create_nome.sql"
+      ],
+      "acceptance": [
+        "Migration compiles without errors",
+        "Table nome exists in database"
+      ]
+    },
+    {
+      "id": "task_nome_model",
+      "title": "Create JPA Entity for Nome",
+      "order": 26,
+      "files": [
+        "backend/src/main/java/com/example/app/domain/Nome.java"
+      ],
+      "acceptance": [
+        "Build backend passes",
+        "Nome entity has all required fields"
+      ],
+      "depends_on": [
+        "task_nome_migration"
+      ]
+    },
+    {
+      "id": "task_nome_repository",
+      "title": "Create Repository for Nome",
+      "order": 27,
+      "files": [
+        "backend/src/main/java/com/example/app/repo/NomeRepository.java"
+      ],
+      "acceptance": [
+        "Build backend passes",
+        "NomeRepository extends JpaRepository"
+      ],
+      "depends_on": [
+        "task_nome_model"
+      ]
+    },
+    {
+      "id": "task_nome_security",
+      "title": "Configure security for Nome endpoints",
+      "order": 30,
+      "files": [
+        "backend/src/main/java/com/example/app/security/SecurityConfig.java"
+      ],
+      "acceptance": [
+        "Endpoints require authentication",
+        "RBAC roles are enforced"
+      ],
+      "depends_on": [
+        "task_nome_controller"
+      ]
+    },
+    {
+      "id": "task_nome_service",
+      "title": "Create Service for Nome",
+      "order": 28,
+      "files": [
+        "backend/src/main/java/com/example/app/service/NomeService.java"
+      ],
+      "acceptance": [
+        "Build backend passes",
+        "NomeService has CRUD methods"
+      ],
+      "depends_on": [
+        "task_nome_repository"
+      ]
+    }
+  ]
+}

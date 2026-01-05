@@ -1,0 +1,57 @@
+{
+  "project": "demo",
+  "version": "1.0.0",
+  "timestamp": "2026-01-04T13:30:01.793694",
+  "engine_version": "1.0.0",
+  "repo_path": "/home/bazari/generated/demo",
+  "store_path": "/home/bazari/engine/demo_store/demo",
+  "success": true,
+  "final_status": "running",
+  "artifacts": {
+    "srs_version": 20,
+    "ir_version": 20,
+    "oas_version": 20,
+    "rbac_version": 20,
+    "plan_version": 20
+  },
+  "metrics": {
+    "requirements_count": 3,
+    "entities_count": 1,
+    "operations_count": 5,
+    "tasks_count": 8,
+    "patch_count": 8
+  },
+  "build": {
+    "build_ok": true,
+    "fix_attempts": 0,
+    "fixes_applied": 0
+  },
+  "release": {
+    "docker_compose_ok": true,
+    "services_running": [
+      "backend",
+      "db",
+      "frontend"
+    ],
+    "smoke_ok": true,
+    "smoke_passed": 6,
+    "smoke_failed": 0
+  },
+  "checklist": {
+    "passed": false,
+    "total_items": 12,
+    "failures": [
+      "hashes_complete: Hashes faltando: input_hash, srs_hash, ir_hash, oas_hash, rbac_hash, plan_hash",
+      "no_pii_logging: Possiveis logs de PII encontrados (1)"
+    ]
+  },
+  "errors": [],
+  "duration_ms": 76687.924,
+  "commands": {
+    "start": "cd /home/bazari/generated/demo && docker compose up -d",
+    "stop": "cd /home/bazari/generated/demo && docker compose down",
+    "logs": "cd /home/bazari/generated/demo && docker compose logs -f",
+    "status": "cd /home/bazari/generated/demo && docker compose ps",
+    "restart": "cd /home/bazari/generated/demo && docker compose restart"
+  }
+}

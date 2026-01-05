@@ -1,0 +1,110 @@
+openapi: 3.0.0
+info:
+  title: Sistema Demo_Test API
+  version: 1.0.0
+  description: API gerada automaticamente para Sistema Demo_Test
+paths:
+  /api/recursoses:
+    get:
+      operationId: listRecursos
+      tags:
+      - Recursos
+      summary: Listar recursoses
+      responses:
+        '200':
+          description: Lista de recursoses
+        '400':
+          description: Bad Request
+        '500':
+          description: Internal Server Error
+    post:
+      operationId: createRecursos
+      tags:
+      - Recursos
+      summary: Criar recursos
+      responses:
+        '201':
+          description: Recursos criado
+        '400':
+          description: Bad Request
+        '500':
+          description: Internal Server Error
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Recursos'
+  /api/recursoses/{id}:
+    get:
+      operationId: getRecursos
+      tags:
+      - Recursos
+      summary: Obter recursos por ID
+      responses:
+        '200':
+          description: Detalhes do recursos
+        '400':
+          description: Bad Request
+        '500':
+          description: Internal Server Error
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+    put:
+      operationId: updateRecursos
+      tags:
+      - Recursos
+      summary: Atualizar recursos
+      responses:
+        '200':
+          description: Recursos atualizado
+        '400':
+          description: Bad Request
+        '500':
+          description: Internal Server Error
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Recursos'
+    delete:
+      operationId: deleteRecursos
+      tags:
+      - Recursos
+      summary: Deletar recursos
+      responses:
+        '200':
+          description: Recursos deletado
+        '400':
+          description: Bad Request
+        '500':
+          description: Internal Server Error
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+components:
+  schemas:
+    Recursos:
+      type: object
+      properties:
+        id:
+          type: string
+        nome:
+          type: string
+      required:
+      - id
+      - nome

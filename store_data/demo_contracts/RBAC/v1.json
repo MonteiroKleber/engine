@@ -1,0 +1,52 @@
+{
+  "roles": [
+    "authenticated",
+    "admin"
+  ],
+  "permissions": [
+    {
+      "operation_id": "listProduto",
+      "required_role": "authenticated"
+    },
+    {
+      "operation_id": "createProduto",
+      "required_role": "authenticated"
+    },
+    {
+      "operation_id": "getProduto",
+      "required_role": "authenticated"
+    },
+    {
+      "operation_id": "updateProduto",
+      "required_role": "authenticated"
+    },
+    {
+      "operation_id": "deleteProduto",
+      "required_role": "authenticated"
+    },
+    {
+      "operation_id": "listPedido",
+      "required_role": "authenticated"
+    },
+    {
+      "operation_id": "createPedido",
+      "required_role": "authenticated"
+    },
+    {
+      "operation_id": "getPedido",
+      "required_role": "authenticated"
+    },
+    {
+      "operation_id": "updatePedido",
+      "required_role": "authenticated"
+    },
+    {
+      "operation_id": "deletePedido",
+      "required_role": "authenticated"
+    }
+  ],
+  "meta": {
+    "created_at": "2026-01-03T11:02:03.592212",
+    "version": "1.0.0"
+  }
+}

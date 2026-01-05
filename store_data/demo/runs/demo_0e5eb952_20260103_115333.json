@@ -1,0 +1,40 @@
+{
+  "execution_id": "demo_0e5eb952",
+  "timestamp": "2026-01-03T11:53:33.650912",
+  "payload": {
+    "status": "completed",
+    "result": {
+      "success": true,
+      "execution_id": "demo_0e5eb952",
+      "project": "demo",
+      "srs_version": 1,
+      "srs_path": "store_data/demo/SRS/v1.json",
+      "ir_version": 1,
+      "ir_path": "store_data/demo/IR/v1.json",
+      "oas_version": 1,
+      "oas_path": "store_data/demo/OAS/v1.yaml",
+      "rbac_version": 1,
+      "rbac_path": "store_data/demo/RBAC/v1.json",
+      "blueprint_type": "generic",
+      "requirements_count": 3,
+      "entities_count": 4,
+      "operations_count": 20,
+      "srs_validation_ok": true,
+      "ir_validation_ok": true,
+      "oas_validation_ok": true,
+      "rbac_validation_ok": true,
+      "policy_ok": true,
+      "contracts_policy_ok": true,
+      "questions": [],
+      "errors": [],
+      "duration_ms": 0.0
+    },
+    "state": "completed",
+    "timestamp": "2026-01-03T11:53:33.650840",
+    "input_hash": "aa2bf405694fec32",
+    "srs_hash": "5b37ddfdace5347d",
+    "ir_hash": "5e4ba29c5e18dccd",
+    "oas_hash": "515a27190929a8ed",
+    "rbac_hash": "a1a3fc2e070d712b"
+  }
+}

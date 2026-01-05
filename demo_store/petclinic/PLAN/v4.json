@@ -1,0 +1,851 @@
+{
+  "meta": {
+    "version": "v4",
+    "strategy": "PATCH_ONLY",
+    "ir_version": "v4",
+    "project_name": "Sistema Petclinic",
+    "created_at": "2026-01-04T18:43:51.615920"
+  },
+  "tasks": [
+    {
+      "id": "task_agendamento_api_client",
+      "title": "Create API client for Agendamento",
+      "order": 48,
+      "files": [
+        "frontend/src/api/client.ts"
+      ],
+      "acceptance": [
+        "Build frontend passes",
+        "API client has methods for Agendamento CRUD"
+      ],
+      "depends_on": [
+        "task_agendamento_frontend_pages"
+      ]
+    },
+    {
+      "id": "task_agendamento_controller",
+      "title": "Create REST Controller for Agendamento",
+      "order": 45,
+      "files": [
+        "backend/src/main/java/com/example/app/api/AgendamentoController.java"
+      ],
+      "acceptance": [
+        "Contract tests pass",
+        "All endpoints return correct status codes",
+        "Implements operations: listAgendamento, createAgendamento, getAgendamento, updateAgendamento, deleteAgendamento"
+      ],
+      "depends_on": [
+        "task_agendamento_service"
+      ]
+    },
+    {
+      "id": "task_agendamento_frontend_pages",
+      "title": "Create frontend pages for Agendamento",
+      "order": 47,
+      "files": [
+        "frontend/src/pages/agendamento/List.tsx",
+        "frontend/src/pages/agendamento/New.tsx",
+        "frontend/src/pages/agendamento/Detail.tsx"
+      ],
+      "acceptance": [
+        "TypeScript typecheck passes",
+        "Pages render without errors"
+      ],
+      "depends_on": [
+        "task_agendamento_controller"
+      ]
+    },
+    {
+      "id": "task_agendamento_migration",
+      "title": "Create database migration for Agendamento",
+      "order": 41,
+      "files": [
+        "backend/src/main/resources/db/migration/V41__create_agendamento.sql"
+      ],
+      "acceptance": [
+        "Migration compiles without errors",
+        "Table agendamento exists in database"
+      ]
+    },
+    {
+      "id": "task_agendamento_model",
+      "title": "Create JPA Entity for Agendamento",
+      "order": 42,
+      "files": [
+        "backend/src/main/java/com/example/app/domain/Agendamento.java"
+      ],
+      "acceptance": [
+        "Build backend passes",
+        "Agendamento entity has all required fields"
+      ],
+      "depends_on": [
+        "task_agendamento_migration"
+      ]
+    },
+    {
+      "id": "task_agendamento_repository",
+      "title": "Create Repository for Agendamento",
+      "order": 43,
+      "files": [
+        "backend/src/main/java/com/example/app/repo/AgendamentoRepository.java"
+      ],
+      "acceptance": [
+        "Build backend passes",
+        "AgendamentoRepository extends JpaRepository"
+      ],
+      "depends_on": [
+        "task_agendamento_model"
+      ]
+    },
+    {
+      "id": "task_agendamento_security",
+      "title": "Configure security for Agendamento endpoints",
+      "order": 46,
+      "files": [
+        "backend/src/main/java/com/example/app/security/SecurityConfig.java"
+      ],
+      "acceptance": [
+        "Endpoints require authentication",
+        "RBAC roles are enforced"
+      ],
+      "depends_on": [
+        "task_agendamento_controller"
+      ]
+    },
+    {
+      "id": "task_agendamento_service",
+      "title": "Create Service for Agendamento",
+      "order": 44,
+      "files": [
+        "backend/src/main/java/com/example/app/service/AgendamentoService.java"
+      ],
+      "acceptance": [
+        "Build backend passes",
+        "AgendamentoService has CRUD methods"
+      ],
+      "depends_on": [
+        "task_agendamento_repository"
+      ]
+    },
+    {
+      "id": "task_atendimento_api_client",
+      "title": "Create API client for Atendimento",
+      "order": 32,
+      "files": [
+        "frontend/src/api/client.ts"
+      ],
+      "acceptance": [
+        "Build frontend passes",
+        "API client has methods for Atendimento CRUD"
+      ],
+      "depends_on": [
+        "task_atendimento_frontend_pages"
+      ]
+    },
+    {
+      "id": "task_atendimento_controller",
+      "title": "Create REST Controller for Atendimento",
+      "order": 29,
+      "files": [
+        "backend/src/main/java/com/example/app/api/AtendimentoController.java"
+      ],
+      "acceptance": [
+        "Contract tests pass",
+        "All endpoints return correct status codes",
+        "Implements operations: listAtendimento, createAtendimento, getAtendimento, updateAtendimento, deleteAtendimento"
+      ],
+      "depends_on": [
+        "task_atendimento_service"
+      ]
+    },
+    {
+      "id": "task_atendimento_frontend_pages",
+      "title": "Create frontend pages for Atendimento",
+      "order": 31,
+      "files": [
+        "frontend/src/pages/atendimento/List.tsx",
+        "frontend/src/pages/atendimento/New.tsx",
+        "frontend/src/pages/atendimento/Detail.tsx"
+      ],
+      "acceptance": [
+        "TypeScript typecheck passes",
+        "Pages render without errors"
+      ],
+      "depends_on": [
+        "task_atendimento_controller"
+      ]
+    },
+    {
+      "id": "task_atendimento_migration",
+      "title": "Create database migration for Atendimento",
+      "order": 25,
+      "files": [
+        "backend/src/main/resources/db/migration/V25__create_atendimento.sql"
+      ],
+      "acceptance": [
+        "Migration compiles without errors",
+        "Table atendimento exists in database"
+      ]
+    },
+    {
+      "id": "task_atendimento_model",
+      "title": "Create JPA Entity for Atendimento",
+      "order": 26,
+      "files": [
+        "backend/src/main/java/com/example/app/domain/Atendimento.java"
+      ],
+      "acceptance": [
+        "Build backend passes",
+        "Atendimento entity has all required fields"
+      ],
+      "depends_on": [
+        "task_atendimento_migration"
+      ]
+    },
+    {
+      "id": "task_atendimento_repository",
+      "title": "Create Repository for Atendimento",
+      "order": 27,
+      "files": [
+        "backend/src/main/java/com/example/app/repo/AtendimentoRepository.java"
+      ],
+      "acceptance": [
+        "Build backend passes",
+        "AtendimentoRepository extends JpaRepository"
+      ],
+      "depends_on": [
+        "task_atendimento_model"
+      ]
+    },
+    {
+      "id": "task_atendimento_security",
+      "title": "Configure security for Atendimento endpoints",
+      "order": 30,
+      "files": [
+        "backend/src/main/java/com/example/app/security/SecurityConfig.java"
+      ],
+      "acceptance": [
+        "Endpoints require authentication",
+        "RBAC roles are enforced"
+      ],
+      "depends_on": [
+        "task_atendimento_controller"
+      ]
+    },
+    {
+      "id": "task_atendimento_service",
+      "title": "Create Service for Atendimento",
+      "order": 28,
+      "files": [
+        "backend/src/main/java/com/example/app/service/AtendimentoService.java"
+      ],
+      "acceptance": [
+        "Build backend passes",
+        "AtendimentoService has CRUD methods"
+      ],
+      "depends_on": [
+        "task_atendimento_repository"
+      ]
+    },
+    {
+      "id": "task_pagamento_api_client",
+      "title": "Create API client for Pagamento",
+      "order": 56,
+      "files": [
+        "frontend/src/api/client.ts"
+      ],
+      "acceptance": [
+        "Build frontend passes",
+        "API client has methods for Pagamento CRUD"
+      ],
+      "depends_on": [
+        "task_pagamento_frontend_pages"
+      ]
+    },
+    {
+      "id": "task_pagamento_controller",
+      "title": "Create REST Controller for Pagamento",
+      "order": 53,
+      "files": [
+        "backend/src/main/java/com/example/app/api/PagamentoController.java"
+      ],
+      "acceptance": [
+        "Contract tests pass",
+        "All endpoints return correct status codes",
+        "Implements operations: listPagamento, createPagamento, getPagamento, updatePagamento, deletePagamento"
+      ],
+      "depends_on": [
+        "task_pagamento_service"
+      ]
+    },
+    {
+      "id": "task_pagamento_frontend_pages",
+      "title": "Create frontend pages for Pagamento",
+      "order": 55,
+      "files": [
+        "frontend/src/pages/pagamento/List.tsx",
+        "frontend/src/pages/pagamento/New.tsx",
+        "frontend/src/pages/pagamento/Detail.tsx"
+      ],
+      "acceptance": [
+        "TypeScript typecheck passes",
+        "Pages render without errors"
+      ],
+      "depends_on": [
+        "task_pagamento_controller"
+      ]
+    },
+    {
+      "id": "task_pagamento_migration",
+      "title": "Create database migration for Pagamento",
+      "order": 49,
+      "files": [
+        "backend/src/main/resources/db/migration/V49__create_pagamento.sql"
+      ],
+      "acceptance": [
+        "Migration compiles without errors",
+        "Table pagamento exists in database"
+      ]
+    },
+    {
+      "id": "task_pagamento_model",
+      "title": "Create JPA Entity for Pagamento",
+      "order": 50,
+      "files": [
+        "backend/src/main/java/com/example/app/domain/Pagamento.java"
+      ],
+      "acceptance": [
+        "Build backend passes",
+        "Pagamento entity has all required fields"
+      ],
+      "depends_on": [
+        "task_pagamento_migration"
+      ]
+    },
+    {
+      "id": "task_pagamento_repository",
+      "title": "Create Repository for Pagamento",
+      "order": 51,
+      "files": [
+        "backend/src/main/java/com/example/app/repo/PagamentoRepository.java"
+      ],
+      "acceptance": [
+        "Build backend passes",
+        "PagamentoRepository extends JpaRepository"
+      ],
+      "depends_on": [
+        "task_pagamento_model"
+      ]
+    },
+    {
+      "id": "task_pagamento_security",
+      "title": "Configure security for Pagamento endpoints",
+      "order": 54,
+      "files": [
+        "backend/src/main/java/com/example/app/security/SecurityConfig.java"
+      ],
+      "acceptance": [
+        "Endpoints require authentication",
+        "RBAC roles are enforced"
+      ],
+      "depends_on": [
+        "task_pagamento_controller"
+      ]
+    },
+    {
+      "id": "task_pagamento_service",
+      "title": "Create Service for Pagamento",
+      "order": 52,
+      "files": [
+        "backend/src/main/java/com/example/app/service/PagamentoService.java"
+      ],
+      "acceptance": [
+        "Build backend passes",
+        "PagamentoService has CRUD methods"
+      ],
+      "depends_on": [
+        "task_pagamento_repository"
+      ]
+    },
+    {
+      "id": "task_pet_api_client",
+      "title": "Create API client for Pet",
+      "order": 16,
+      "files": [
+        "frontend/src/api/client.ts"
+      ],
+      "acceptance": [
+        "Build frontend passes",
+        "API client has methods for Pet CRUD"
+      ],
+      "depends_on": [
+        "task_pet_frontend_pages"
+      ]
+    },
+    {
+      "id": "task_pet_controller",
+      "title": "Create REST Controller for Pet",
+      "order": 13,
+      "files": [
+        "backend/src/main/java/com/example/app/api/PetController.java"
+      ],
+      "acceptance": [
+        "Contract tests pass",
+        "All endpoints return correct status codes",
+        "Implements operations: listPet, createPet, getPet, updatePet, deletePet"
+      ],
+      "depends_on": [
+        "task_pet_service"
+      ]
+    },
+    {
+      "id": "task_pet_frontend_pages",
+      "title": "Create frontend pages for Pet",
+      "order": 15,
+      "files": [
+        "frontend/src/pages/pet/List.tsx",
+        "frontend/src/pages/pet/New.tsx",
+        "frontend/src/pages/pet/Detail.tsx"
+      ],
+      "acceptance": [
+        "TypeScript typecheck passes",
+        "Pages render without errors"
+      ],
+      "depends_on": [
+        "task_pet_controller"
+      ]
+    },
+    {
+      "id": "task_pet_migration",
+      "title": "Create database migration for Pet",
+      "order": 9,
+      "files": [
+        "backend/src/main/resources/db/migration/V9__create_pet.sql"
+      ],
+      "acceptance": [
+        "Migration compiles without errors",
+        "Table pet exists in database"
+      ]
+    },
+    {
+      "id": "task_pet_model",
+      "title": "Create JPA Entity for Pet",
+      "order": 10,
+      "files": [
+        "backend/src/main/java/com/example/app/domain/Pet.java"
+      ],
+      "acceptance": [
+        "Build backend passes",
+        "Pet entity has all required fields"
+      ],
+      "depends_on": [
+        "task_pet_migration"
+      ]
+    },
+    {
+      "id": "task_pet_repository",
+      "title": "Create Repository for Pet",
+      "order": 11,
+      "files": [
+        "backend/src/main/java/com/example/app/repo/PetRepository.java"
+      ],
+      "acceptance": [
+        "Build backend passes",
+        "PetRepository extends JpaRepository"
+      ],
+      "depends_on": [
+        "task_pet_model"
+      ]
+    },
+    {
+      "id": "task_pet_security",
+      "title": "Configure security for Pet endpoints",
+      "order": 14,
+      "files": [
+        "backend/src/main/java/com/example/app/security/SecurityConfig.java"
+      ],
+      "acceptance": [
+        "Endpoints require authentication",
+        "RBAC roles are enforced"
+      ],
+      "depends_on": [
+        "task_pet_controller"
+      ]
+    },
+    {
+      "id": "task_pet_service",
+      "title": "Create Service for Pet",
+      "order": 12,
+      "files": [
+        "backend/src/main/java/com/example/app/service/PetService.java"
+      ],
+      "acceptance": [
+        "Build backend passes",
+        "PetService has CRUD methods"
+      ],
+      "depends_on": [
+        "task_pet_repository"
+      ]
+    },
+    {
+      "id": "task_tutor_api_client",
+      "title": "Create API client for Tutor",
+      "order": 8,
+      "files": [
+        "frontend/src/api/client.ts"
+      ],
+      "acceptance": [
+        "Build frontend passes",
+        "API client has methods for Tutor CRUD"
+      ],
+      "depends_on": [
+        "task_tutor_frontend_pages"
+      ]
+    },
+    {
+      "id": "task_tutor_controller",
+      "title": "Create REST Controller for Tutor",
+      "order": 5,
+      "files": [
+        "backend/src/main/java/com/example/app/api/TutorController.java"
+      ],
+      "acceptance": [
+        "Contract tests pass",
+        "All endpoints return correct status codes",
+        "Implements operations: listTutor, createTutor, getTutor, updateTutor, deleteTutor"
+      ],
+      "depends_on": [
+        "task_tutor_service"
+      ]
+    },
+    {
+      "id": "task_tutor_frontend_pages",
+      "title": "Create frontend pages for Tutor",
+      "order": 7,
+      "files": [
+        "frontend/src/pages/tutor/List.tsx",
+        "frontend/src/pages/tutor/New.tsx",
+        "frontend/src/pages/tutor/Detail.tsx"
+      ],
+      "acceptance": [
+        "TypeScript typecheck passes",
+        "Pages render without errors"
+      ],
+      "depends_on": [
+        "task_tutor_controller"
+      ]
+    },
+    {
+      "id": "task_tutor_migration",
+      "title": "Create database migration for Tutor",
+      "order": 1,
+      "files": [
+        "backend/src/main/resources/db/migration/V1__create_tutor.sql"
+      ],
+      "acceptance": [
+        "Migration compiles without errors",
+        "Table tutor exists in database"
+      ]
+    },
+    {
+      "id": "task_tutor_model",
+      "title": "Create JPA Entity for Tutor",
+      "order": 2,
+      "files": [
+        "backend/src/main/java/com/example/app/domain/Tutor.java"
+      ],
+      "acceptance": [
+        "Build backend passes",
+        "Tutor entity has all required fields"
+      ],
+      "depends_on": [
+        "task_tutor_migration"
+      ]
+    },
+    {
+      "id": "task_tutor_repository",
+      "title": "Create Repository for Tutor",
+      "order": 3,
+      "files": [
+        "backend/src/main/java/com/example/app/repo/TutorRepository.java"
+      ],
+      "acceptance": [
+        "Build backend passes",
+        "TutorRepository extends JpaRepository"
+      ],
+      "depends_on": [
+        "task_tutor_model"
+      ]
+    },
+    {
+      "id": "task_tutor_security",
+      "title": "Configure security for Tutor endpoints",
+      "order": 6,
+      "files": [
+        "backend/src/main/java/com/example/app/security/SecurityConfig.java"
+      ],
+      "acceptance": [
+        "Endpoints require authentication",
+        "RBAC roles are enforced"
+      ],
+      "depends_on": [
+        "task_tutor_controller"
+      ]
+    },
+    {
+      "id": "task_tutor_service",
+      "title": "Create Service for Tutor",
+      "order": 4,
+      "files": [
+        "backend/src/main/java/com/example/app/service/TutorService.java"
+      ],
+      "acceptance": [
+        "Build backend passes",
+        "TutorService has CRUD methods"
+      ],
+      "depends_on": [
+        "task_tutor_repository"
+      ]
+    },
+    {
+      "id": "task_vacina_api_client",
+      "title": "Create API client for Vacina",
+      "order": 40,
+      "files": [
+        "frontend/src/api/client.ts"
+      ],
+      "acceptance": [
+        "Build frontend passes",
+        "API client has methods for Vacina CRUD"
+      ],
+      "depends_on": [
+        "task_vacina_frontend_pages"
+      ]
+    },
+    {
+      "id": "task_vacina_controller",
+      "title": "Create REST Controller for Vacina",
+      "order": 37,
+      "files": [
+        "backend/src/main/java/com/example/app/api/VacinaController.java"
+      ],
+      "acceptance": [
+        "Contract tests pass",
+        "All endpoints return correct status codes",
+        "Implements operations: listVacina, createVacina, getVacina, updateVacina, deleteVacina"
+      ],
+      "depends_on": [
+        "task_vacina_service"
+      ]
+    },
+    {
+      "id": "task_vacina_frontend_pages",
+      "title": "Create frontend pages for Vacina",
+      "order": 39,
+      "files": [
+        "frontend/src/pages/vacina/List.tsx",
+        "frontend/src/pages/vacina/New.tsx",
+        "frontend/src/pages/vacina/Detail.tsx"
+      ],
+      "acceptance": [
+        "TypeScript typecheck passes",
+        "Pages render without errors"
+      ],
+      "depends_on": [
+        "task_vacina_controller"
+      ]
+    },
+    {
+      "id": "task_vacina_migration",
+      "title": "Create database migration for Vacina",
+      "order": 33,
+      "files": [
+        "backend/src/main/resources/db/migration/V33__create_vacina.sql"
+      ],
+      "acceptance": [
+        "Migration compiles without errors",
+        "Table vacina exists in database"
+      ]
+    },
+    {
+      "id": "task_vacina_model",
+      "title": "Create JPA Entity for Vacina",
+      "order": 34,
+      "files": [
+        "backend/src/main/java/com/example/app/domain/Vacina.java"
+      ],
+      "acceptance": [
+        "Build backend passes",
+        "Vacina entity has all required fields"
+      ],
+      "depends_on": [
+        "task_vacina_migration"
+      ]
+    },
+    {
+      "id": "task_vacina_repository",
+      "title": "Create Repository for Vacina",
+      "order": 35,
+      "files": [
+        "backend/src/main/java/com/example/app/repo/VacinaRepository.java"
+      ],
+      "acceptance": [
+        "Build backend passes",
+        "VacinaRepository extends JpaRepository"
+      ],
+      "depends_on": [
+        "task_vacina_model"
+      ]
+    },
+    {
+      "id": "task_vacina_security",
+      "title": "Configure security for Vacina endpoints",
+      "order": 38,
+      "files": [
+        "backend/src/main/java/com/example/app/security/SecurityConfig.java"
+      ],
+      "acceptance": [
+        "Endpoints require authentication",
+        "RBAC roles are enforced"
+      ],
+      "depends_on": [
+        "task_vacina_controller"
+      ]
+    },
+    {
+      "id": "task_vacina_service",
+      "title": "Create Service for Vacina",
+      "order": 36,
+      "files": [
+        "backend/src/main/java/com/example/app/service/VacinaService.java"
+      ],
+      "acceptance": [
+        "Build backend passes",
+        "VacinaService has CRUD methods"
+      ],
+      "depends_on": [
+        "task_vacina_repository"
+      ]
+    },
+    {
+      "id": "task_veterinario_api_client",
+      "title": "Create API client for Veterinario",
+      "order": 24,
+      "files": [
+        "frontend/src/api/client.ts"
+      ],
+      "acceptance": [
+        "Build frontend passes",
+        "API client has methods for Veterinario CRUD"
+      ],
+      "depends_on": [
+        "task_veterinario_frontend_pages"
+      ]
+    },
+    {
+      "id": "task_veterinario_controller",
+      "title": "Create REST Controller for Veterinario",
+      "order": 21,
+      "files": [
+        "backend/src/main/java/com/example/app/api/VeterinarioController.java"
+      ],
+      "acceptance": [
+        "Contract tests pass",
+        "All endpoints return correct status codes",
+        "Implements operations: listVeterinario, createVeterinario, getVeterinario, updateVeterinario, deleteVeterinario"
+      ],
+      "depends_on": [
+        "task_veterinario_service"
+      ]
+    },
+    {
+      "id": "task_veterinario_frontend_pages",
+      "title": "Create frontend pages for Veterinario",
+      "order": 23,
+      "files": [
+        "frontend/src/pages/veterinario/List.tsx",
+        "frontend/src/pages/veterinario/New.tsx",
+        "frontend/src/pages/veterinario/Detail.tsx"
+      ],
+      "acceptance": [
+        "TypeScript typecheck passes",
+        "Pages render without errors"
+      ],
+      "depends_on": [
+        "task_veterinario_controller"
+      ]
+    },
+    {
+      "id": "task_veterinario_migration",
+      "title": "Create database migration for Veterinario",
+      "order": 17,
+      "files": [
+        "backend/src/main/resources/db/migration/V17__create_veterinario.sql"
+      ],
+      "acceptance": [
+        "Migration compiles without errors",
+        "Table veterinario exists in database"
+      ]
+    },
+    {
+      "id": "task_veterinario_model",
+      "title": "Create JPA Entity for Veterinario",
+      "order": 18,
+      "files": [
+        "backend/src/main/java/com/example/app/domain/Veterinario.java"
+      ],
+      "acceptance": [
+        "Build backend passes",
+        "Veterinario entity has all required fields"
+      ],
+      "depends_on": [
+        "task_veterinario_migration"
+      ]
+    },
+    {
+      "id": "task_veterinario_repository",
+      "title": "Create Repository for Veterinario",
+      "order": 19,
+      "files": [
+        "backend/src/main/java/com/example/app/repo/VeterinarioRepository.java"
+      ],
+      "acceptance": [
+        "Build backend passes",
+        "VeterinarioRepository extends JpaRepository"
+      ],
+      "depends_on": [
+        "task_veterinario_model"
+      ]
+    },
+    {
+      "id": "task_veterinario_security",
+      "title": "Configure security for Veterinario endpoints",
+      "order": 22,
+      "files": [
+        "backend/src/main/java/com/example/app/security/SecurityConfig.java"
+      ],
+      "acceptance": [
+        "Endpoints require authentication",
+        "RBAC roles are enforced"
+      ],
+      "depends_on": [
+        "task_veterinario_controller"
+      ]
+    },
+    {
+      "id": "task_veterinario_service",
+      "title": "Create Service for Veterinario",
+      "order": 20,
+      "files": [
+        "backend/src/main/java/com/example/app/service/VeterinarioService.java"
+      ],
+      "acceptance": [
+        "Build backend passes",
+        "VeterinarioService has CRUD methods"
+      ],
+      "depends_on": [
+        "task_veterinario_repository"
+      ]
+    }
+  ]
+}

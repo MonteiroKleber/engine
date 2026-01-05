@@ -1,0 +1,200 @@
+{
+  "meta": {
+    "project_name": "Sistema Petclinic",
+    "created_at": "2026-01-04T16:26:27.834153",
+    "version": "v1",
+    "srs_version": "v1"
+  },
+  "domain": {
+    "entities": [
+      {
+        "name": "pagamento",
+        "primary_key": "id",
+        "fields": [
+          {
+            "name": "id",
+            "type": "uuid",
+            "required": true,
+            "unique": true,
+            "indexed": true
+          },
+          {
+            "name": "nome",
+            "type": "string",
+            "required": true,
+            "unique": false,
+            "indexed": false
+          }
+        ]
+      },
+      {
+        "name": "serviço",
+        "primary_key": "id",
+        "fields": [
+          {
+            "name": "id",
+            "type": "uuid",
+            "required": true,
+            "unique": true,
+            "indexed": true
+          },
+          {
+            "name": "nome",
+            "type": "string",
+            "required": true,
+            "unique": false,
+            "indexed": false
+          }
+        ]
+      },
+      {
+        "name": "nota",
+        "primary_key": "id",
+        "fields": [
+          {
+            "name": "id",
+            "type": "uuid",
+            "required": true,
+            "unique": true,
+            "indexed": true
+          },
+          {
+            "name": "nome",
+            "type": "string",
+            "required": true,
+            "unique": false,
+            "indexed": false
+          }
+        ]
+      }
+    ],
+    "relations": [],
+    "workflows": [],
+    "rules": []
+  },
+  "api_intent": {
+    "resources": [
+      "pagamento",
+      "serviço",
+      "nota"
+    ]
+  },
+  "ui": {
+    "pages": [
+      {
+        "path": "/app/pagamento/list",
+        "title": "Listar Pagamento",
+        "components": [
+          "table",
+          "pagination",
+          "search"
+        ],
+        "actions": [
+          "list",
+          "view",
+          "delete"
+        ]
+      },
+      {
+        "path": "/app/pagamento/new",
+        "title": "Novo Pagamento",
+        "components": [
+          "form"
+        ],
+        "actions": [
+          "create"
+        ]
+      },
+      {
+        "path": "/app/pagamento/:id",
+        "title": "Detalhes Pagamento",
+        "components": [
+          "form"
+        ],
+        "actions": [
+          "view",
+          "update",
+          "delete"
+        ]
+      },
+      {
+        "path": "/app/serviço/list",
+        "title": "Listar Serviço",
+        "components": [
+          "table",
+          "pagination",
+          "search"
+        ],
+        "actions": [
+          "list",
+          "view",
+          "delete"
+        ]
+      },
+      {
+        "path": "/app/serviço/new",
+        "title": "Novo Serviço",
+        "components": [
+          "form"
+        ],
+        "actions": [
+          "create"
+        ]
+      },
+      {
+        "path": "/app/serviço/:id",
+        "title": "Detalhes Serviço",
+        "components": [
+          "form"
+        ],
+        "actions": [
+          "view",
+          "update",
+          "delete"
+        ]
+      },
+      {
+        "path": "/app/nota/list",
+        "title": "Listar Nota",
+        "components": [
+          "table",
+          "pagination",
+          "search"
+        ],
+        "actions": [
+          "list",
+          "view",
+          "delete"
+        ]
+      },
+      {
+        "path": "/app/nota/new",
+        "title": "Novo Nota",
+        "components": [
+          "form"
+        ],
+        "actions": [
+          "create"
+        ]
+      },
+      {
+        "path": "/app/nota/:id",
+        "title": "Detalhes Nota",
+        "components": [
+          "form"
+        ],
+        "actions": [
+          "view",
+          "update",
+          "delete"
+        ]
+      }
+    ]
+  },
+  "nfr": {
+    "security": {
+      "auth_required": true,
+      "audit_log_required": false
+    }
+  }
+}

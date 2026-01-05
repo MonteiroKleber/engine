@@ -1,0 +1,229 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "ir.schema.json",
+  "title": "Intermediate Representation",
+  "description": "IR canônico gerado a partir do SRS",
+  "type": "object",
+  "required": ["meta", "domain", "api_intent", "ui", "nfr"],
+  "properties": {
+    "meta": {
+      "type": "object",
+      "required": ["project_name"],
+      "properties": {
+        "project_name": {
+          "type": "string",
+          "description": "Nome do projeto"
+        },
+        "version": {
+          "type": "string",
+          "description": "Versão do IR"
+        },
+        "created_at": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Data de criação"
+        },
+        "srs_version": {
+          "type": "string",
+          "description": "Versão do SRS de origem"
+        }
+      }
+    },
+    "domain": {
+      "type": "object",
+      "required": ["entities"],
+      "properties": {
+        "entities": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "object",
+            "required": ["name", "fields"],
+            "properties": {
+              "name": {
+                "type": "string",
+                "description": "Nome da entidade"
+              },
+              "primary_key": {
+                "type": "string",
+                "description": "Campo chave primária"
+              },
+              "fields": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "required": ["name", "type"],
+                  "properties": {
+                    "name": {
+                      "type": "string"
+                    },
+                    "type": {
+                      "type": "string"
+                    },
+                    "required": {
+                      "type": "boolean"
+                    },
+                    "unique": {
+                      "type": "boolean"
+                    },
+                    "indexed": {
+                      "type": "boolean"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "relations": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "from": {
+                "type": "string"
+              },
+              "to": {
+                "type": "string"
+              },
+              "type": {
+                "type": "string",
+                "enum": ["one-to-one", "one-to-many", "many-to-many"]
+              }
+            }
+          }
+        },
+        "workflows": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "name": {
+                "type": "string"
+              },
+              "steps": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        },
+        "rules": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string"
+              },
+              "description": {
+                "type": "string"
+              },
+              "severity": {
+                "type": "string",
+                "enum": ["ERROR", "WARNING", "INFO"]
+              }
+            }
+          }
+        }
+      }
+    },
+    "api_intent": {
+      "type": "object",
+      "properties": {
+        "resources": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "Lista de recursos/entidades expostos na API"
+        },
+        "operations": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "resource": {
+                "type": "string"
+              },
+              "method": {
+                "type": "string",
+                "enum": ["GET", "POST", "PUT", "PATCH", "DELETE"]
+              },
+              "path": {
+                "type": "string"
+              }
+            }
+          }
+        }
+      }
+    },
+    "ui": {
+      "type": "object",
+      "properties": {
+        "pages": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["path"],
+            "properties": {
+              "path": {
+                "type": "string"
+              },
+              "title": {
+                "type": "string"
+              },
+              "components": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              },
+              "actions": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "nfr": {
+      "type": "object",
+      "description": "Non-Functional Requirements",
+      "properties": {
+        "security": {
+          "type": "object",
+          "properties": {
+            "auth_required": {
+              "type": "boolean"
+            },
+            "audit_log_required": {
+              "type": "boolean"
+            }
+          }
+        },
+        "performance": {
+          "type": "object",
+          "properties": {
+            "max_response_time_ms": {
+              "type": "integer"
+            }
+          }
+        },
+        "availability": {
+          "type": "object",
+          "properties": {
+            "uptime_sla": {
+              "type": "string"
+            }
+          }
+        }
+      }
+    }
+  }
+}

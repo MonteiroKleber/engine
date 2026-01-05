@@ -1,0 +1,100 @@
+{
+  "id": "srs-f3e06483",
+  "title": "Sistema E-Commerce",
+  "version": "1.0.0",
+  "requirements": [
+    {
+      "id": "FR-001",
+      "description": "O sistema deve permitir cadastrar produto",
+      "priority": "high",
+      "type": "functional"
+    },
+    {
+      "id": "FR-002",
+      "description": "O sistema deve permitir listar produto",
+      "priority": "medium",
+      "type": "functional"
+    },
+    {
+      "id": "FR-003",
+      "description": "O sistema deve permitir editar produto",
+      "priority": "medium",
+      "type": "functional"
+    }
+  ],
+  "meta": {
+    "project_name": "Sistema E-Commerce"
+  },
+  "data_requirements": [
+    {
+      "entity": "produto",
+      "fields": [
+        {
+          "name": "nome",
+          "type": "string",
+          "required": true
+        },
+        {
+          "name": "descricao",
+          "type": "string",
+          "required": false
+        },
+        {
+          "name": "preco",
+          "type": "decimal",
+          "required": true
+        }
+      ]
+    },
+    {
+      "entity": "pedido",
+      "fields": [
+        {
+          "name": "nome",
+          "type": "string",
+          "required": true
+        },
+        {
+          "name": "data",
+          "type": "datetime",
+          "required": true
+        },
+        {
+          "name": "status",
+          "type": "string",
+          "required": true
+        },
+        {
+          "name": "valor_total",
+          "type": "decimal",
+          "required": true
+        }
+      ]
+    }
+  ],
+  "business_rules": [],
+  "non_functional_requirements": {
+    "security": {
+      "auth_required": true,
+      "audit_log_required": false
+    }
+  },
+  "metadata": {
+    "created_at": "2026-01-03T11:02:03.587332",
+    "language": "pt-BR",
+    "actors": [
+      {
+        "id": "admin",
+        "name": "Administrador",
+        "description": "Usuário administrador do sistema"
+      }
+    ],
+    "summary": "sistema de gestão de produtos e pedidos",
+    "open_questions": [
+      "Autenticação é necessária? Qual tipo (login/senha, OAuth, SSO)?",
+      "Quais perfis de usuário existem além de admin?",
+      "Quais são as principais entidades/recursos do sistema?"
+    ],
+    "generation_mode": "MOCK"
+  }
+}

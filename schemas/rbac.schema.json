@@ -1,0 +1,62 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "rbac.schema.json",
+  "title": "RBAC Schema",
+  "description": "Schema para configuração de Role-Based Access Control",
+  "type": "object",
+  "required": ["roles", "permissions"],
+  "properties": {
+    "roles": {
+      "type": "array",
+      "description": "Lista de roles disponíveis no sistema",
+      "items": {
+        "type": "string",
+        "minLength": 1
+      },
+      "minItems": 1,
+      "uniqueItems": true
+    },
+    "permissions": {
+      "type": "array",
+      "description": "Lista de permissões mapeando operações a roles",
+      "items": {
+        "type": "object",
+        "required": ["operation_id", "required_role"],
+        "properties": {
+          "operation_id": {
+            "type": "string",
+            "description": "Identificador único da operação (ex: createUser, listProducts)",
+            "minLength": 1
+          },
+          "required_role": {
+            "type": "string",
+            "description": "Role mínima necessária para executar a operação",
+            "minLength": 1
+          },
+          "description": {
+            "type": "string",
+            "description": "Descrição opcional da permissão"
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    "meta": {
+      "type": "object",
+      "description": "Metadados opcionais",
+      "properties": {
+        "version": {
+          "type": "string"
+        },
+        "created_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "project_name": {
+          "type": "string"
+        }
+      }
+    }
+  },
+  "additionalProperties": false
+}

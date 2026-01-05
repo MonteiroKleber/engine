@@ -1,0 +1,131 @@
+{
+  "meta": {
+    "version": "v19",
+    "strategy": "PATCH_ONLY",
+    "ir_version": "v19",
+    "project_name": "Sistema Demo",
+    "created_at": "2026-01-04T13:22:18.421054"
+  },
+  "tasks": [
+    {
+      "id": "task_empresa_api_client",
+      "title": "Create API client for Empresa",
+      "order": 8,
+      "files": [
+        "frontend/src/api/client.ts"
+      ],
+      "acceptance": [
+        "Build frontend passes",
+        "API client has methods for Empresa CRUD"
+      ],
+      "depends_on": [
+        "task_empresa_frontend_pages"
+      ]
+    },
+    {
+      "id": "task_empresa_controller",
+      "title": "Create REST Controller for Empresa",
+      "order": 5,
+      "files": [
+        "backend/src/main/java/com/example/app/api/EmpresaController.java"
+      ],
+      "acceptance": [
+        "Contract tests pass",
+        "All endpoints return correct status codes",
+        "Implements operations: listEmpresa, createEmpresa, getEmpresa, updateEmpresa, deleteEmpresa"
+      ],
+      "depends_on": [
+        "task_empresa_service"
+      ]
+    },
+    {
+      "id": "task_empresa_frontend_pages",
+      "title": "Create frontend pages for Empresa",
+      "order": 7,
+      "files": [
+        "frontend/src/pages/empresa/List.tsx",
+        "frontend/src/pages/empresa/New.tsx",
+        "frontend/src/pages/empresa/Detail.tsx"
+      ],
+      "acceptance": [
+        "TypeScript typecheck passes",
+        "Pages render without errors"
+      ],
+      "depends_on": [
+        "task_empresa_controller"
+      ]
+    },
+    {
+      "id": "task_empresa_migration",
+      "title": "Create database migration for Empresa",
+      "order": 1,
+      "files": [
+        "backend/src/main/resources/db/migration/V1__create_empresa.sql"
+      ],
+      "acceptance": [
+        "Migration compiles without errors",
+        "Table empresa exists in database"
+      ]
+    },
+    {
+      "id": "task_empresa_model",
+      "title": "Create JPA Entity for Empresa",
+      "order": 2,
+      "files": [
+        "backend/src/main/java/com/example/app/domain/Empresa.java"
+      ],
+      "acceptance": [
+        "Build backend passes",
+        "Empresa entity has all required fields"
+      ],
+      "depends_on": [
+        "task_empresa_migration"
+      ]
+    },
+    {
+      "id": "task_empresa_repository",
+      "title": "Create Repository for Empresa",
+      "order": 3,
+      "files": [
+        "backend/src/main/java/com/example/app/repo/EmpresaRepository.java"
+      ],
+      "acceptance": [
+        "Build backend passes",
+        "EmpresaRepository extends JpaRepository"
+      ],
+      "depends_on": [
+        "task_empresa_model"
+      ]
+    },
+    {
+      "id": "task_empresa_security",
+      "title": "Configure security for Empresa endpoints",
+      "order": 6,
+      "files": [
+        "backend/src/main/java/com/example/app/security/SecurityConfig.java"
+      ],
+      "acceptance": [
+        "Endpoints require authentication",
+        "RBAC roles are enforced"
+      ],
+      "depends_on": [
+        "task_empresa_controller"
+      ]
+    },
+    {
+      "id": "task_empresa_service",
+      "title": "Create Service for Empresa",
+      "order": 4,
+      "files": [
+        "backend/src/main/java/com/example/app/service/EmpresaService.java"
+      ],
+      "acceptance": [
+        "Build backend passes",
+        "EmpresaService has CRUD methods"
+      ],
+      "depends_on": [
+        "task_empresa_repository"
+      ]
+    }
+  ]
+}

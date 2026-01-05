@@ -1,0 +1,40 @@
+{
+  "execution_id": "demo_contracts_04b6c55e",
+  "timestamp": "2026-01-03T11:02:03.616384",
+  "payload": {
+    "status": "completed",
+    "result": {
+      "success": true,
+      "execution_id": "demo_contracts_04b6c55e",
+      "project": "demo_contracts",
+      "srs_version": 1,
+      "srs_path": "store_data/demo_contracts/SRS/v1.json",
+      "ir_version": 1,
+      "ir_path": "store_data/demo_contracts/IR/v1.json",
+      "oas_version": 1,
+      "oas_path": "store_data/demo_contracts/OAS/v1.yaml",
+      "rbac_version": 1,
+      "rbac_path": "store_data/demo_contracts/RBAC/v1.json",
+      "blueprint_type": "generic",
+      "requirements_count": 3,
+      "entities_count": 2,
+      "operations_count": 10,
+      "srs_validation_ok": true,
+      "ir_validation_ok": true,
+      "oas_validation_ok": true,
+      "rbac_validation_ok": true,
+      "policy_ok": true,
+      "contracts_policy_ok": true,
+      "questions": [],
+      "errors": [],
+      "duration_ms": 0.0
+    },
+    "state": "completed",
+    "timestamp": "2026-01-03T11:02:03.616199",
+    "input_hash": "5d30513caacc13aa",
+    "srs_hash": "c94f9309737d7af0",
+    "ir_hash": "e36cd6412293a74b",
+    "oas_hash": "6e62597b16311740",
+    "rbac_hash": "2df07427428b5a94"
+  }
+}

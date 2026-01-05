@@ -1,0 +1,612 @@
+{
+  "roles": [
+    "authenticated",
+    "admin"
+  ],
+  "permissions": [
+    {
+      "operation_id": "listQuero_um_sistema_web_para_controle_de_clinica_veterinaria",
+      "required_role": "authenticated"
+    },
+    {
+      "operation_id": "createQuero_um_sistema_web_para_controle_de_clinica_veterinaria",
+      "required_role": "authenticated"
+    },
+    {
+      "operation_id": "getQuero_um_sistema_web_para_controle_de_clinica_veterinaria",
+      "required_role": "authenticated"
+    },
+    {
+      "operation_id": "updateQuero_um_sistema_web_para_controle_de_clinica_veterinaria",
+      "required_role": "authenticated"
+    },
+    {
+      "operation_id": "deleteQuero_um_sistema_web_para_controle_de_clinica_veterinaria",
+      "required_role": "authenticated"
+    },
+    {
+      "operation_id": "listPreciso_cadastrar_tutor",
+      "required_role": "authenticated"
+    },
+    {
+      "operation_id": "createPreciso_cadastrar_tutor",
+      "required_role": "authenticated"
+    },
+    {
+      "operation_id": "getPreciso_cadastrar_tutor",
+      "required_role": "authenticated"
+    },
+    {
+      "operation_id": "updatePreciso_cadastrar_tutor",
+      "required_role": "authenticated"
+    },
+    {
+      "operation_id": "deletePreciso_cadastrar_tutor",
+      "required_role": "authenticated"
+    },
+    {
+      "operation_id": "listPet",
+      "required_role": "authenticated"
+    },
+    {
+      "operation_id": "createPet",
+      "required_role": "authenticated"
+    },
+    {
+      "operation_id": "getPet",
+      "required_role": "authenticated"
+    },
+    {
+      "operation_id": "updatePet",
+      "required_role": "authenticated"
+    },
+    {
+      "operation_id": "deletePet",
+      "required_role": "authenticated"
+    },
+    {
+      "operation_id": "listVeterinario",
+      "required_role": "authenticated"
+    },
+    {
+      "operation_id": "createVeterinario",
+      "required_role": "authenticated"
+    },
+    {
+      "operation_id": "getVeterinario",
+      "required_role": "authenticated"
+    },
+    {
+      "operation_id": "updateVeterinario",
+      "required_role": "authenticated"
+    },
+    {
+      "operation_id": "deleteVeterinario",
+      "required_role": "authenticated"
+    },
+    {
+      "operation_id": "listConsulta",
+      "required_role": "authenticated"
+    },
+    {
+      "operation_id": "createConsulta",
+      "required_role": "authenticated"
+    },
+    {
+      "operation_id": "getConsulta",
+      "required_role": "authenticated"
+    },
+    {
+      "operation_id": "updateConsulta",
+      "required_role": "authenticated"
+    },
+    {
+      "operation_id": "deleteConsulta",
+      "required_role": "authenticated"
+    },
+    {
+      "operation_id": "listVacina",
+      "required_role": "authenticated"
+    },
+    {
+      "operation_id": "createVacina",
+      "required_role": "authenticated"
+    },
+    {
+      "operation_id": "getVacina",
+      "required_role": "authenticated"
+    },
+    {
+      "operation_id": "updateVacina",
+      "required_role": "authenticated"
+    },
+    {
+      "operation_id": "deleteVacina",
+      "required_role": "authenticated"
+    },
+    {
+      "operation_id": "listAgendamento",
+      "required_role": "authenticated"
+    },
+    {
+      "operation_id": "createAgendamento",
+      "required_role": "authenticated"
+    },
+    {
+      "operation_id": "getAgendamento",
+      "required_role": "authenticated"
+    },
+    {
+      "operation_id": "updateAgendamento",
+      "required_role": "authenticated"
+    },
+    {
+      "operation_id": "deleteAgendamento",
+      "required_role": "authenticated"
+    },
+    {
+      "operation_id": "listE_pagamento",
+      "required_role": "authenticated"
+    },
+    {
+      "operation_id": "createE_pagamento",
+      "required_role": "authenticated"
+    },
+    {
+      "operation_id": "getE_pagamento",
+      "required_role": "authenticated"
+    },
+    {
+      "operation_id": "updateE_pagamento",
+      "required_role": "authenticated"
+    },
+    {
+      "operation_id": "deleteE_pagamento",
+      "required_role": "authenticated"
+    },
+    {
+      "operation_id": "listDashboard_inicial_com_atalho",
+      "required_role": "authenticated"
+    },
+    {
+      "operation_id": "createDashboard_inicial_com_atalho",
+      "required_role": "authenticated"
+    },
+    {
+      "operation_id": "getDashboard_inicial_com_atalho",
+      "required_role": "authenticated"
+    },
+    {
+      "operation_id": "updateDashboard_inicial_com_atalho",
+      "required_role": "authenticated"
+    },
+    {
+      "operation_id": "deleteDashboard_inicial_com_atalho",
+      "required_role": "authenticated"
+    },
+    {
+      "operation_id": "listEspecie",
+      "required_role": "authenticated"
+    },
+    {
+      "operation_id": "createEspecie",
+      "required_role": "authenticated"
+    },
+    {
+      "operation_id": "getEspecie",
+      "required_role": "authenticated"
+    },
+    {
+      "operation_id": "updateEspecie",
+      "required_role": "authenticated"
+    },
+    {
+      "operation_id": "deleteEspecie",
+      "required_role": "authenticated"
+    },
+    {
+      "operation_id": "listRaca",
+      "required_role": "authenticated"
+    },
+    {
+      "operation_id": "createRaca",
+      "required_role": "authenticated"
+    },
+    {
+      "operation_id": "getRaca",
+      "required_role": "authenticated"
+    },
+    {
+      "operation_id": "updateRaca",
+      "required_role": "authenticated"
+    },
+    {
+      "operation_id": "deleteRaca",
+      "required_role": "authenticated"
+    },
+    {
+      "operation_id": "listSexo",
+      "required_role": "authenticated"
+    },
+    {
+      "operation_id": "createSexo",
+      "required_role": "authenticated"
+    },
+    {
+      "operation_id": "getSexo",
+      "required_role": "authenticated"
+    },
+    {
+      "operation_id": "updateSexo",
+      "required_role": "authenticated"
+    },
+    {
+      "operation_id": "deleteSexo",
+      "required_role": "authenticated"
+    },
+    {
+      "operation_id": "listTutor",
+      "required_role": "authenticated"
+    },
+    {
+      "operation_id": "createTutor",
+      "required_role": "authenticated"
+    },
+    {
+      "operation_id": "getTutor",
+      "required_role": "authenticated"
+    },
+    {
+      "operation_id": "updateTutor",
+      "required_role": "authenticated"
+    },
+    {
+      "operation_id": "deleteTutor",
+      "required_role": "authenticated"
+    },
+    {
+      "operation_id": "listCrmv",
+      "required_role": "authenticated"
+    },
+    {
+      "operation_id": "createCrmv",
+      "required_role": "authenticated"
+    },
+    {
+      "operation_id": "getCrmv",
+      "required_role": "authenticated"
+    },
+    {
+      "operation_id": "updateCrmv",
+      "required_role": "authenticated"
+    },
+    {
+      "operation_id": "deleteCrmv",
+      "required_role": "authenticated"
+    },
+    {
+      "operation_id": "listEspecialidade",
+      "required_role": "authenticated"
+    },
+    {
+      "operation_id": "createEspecialidade",
+      "required_role": "authenticated"
+    },
+    {
+      "operation_id": "getEspecialidade",
+      "required_role": "authenticated"
+    },
+    {
+      "operation_id": "updateEspecialidade",
+      "required_role": "authenticated"
+    },
+    {
+      "operation_id": "deleteEspecialidade",
+      "required_role": "authenticated"
+    },
+    {
+      "operation_id": "listMotivo",
+      "required_role": "authenticated"
+    },
+    {
+      "operation_id": "createMotivo",
+      "required_role": "authenticated"
+    },
+    {
+      "operation_id": "getMotivo",
+      "required_role": "authenticated"
+    },
+    {
+      "operation_id": "updateMotivo",
+      "required_role": "authenticated"
+    },
+    {
+      "operation_id": "deleteMotivo",
+      "required_role": "authenticated"
+    },
+    {
+      "operation_id": "listAnotacao",
+      "required_role": "authenticated"
+    },
+    {
+      "operation_id": "createAnotacao",
+      "required_role": "authenticated"
+    },
+    {
+      "operation_id": "getAnotacao",
+      "required_role": "authenticated"
+    },
+    {
+      "operation_id": "updateAnotacao",
+      "required_role": "authenticated"
+    },
+    {
+      "operation_id": "deleteAnotacao",
+      "required_role": "authenticated"
+    },
+    {
+      "operation_id": "listDiagnostico",
+      "required_role": "authenticated"
+    },
+    {
+      "operation_id": "createDiagnostico",
+      "required_role": "authenticated"
+    },
+    {
+      "operation_id": "getDiagnostico",
+      "required_role": "authenticated"
+    },
+    {
+      "operation_id": "updateDiagnostico",
+      "required_role": "authenticated"
+    },
+    {
+      "operation_id": "deleteDiagnostico",
+      "required_role": "authenticated"
+    },
+    {
+      "operation_id": "listPrescricao",
+      "required_role": "authenticated"
+    },
+    {
+      "operation_id": "createPrescricao",
+      "required_role": "authenticated"
+    },
+    {
+      "operation_id": "getPrescricao",
+      "required_role": "authenticated"
+    },
+    {
+      "operation_id": "updatePrescricao",
+      "required_role": "authenticated"
+    },
+    {
+      "operation_id": "deletePrescricao",
+      "required_role": "authenticated"
+    },
+    {
+      "operation_id": "listData_aplicacao",
+      "required_role": "authenticated"
+    },
+    {
+      "operation_id": "createData_aplicacao",
+      "required_role": "authenticated"
+    },
+    {
+      "operation_id": "getData_aplicacao",
+      "required_role": "authenticated"
+    },
+    {
+      "operation_id": "updateData_aplicacao",
+      "required_role": "authenticated"
+    },
+    {
+      "operation_id": "deleteData_aplicacao",
+      "required_role": "authenticated"
+    },
+    {
+      "operation_id": "listProxima_dose",
+      "required_role": "authenticated"
+    },
+    {
+      "operation_id": "createProxima_dose",
+      "required_role": "authenticated"
+    },
+    {
+      "operation_id": "getProxima_dose",
+      "required_role": "authenticated"
+    },
+    {
+      "operation_id": "updateProxima_dose",
+      "required_role": "authenticated"
+    },
+    {
+      "operation_id": "deleteProxima_dose",
+      "required_role": "authenticated"
+    },
+    {
+      "operation_id": "listLote",
+      "required_role": "authenticated"
+    },
+    {
+      "operation_id": "createLote",
+      "required_role": "authenticated"
+    },
+    {
+      "operation_id": "getLote",
+      "required_role": "authenticated"
+    },
+    {
+      "operation_id": "updateLote",
+      "required_role": "authenticated"
+    },
+    {
+      "operation_id": "deleteLote",
+      "required_role": "authenticated"
+    },
+    {
+      "operation_id": "listObservacoes",
+      "required_role": "authenticated"
+    },
+    {
+      "operation_id": "createObservacoes",
+      "required_role": "authenticated"
+    },
+    {
+      "operation_id": "getObservacoes",
+      "required_role": "authenticated"
+    },
+    {
+      "operation_id": "updateObservacoes",
+      "required_role": "authenticated"
+    },
+    {
+      "operation_id": "deleteObservacoes",
+      "required_role": "authenticated"
+    },
+    {
+      "operation_id": "listVeterinario_opcional",
+      "required_role": "authenticated"
+    },
+    {
+      "operation_id": "createVeterinario_opcional",
+      "required_role": "authenticated"
+    },
+    {
+      "operation_id": "getVeterinario_opcional",
+      "required_role": "authenticated"
+    },
+    {
+      "operation_id": "updateVeterinario_opcional",
+      "required_role": "authenticated"
+    },
+    {
+      "operation_id": "deleteVeterinario_opcional",
+      "required_role": "authenticated"
+    },
+    {
+      "operation_id": "listServico",
+      "required_role": "authenticated"
+    },
+    {
+      "operation_id": "createServico",
+      "required_role": "authenticated"
+    },
+    {
+      "operation_id": "getServico",
+      "required_role": "authenticated"
+    },
+    {
+      "operation_id": "updateServico",
+      "required_role": "authenticated"
+    },
+    {
+      "operation_id": "deleteServico",
+      "required_role": "authenticated"
+    },
+    {
+      "operation_id": "listStatu",
+      "required_role": "authenticated"
+    },
+    {
+      "operation_id": "createStatu",
+      "required_role": "authenticated"
+    },
+    {
+      "operation_id": "getStatu",
+      "required_role": "authenticated"
+    },
+    {
+      "operation_id": "updateStatu",
+      "required_role": "authenticated"
+    },
+    {
+      "operation_id": "deleteStatu",
+      "required_role": "authenticated"
+    },
+    {
+      "operation_id": "listData_regras_nao_pode_ter_atendimento_sem_pet",
+      "required_role": "authenticated"
+    },
+    {
+      "operation_id": "createData_regras_nao_pode_ter_atendimento_sem_pet",
+      "required_role": "authenticated"
+    },
+    {
+      "operation_id": "getData_regras_nao_pode_ter_atendimento_sem_pet",
+      "required_role": "authenticated"
+    },
+    {
+      "operation_id": "updateData_regras_nao_pode_ter_atendimento_sem_pet",
+      "required_role": "authenticated"
+    },
+    {
+      "operation_id": "deleteData_regras_nao_pode_ter_atendimento_sem_pet",
+      "required_role": "authenticated"
+    },
+    {
+      "operation_id": "listSem_veterinario",
+      "required_role": "authenticated"
+    },
+    {
+      "operation_id": "createSem_veterinario",
+      "required_role": "authenticated"
+    },
+    {
+      "operation_id": "getSem_veterinario",
+      "required_role": "authenticated"
+    },
+    {
+      "operation_id": "updateSem_veterinario",
+      "required_role": "authenticated"
+    },
+    {
+      "operation_id": "deleteSem_veterinario",
+      "required_role": "authenticated"
+    },
+    {
+      "operation_id": "listCadastrar_pet",
+      "required_role": "authenticated"
+    },
+    {
+      "operation_id": "createCadastrar_pet",
+      "required_role": "authenticated"
+    },
+    {
+      "operation_id": "getCadastrar_pet",
+      "required_role": "authenticated"
+    },
+    {
+      "operation_id": "updateCadastrar_pet",
+      "required_role": "authenticated"
+    },
+    {
+      "operation_id": "deleteCadastrar_pet",
+      "required_role": "authenticated"
+    },
+    {
+      "operation_id": "listClinica",
+      "required_role": "authenticated"
+    },
+    {
+      "operation_id": "createClinica",
+      "required_role": "authenticated"
+    },
+    {
+      "operation_id": "getClinica",
+      "required_role": "authenticated"
+    },
+    {
+      "operation_id": "updateClinica",
+      "required_role": "authenticated"
+    },
+    {
+      "operation_id": "deleteClinica",
+      "required_role": "authenticated"
+    }
+  ],
+  "meta": {
+    "created_at": "2026-01-04T18:43:08.591839",
+    "version": "1.0.0"
+  }
+}

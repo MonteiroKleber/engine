@@ -1,0 +1,314 @@
+openapi: 3.0.0
+info:
+  title: Sistema Petclinic API
+  version: 1.0.0
+  description: API gerada automaticamente para Sistema Petclinic
+paths:
+  /api/pagamentos:
+    get:
+      operationId: listPagamento
+      tags:
+      - Pagamento
+      summary: Listar pagamentos
+      responses:
+        '200':
+          description: Lista de pagamentos
+        '400':
+          description: Bad Request
+        '500':
+          description: Internal Server Error
+    post:
+      operationId: createPagamento
+      tags:
+      - Pagamento
+      summary: Criar pagamento
+      responses:
+        '201':
+          description: Pagamento criado
+        '400':
+          description: Bad Request
+        '500':
+          description: Internal Server Error
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Pagamento'
+  /api/pagamentos/{id}:
+    get:
+      operationId: getPagamento
+      tags:
+      - Pagamento
+      summary: Obter pagamento por ID
+      responses:
+        '200':
+          description: Detalhes do pagamento
+        '400':
+          description: Bad Request
+        '500':
+          description: Internal Server Error
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+    put:
+      operationId: updatePagamento
+      tags:
+      - Pagamento
+      summary: Atualizar pagamento
+      responses:
+        '200':
+          description: Pagamento atualizado
+        '400':
+          description: Bad Request
+        '500':
+          description: Internal Server Error
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Pagamento'
+    delete:
+      operationId: deletePagamento
+      tags:
+      - Pagamento
+      summary: Deletar pagamento
+      responses:
+        '200':
+          description: Pagamento deletado
+        '400':
+          description: Bad Request
+        '500':
+          description: Internal Server Error
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+  /api/serviços:
+    get:
+      operationId: listServiço
+      tags:
+      - Serviço
+      summary: Listar serviços
+      responses:
+        '200':
+          description: Lista de serviços
+        '400':
+          description: Bad Request
+        '500':
+          description: Internal Server Error
+    post:
+      operationId: createServiço
+      tags:
+      - Serviço
+      summary: Criar serviço
+      responses:
+        '201':
+          description: Serviço criado
+        '400':
+          description: Bad Request
+        '500':
+          description: Internal Server Error
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Serviço'
+  /api/serviços/{id}:
+    get:
+      operationId: getServiço
+      tags:
+      - Serviço
+      summary: Obter serviço por ID
+      responses:
+        '200':
+          description: Detalhes do serviço
+        '400':
+          description: Bad Request
+        '500':
+          description: Internal Server Error
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+    put:
+      operationId: updateServiço
+      tags:
+      - Serviço
+      summary: Atualizar serviço
+      responses:
+        '200':
+          description: Serviço atualizado
+        '400':
+          description: Bad Request
+        '500':
+          description: Internal Server Error
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Serviço'
+    delete:
+      operationId: deleteServiço
+      tags:
+      - Serviço
+      summary: Deletar serviço
+      responses:
+        '200':
+          description: Serviço deletado
+        '400':
+          description: Bad Request
+        '500':
+          description: Internal Server Error
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+  /api/notas:
+    get:
+      operationId: listNota
+      tags:
+      - Nota
+      summary: Listar notas
+      responses:
+        '200':
+          description: Lista de notas
+        '400':
+          description: Bad Request
+        '500':
+          description: Internal Server Error
+    post:
+      operationId: createNota
+      tags:
+      - Nota
+      summary: Criar nota
+      responses:
+        '201':
+          description: Nota criado
+        '400':
+          description: Bad Request
+        '500':
+          description: Internal Server Error
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Nota'
+  /api/notas/{id}:
+    get:
+      operationId: getNota
+      tags:
+      - Nota
+      summary: Obter nota por ID
+      responses:
+        '200':
+          description: Detalhes do nota
+        '400':
+          description: Bad Request
+        '500':
+          description: Internal Server Error
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+    put:
+      operationId: updateNota
+      tags:
+      - Nota
+      summary: Atualizar nota
+      responses:
+        '200':
+          description: Nota atualizado
+        '400':
+          description: Bad Request
+        '500':
+          description: Internal Server Error
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Nota'
+    delete:
+      operationId: deleteNota
+      tags:
+      - Nota
+      summary: Deletar nota
+      responses:
+        '200':
+          description: Nota deletado
+        '400':
+          description: Bad Request
+        '500':
+          description: Internal Server Error
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+components:
+  schemas:
+    Pagamento:
+      type: object
+      properties:
+        id:
+          type: string
+        nome:
+          type: string
+      required:
+      - id
+      - nome
+    Serviço:
+      type: object
+      properties:
+        id:
+          type: string
+        nome:
+          type: string
+      required:
+      - id
+      - nome
+    Nota:
+      type: object
+      properties:
+        id:
+          type: string
+        nome:
+          type: string
+      required:
+      - id
+      - nome

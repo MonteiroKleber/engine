@@ -1,0 +1,57 @@
+{
+  "project": "petclinic",
+  "version": "1.0.0",
+  "timestamp": "2026-01-04T16:31:45.321210",
+  "engine_version": "1.0.0",
+  "repo_path": "/home/bazari/generated/petclinic",
+  "store_path": "/home/bazari/engine/demo_store/petclinic",
+  "success": true,
+  "final_status": "running",
+  "artifacts": {
+    "srs_version": 2,
+    "ir_version": 2,
+    "oas_version": 2,
+    "rbac_version": 2,
+    "plan_version": 2
+  },
+  "metrics": {
+    "requirements_count": 3,
+    "entities_count": 3,
+    "operations_count": 15,
+    "tasks_count": 24,
+    "patch_count": 27
+  },
+  "build": {
+    "build_ok": true,
+    "fix_attempts": 0,
+    "fixes_applied": 0
+  },
+  "release": {
+    "docker_compose_ok": true,
+    "services_running": [
+      "backend",
+      "db",
+      "frontend"
+    ],
+    "smoke_ok": true,
+    "smoke_passed": 6,
+    "smoke_failed": 0
+  },
+  "checklist": {
+    "passed": false,
+    "total_items": 12,
+    "failures": [
+      "hashes_complete: Hashes faltando: input_hash, srs_hash, ir_hash, oas_hash, rbac_hash, plan_hash",
+      "no_pii_logging: Possiveis logs de PII encontrados (1)"
+    ]
+  },
+  "errors": [],
+  "duration_ms": 84846.907,
+  "commands": {
+    "start": "cd /home/bazari/generated/petclinic && docker compose up -d",
+    "stop": "cd /home/bazari/generated/petclinic && docker compose down",
+    "logs": "cd /home/bazari/generated/petclinic && docker compose logs -f",
+    "status": "cd /home/bazari/generated/petclinic && docker compose ps",
+    "restart": "cd /home/bazari/generated/petclinic && docker compose restart"
+  }
+}

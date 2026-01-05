@@ -1,0 +1,86 @@
+{
+  "meta": {
+    "project_name": "Sistema Demo",
+    "created_at": "2026-01-03T21:16:23.121440",
+    "version": "v4",
+    "srs_version": "v4"
+  },
+  "domain": {
+    "entities": [
+      {
+        "name": "recursos",
+        "primary_key": "id",
+        "fields": [
+          {
+            "name": "id",
+            "type": "uuid",
+            "required": true,
+            "unique": true,
+            "indexed": true
+          },
+          {
+            "name": "nome",
+            "type": "string",
+            "required": true,
+            "unique": false,
+            "indexed": false
+          }
+        ]
+      }
+    ],
+    "relations": [],
+    "workflows": [],
+    "rules": []
+  },
+  "api_intent": {
+    "resources": [
+      "recursos"
+    ]
+  },
+  "ui": {
+    "pages": [
+      {
+        "path": "/app/recursos/list",
+        "title": "Listar Recursos",
+        "components": [
+          "table",
+          "pagination",
+          "search"
+        ],
+        "actions": [
+          "list",
+          "view",
+          "delete"
+        ]
+      },
+      {
+        "path": "/app/recursos/new",
+        "title": "Novo Recursos",
+        "components": [
+          "form"
+        ],
+        "actions": [
+          "create"
+        ]
+      },
+      {
+        "path": "/app/recursos/:id",
+        "title": "Detalhes Recursos",
+        "components": [
+          "form"
+        ],
+        "actions": [
+          "view",
+          "update",
+          "delete"
+        ]
+      }
+    ]
+  },
+  "nfr": {
+    "security": {
+      "auth_required": true,
+      "audit_log_required": false
+    }
+  }
+}

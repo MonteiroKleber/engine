@@ -1,0 +1,56 @@
+{
+  "project": "demo",
+  "version": "1.0.0",
+  "timestamp": "2026-01-04T14:42:29.718203",
+  "engine_version": "1.0.0",
+  "repo_path": "/home/bazari/generated/demo",
+  "store_path": "/home/bazari/engine/demo_store/demo",
+  "success": false,
+  "final_status": "BUILD_FAILED",
+  "artifacts": {
+    "srs_version": 21,
+    "ir_version": 21,
+    "oas_version": 21,
+    "rbac_version": 21,
+    "plan_version": 21
+  },
+  "metrics": {
+    "requirements_count": 3,
+    "entities_count": 1,
+    "operations_count": 5,
+    "tasks_count": 8,
+    "patch_count": 11
+  },
+  "build": {
+    "build_ok": false,
+    "fix_attempts": 0,
+    "fixes_applied": 0
+  },
+  "release": {
+    "docker_compose_ok": false,
+    "services_running": [],
+    "smoke_ok": false,
+    "smoke_passed": 0,
+    "smoke_failed": 0
+  },
+  "checklist": {
+    "passed": false,
+    "total_items": 10,
+    "failures": [
+      "hashes_complete: Hashes faltando: input_hash, srs_hash, ir_hash, oas_hash, rbac_hash, plan_hash",
+      "build_ok: Build falhou",
+      "smoke_ok: Smoke tests falharam (0 falhas)"
+    ]
+  },
+  "errors": [
+    "Patch application failed"
+  ],
+  "duration_ms": 147.28199999999998,
+  "commands": {
+    "start": "cd /home/bazari/generated/demo && docker compose up -d",
+    "stop": "cd /home/bazari/generated/demo && docker compose down",
+    "logs": "cd /home/bazari/generated/demo && docker compose logs -f",
+    "status": "cd /home/bazari/generated/demo && docker compose ps",
+    "restart": "cd /home/bazari/generated/demo && docker compose restart"
+  }
+}

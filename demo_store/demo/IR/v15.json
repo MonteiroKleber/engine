@@ -1,0 +1,100 @@
+{
+  "meta": {
+    "project_name": "Sistema Demo",
+    "created_at": "2026-01-04T12:19:39.024056",
+    "version": "v15",
+    "srs_version": "v15"
+  },
+  "domain": {
+    "entities": [
+      {
+        "name": "empresa",
+        "primary_key": "id",
+        "fields": [
+          {
+            "name": "id",
+            "type": "uuid",
+            "required": true,
+            "unique": true,
+            "indexed": true
+          },
+          {
+            "name": "nome",
+            "type": "string",
+            "required": true,
+            "unique": false,
+            "indexed": false
+          },
+          {
+            "name": "cnpj",
+            "type": "string",
+            "required": true,
+            "unique": true,
+            "indexed": false
+          },
+          {
+            "name": "endereco",
+            "type": "string",
+            "required": false,
+            "unique": false,
+            "indexed": false
+          }
+        ]
+      }
+    ],
+    "relations": [],
+    "workflows": [],
+    "rules": []
+  },
+  "api_intent": {
+    "resources": [
+      "empresa"
+    ]
+  },
+  "ui": {
+    "pages": [
+      {
+        "path": "/app/empresa/list",
+        "title": "Listar Empresa",
+        "components": [
+          "table",
+          "pagination",
+          "search"
+        ],
+        "actions": [
+          "list",
+          "view",
+          "delete"
+        ]
+      },
+      {
+        "path": "/app/empresa/new",
+        "title": "Novo Empresa",
+        "components": [
+          "form"
+        ],
+        "actions": [
+          "create"
+        ]
+      },
+      {
+        "path": "/app/empresa/:id",
+        "title": "Detalhes Empresa",
+        "components": [
+          "form"
+        ],
+        "actions": [
+          "view",
+          "update",
+          "delete"
+        ]
+      }
+    ]
+  },
+  "nfr": {
+    "security": {
+      "auth_required": true,
+      "audit_log_required": false
+    }
+  }
+}

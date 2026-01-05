@@ -1,0 +1,85 @@
+{
+  "id": "srs-72c8ab70",
+  "title": "Sistema Petclinic",
+  "version": "1.0.0",
+  "requirements": [
+    {
+      "id": "FR-001",
+      "description": "O sistema deve permitir cadastrar pagamento",
+      "priority": "high",
+      "type": "functional"
+    },
+    {
+      "id": "FR-002",
+      "description": "O sistema deve permitir cadastrar pagamento",
+      "priority": "high",
+      "type": "functional"
+    },
+    {
+      "id": "FR-003",
+      "description": "O sistema deve permitir listar pagamento",
+      "priority": "medium",
+      "type": "functional"
+    }
+  ],
+  "meta": {
+    "project_name": "Sistema Petclinic"
+  },
+  "data_requirements": [
+    {
+      "entity": "pagamento",
+      "fields": [
+        {
+          "name": "nome",
+          "type": "string",
+          "required": true
+        }
+      ]
+    },
+    {
+      "entity": "serviço",
+      "fields": [
+        {
+          "name": "nome",
+          "type": "string",
+          "required": true
+        }
+      ]
+    },
+    {
+      "entity": "nota",
+      "fields": [
+        {
+          "name": "nome",
+          "type": "string",
+          "required": true
+        }
+      ]
+    }
+  ],
+  "business_rules": [],
+  "non_functional_requirements": {
+    "security": {
+      "auth_required": true,
+      "audit_log_required": false
+    }
+  },
+  "metadata": {
+    "created_at": "2026-01-04T16:26:27.831979",
+    "language": "pt-BR",
+    "actors": [
+      {
+        "id": "admin",
+        "name": "Administrador",
+        "description": "Usuário administrador do sistema"
+      }
+    ],
+    "summary": "Quero um sistema web para controle de clínica veterinária (clínica pet)",
+    "open_questions": [
+      "Autenticação é necessária? Qual tipo (login/senha, OAuth, SSO)?",
+      "Quais são as principais entidades/recursos do sistema?",
+      "Existem regras de permissão específicas por perfil?"
+    ],
+    "generation_mode": "MOCK"
+  }
+}

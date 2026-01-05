@@ -1,0 +1,32 @@
+{
+  "roles": [
+    "authenticated",
+    "admin"
+  ],
+  "permissions": [
+    {
+      "operation_id": "listEmpresa",
+      "required_role": "authenticated"
+    },
+    {
+      "operation_id": "createEmpresa",
+      "required_role": "authenticated"
+    },
+    {
+      "operation_id": "getEmpresa",
+      "required_role": "authenticated"
+    },
+    {
+      "operation_id": "updateEmpresa",
+      "required_role": "authenticated"
+    },
+    {
+      "operation_id": "deleteEmpresa",
+      "required_role": "authenticated"
+    }
+  ],
+  "meta": {
+    "created_at": "2026-01-04T10:49:28.836321",
+    "version": "1.0.0"
+  }
+}
