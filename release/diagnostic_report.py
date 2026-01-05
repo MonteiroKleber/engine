@@ -8,14 +8,72 @@ Gera um relatório legível por humanos que explica:
 
 Este relatório é gerado APENAS quando um release falha.
 NÃO substitui Run Log nem Release Report existentes.
+
+Schema versionado: diagnostic_report.v1
 """
 
+import hashlib
+import json
 from dataclasses import dataclass
 from datetime import datetime
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
 from version import __version__
+
+# Schema version para contrato canônico
+DIAGNOSTIC_REPORT_SCHEMA_VERSION = "diagnostic_report.v1"
+
+
+def compute_content_hash_sha256(hashable_payload: Dict[str, Any]) -> str:
+    """Calcula SHA256 do payload canônico.
+
+    Args:
+        hashable_payload: Dict com campos incluídos no hash (sem voláteis)
+
+    Returns:
+        Hash SHA256 em hexadecimal
+    """
+    canonical_json = json.dumps(
+        hashable_payload,
+        sort_keys=True,
+        separators=(',', ':'),
+        ensure_ascii=False
+    )
+    return hashlib.sha256(canonical_json.encode('utf-8')).hexdigest()
+
+
+# Campos que compõem o hashable payload (contrato v1)
+HASHABLE_FIELDS = [
+    "schema_version",
+    "project",
+    "final_status",
+    "engine_version",
+    "build_ok",
+    "docker_compose_ok",
+    "smoke_ok",
+    "errors",
+    "repo_path",
+    "failed_repo_path",
+    "docker_ps_snapshot",
+    "docker_logs_backend_tail",
+    "docker_logs_frontend_tail",
+    "suggested_actions",
+]
+
+
+def extract_hashable_payload_from_canonical(canonical_dict: Dict[str, Any]) -> Dict[str, Any]:
+    """Extrai o payload hashable de um dict canônico carregado do JSON.
+
+    Usado para validar o contract gate após persistência.
+
+    Args:
+        canonical_dict: Dict carregado do JSON canônico
+
+    Returns:
+        Dict com apenas os campos que entram no hash
+    """
+    return {field: canonical_dict[field] for field in HASHABLE_FIELDS}
 
 
 # Mapeamento de status canônicos para causas prováveis
@@ -108,6 +166,9 @@ class DiagnosticReport:
     # Caminhos
     repo_path: str
     failed_repo_path: str
+
+    # Notas do contrato (opcional, fora do hash)
+    contract_notes: Optional[str] = None
 
     def _generate_probable_cause(self) -> str:
         """Gera texto descritivo da causa provável."""
@@ -202,19 +263,121 @@ class DiagnosticReport:
         """Gera lista de ações sugeridas com paths substituídos."""
         actions = SUGGESTED_ACTIONS.get(self.final_status, SUGGESTED_ACTIONS["UNKNOWN_RELEASE_FAILED"])
 
-        # Substituir placeholders
+        # Substituição direta - Generator garante que repo_path e failed_repo_path nunca são None
         result = []
         for action in actions:
             action = action.replace("<repo_path>", self.repo_path)
-            action = action.replace("<failed_repo_path>", self.failed_repo_path or self.repo_path)
+            action = action.replace("<failed_repo_path>", self.failed_repo_path)
             result.append(action)
 
         return result
 
-    def to_markdown(self) -> str:
-        """Gera o relatório em formato Markdown."""
+    def to_hashable_dict(self) -> Dict[str, Any]:
+        """Gera payload para cálculo do hash (sem campos voláteis).
+
+        Campos INCLUÍDOS (contrato):
+        - schema_version, project, final_status, engine_version
+        - build_ok, docker_compose_ok, smoke_ok
+        - errors, repo_path, failed_repo_path
+        - docker_ps_snapshot, docker_logs_backend_tail, docker_logs_frontend_tail
+        - suggested_actions (determinístico dado status + paths)
+
+        Campos EXCLUÍDOS (voláteis):
+        - timestamp, duration_ms, content_hash_sha256
+        """
+        return {
+            "schema_version": DIAGNOSTIC_REPORT_SCHEMA_VERSION,
+            "project": self.project,
+            "final_status": self.final_status,
+            "engine_version": self.engine_version,
+            "build_ok": self.build_ok,
+            "docker_compose_ok": self.docker_compose_ok,
+            "smoke_ok": self.smoke_ok,
+            "errors": self.errors,
+            "repo_path": self.repo_path,
+            "failed_repo_path": self.failed_repo_path,
+            "docker_ps_snapshot": self.docker_ps_snapshot,
+            "docker_logs_backend_tail": self.docker_logs_backend_tail,
+            "docker_logs_frontend_tail": self.docker_logs_frontend_tail,
+            "suggested_actions": self._generate_suggested_actions(),
+        }
+
+    def to_canonical_dict(self) -> Dict[str, Any]:
+        """Gera payload canônico completo com schema_version e content_hash.
+
+        Returns:
+            Dict com todos os campos incluindo schema_version e content_hash_sha256
+        """
+        hashable = self.to_hashable_dict()
+        content_hash = compute_content_hash_sha256(hashable)
+
+        result = {
+            "schema_version": DIAGNOSTIC_REPORT_SCHEMA_VERSION,
+            "content_hash_sha256": content_hash,
+            "project": self.project,
+            "final_status": self.final_status,
+            "engine_version": self.engine_version,
+            "timestamp": self.timestamp,
+            "duration_ms": self.duration_ms,
+            "build_ok": self.build_ok,
+            "docker_compose_ok": self.docker_compose_ok,
+            "smoke_ok": self.smoke_ok,
+            "errors": self.errors,
+            "repo_path": self.repo_path,
+            "failed_repo_path": self.failed_repo_path,
+            "docker_ps_snapshot": self.docker_ps_snapshot,
+            "docker_logs_backend_tail": self.docker_logs_backend_tail,
+            "docker_logs_frontend_tail": self.docker_logs_frontend_tail,
+            "suggested_actions": self._generate_suggested_actions(),
+            "probable_cause": self._generate_probable_cause(),
+            "possible_causes": self._generate_possible_causes(),
+            "objective_evidence": self._generate_objective_evidence(),
+        }
+
+        # contract_notes é opcional, fora do hash
+        if self.contract_notes is not None:
+            result["contract_notes"] = self.contract_notes
+
+        return result
+
+    def to_json(self, indent: int = 2) -> str:
+        """Serializa para JSON canônico.
+
+        Args:
+            indent: Indentação do JSON
+
+        Returns:
+            String JSON formatada
+        """
+        return json.dumps(self.to_canonical_dict(), indent=indent, ensure_ascii=False)
+
+    def to_markdown(self, schema_version: str = None, content_hash: str = None) -> str:
+        """Gera o relatório em formato Markdown.
+
+        Args:
+            schema_version: Versão do schema (default: calcula automaticamente)
+            content_hash: Hash do conteúdo (default: calcula automaticamente)
+
+        Returns:
+            String Markdown formatada
+        """
+        # Calcular schema e hash se não fornecidos
+        if schema_version is None:
+            schema_version = DIAGNOSTIC_REPORT_SCHEMA_VERSION
+        if content_hash is None:
+            content_hash = compute_content_hash_sha256(self.to_hashable_dict())
+
         lines = [
             "# Diagnostic Report",
+            "",
+            "---",
+            "",
+            "## Contract",
+            "",
+            "```",
+            f"SCHEMA VERSION: {schema_version}",
+            f"CONTENT HASH: {content_hash}",
+            "```",
             "",
             "---",
             "",
@@ -347,6 +510,16 @@ class DiagnosticReportGenerator:
         if not self.should_generate(run_result):
             return None
 
+        # Normalização de repo_path: nunca None
+        repo_path = run_result.get("repo_path")
+        if not repo_path:
+            repo_path = str(self.generated_root / project)
+
+        # Normalização de failed_repo_path: nunca None, herda de repo_path
+        failed_repo_path = run_result.get("failed_repo_path")
+        if not failed_repo_path:
+            failed_repo_path = repo_path
+
         return DiagnosticReport(
             project=project,
             final_status=run_result.get("final_status", "UNKNOWN_RELEASE_FAILED"),
@@ -360,8 +533,9 @@ class DiagnosticReportGenerator:
             docker_logs_backend_tail=run_result.get("docker_logs_backend_tail", ""),
             docker_logs_frontend_tail=run_result.get("docker_logs_frontend_tail", ""),
             errors=run_result.get("errors", []),
-            repo_path=run_result.get("repo_path", str(self.generated_root / project)),
-            failed_repo_path=run_result.get("failed_repo_path", ""),
+            repo_path=repo_path,
+            failed_repo_path=failed_repo_path,
+            contract_notes=run_result.get("contract_notes"),
         )
 
     def generate_and_save(
@@ -369,34 +543,84 @@ class DiagnosticReportGenerator:
         project: str,
         run_result: Dict[str, Any],
     ) -> Optional[Dict[str, str]]:
-        """Gera e salva o DiagnosticReport.
+        """Gera e salva o DiagnosticReport (JSON canônico + Markdown).
+
+        Inclui Contract Gate: após salvar, recarrega o JSON e valida o hash.
 
         Args:
             project: Nome do projeto
             run_result: Resultado do run_release()
 
         Returns:
-            Dict com caminho do arquivo salvo, ou None se não gerou
+            Dict com caminhos dos arquivos salvos, ou None se não gerou
+
+        Raises:
+            RuntimeError: Se o Contract Gate falhar (hash mismatch)
         """
         report = self.generate(project, run_result)
 
         if report is None:
             return None
 
-        # Diretório de saída (mesmo do release_report)
-        output_dir = self.store_root / project / "releases"
+        # Diretório de saída: diagnostics/ dentro do projeto
+        output_dir = self.store_root / project / "diagnostics"
         output_dir.mkdir(parents=True, exist_ok=True)
 
         # Gerar timestamp para nome do arquivo
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-        md_path = output_dir / f"diagnostic_report_{timestamp}.md"
 
-        # Salvar markdown
-        md_path.write_text(report.to_markdown())
+        # Obter dados canônicos
+        canonical_dict = report.to_canonical_dict()
+        schema_version = canonical_dict["schema_version"]
+        content_hash = canonical_dict["content_hash_sha256"]
+
+        # Salvar JSON canônico
+        json_path = output_dir / f"diagnostic_report_{timestamp}.json"
+        json_path.write_text(
+            json.dumps(canonical_dict, indent=2, ensure_ascii=False)
+        )
+
+        # CONTRACT GATE: Validar integridade do JSON salvo
+        self._validate_contract_gate(json_path)
+
+        # Salvar Markdown (com schema e hash no header)
+        md_path = output_dir / f"diagnostic_report_{timestamp}.md"
+        md_path.write_text(report.to_markdown(schema_version, content_hash))
 
         return {
+            "json": str(json_path),
             "markdown": str(md_path),
         }
+
+    def _validate_contract_gate(self, json_path: Path) -> None:
+        """Valida o Contract Gate: recarrega JSON e verifica hash.
+
+        Args:
+            json_path: Caminho do arquivo JSON salvo
+
+        Raises:
+            RuntimeError: Se o hash recalculado não bater com o salvo
+        """
+        # 1. Recarregar JSON do disco
+        with open(json_path, 'r', encoding='utf-8') as f:
+            loaded_canonical = json.load(f)
+
+        # 2. Extrair payload hashable
+        hashable_payload = extract_hashable_payload_from_canonical(loaded_canonical)
+
+        # 3. Recalcular hash
+        recalculated_hash = compute_content_hash_sha256(hashable_payload)
+
+        # 4. Comparar com hash salvo
+        saved_hash = loaded_canonical.get("content_hash_sha256", "")
+
+        if recalculated_hash != saved_hash:
+            raise RuntimeError(
+                f"Contract Gate FAILED: hash mismatch.\n"
+                f"  File: {json_path}\n"
+                f"  Expected hash: {saved_hash}\n"
+                f"  Calculated hash: {recalculated_hash}"
+            )
 
 
 def generate_diagnostic_report(
