@@ -1,0 +1,138 @@
+# Bazari Engine Distribution - Docker Compose
+# Version: 1.0.0
+#
+# This compose file runs the Engine in standalone/distribution mode.
+# Designed for air-gapped environments - no external dependencies at runtime.
+#
+# Services:
+#   - engine: Main Bazari Engine runner
+#   - (optional) wizard: Interactive wizard API - uncomment if needed
+#
+# Usage:
+#   docker compose up -d
+#   docker compose logs -f engine
+#   docker compose down
+#
+# Air-gapped mode:
+#   Pre-load images with: docker load -i bazari-engine-images.tar
+#   Run with: docker compose up -d
+
+services:
+  # ==========================================================================
+  # Engine Runner - Main Service
+  # ==========================================================================
+  engine:
+    image: python:3.10-slim
+    container_name: bazari-engine
+    hostname: engine
+    working_dir: /app/engine
+    command: >
+      bash -c "
+        pip install --no-cache-dir -q pyyaml jsonschema jinja2 &&
+        echo 'Engine ready. Use docker exec to run commands.' &&
+        tail -f /dev/null
+      "
+    environment:
+      - ENGINE_VERSION=${ENGINE_VERSION:-1.0.0}
+      - ENGINE_HOME=/app/engine
+      - ENGINE_DATA=/data
+      - ENGINE_LOGS=/logs
+      - PYTHONPATH=/app/engine
+      - PYTHONUNBUFFERED=1
+      # Telemetry settings
+      - TELEMETRY_ENABLED=${TELEMETRY_ENABLED:-true}
+      - TELEMETRY_OUTPUT=${TELEMETRY_OUTPUT:-stdout}
+      # Air-gapped mode - disable external calls
+      - ENGINE_AIRGAPPED=${ENGINE_AIRGAPPED:-false}
+    volumes:
+      # Mount engine source (read-only in production)
+      - ${ENGINE_SOURCE:-../../}:/app/engine:ro
+      # Persistent data volume
+      - engine-data:/data
+      # Logs volume (persistent)
+      - engine-logs:/logs
+      # Generated artifacts (writable)
+      - ${GENERATED_ROOT:-/tmp/generated}:/home/bazari/generated
+      # Templates (read-only)
+      - ${TEMPLATES_ROOT:-../../templates}:/home/bazari/templates:ro
+    networks:
+      - engine-network
+    healthcheck:
+      test: ["CMD", "python", "-c", "import sys; sys.exit(0)"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+    restart: unless-stopped
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  # ==========================================================================
+  # Wizard API (Optional) - Uncomment if wizard service is needed
+  # ==========================================================================
+  # wizard:
+  #   image: python:3.10-slim
+  #   container_name: bazari-wizard
+  #   hostname: wizard
+  #   working_dir: /app/engine
+  #   command: >
+  #     bash -c "
+  #       pip install --no-cache-dir -q pyyaml jsonschema &&
+  #       python -m wizard.wizard_cli --help &&
+  #       tail -f /dev/null
+  #     "
+  #   environment:
+  #     - ENGINE_VERSION=${ENGINE_VERSION:-1.0.0}
+  #     - PYTHONPATH=/app/engine
+  #     - PYTHONUNBUFFERED=1
+  #     - WIZARD_SESSIONS_DIR=/data/wizard/sessions
+  #   volumes:
+  #     - ${ENGINE_SOURCE:-../../}:/app/engine:ro
+  #     - engine-data:/data
+  #     - engine-logs:/logs
+  #   networks:
+  #     - engine-network
+  #   depends_on:
+  #     engine:
+  #       condition: service_healthy
+  #   healthcheck:
+  #     test: ["CMD", "python", "-c", "from wizard.session import create_session; print('ok')"]
+  #     interval: 30s
+  #     timeout: 10s
+  #     retries: 3
+  #   restart: unless-stopped
+  #   logging:
+  #     driver: json-file
+  #     options:
+  #       max-size: "10m"
+  #       max-file: "3"
+
+# =============================================================================
+# Networks
+# =============================================================================
+networks:
+  engine-network:
+    driver: bridge
+    # For air-gapped mode, can use internal: true to prevent external access
+    # internal: ${NETWORK_INTERNAL:-false}
+
+# =============================================================================
+# Volumes - Persistent Storage
+# =============================================================================
+volumes:
+  # Engine data (episodes, artifacts, etc.)
+  engine-data:
+    driver: local
+    labels:
+      - "com.bazari.component=engine"
+      - "com.bazari.type=data"
+
+  # Logs (telemetry, execution logs)
+  engine-logs:
+    driver: local
+    labels:
+      - "com.bazari.component=engine"
+      - "com.bazari.type=logs"

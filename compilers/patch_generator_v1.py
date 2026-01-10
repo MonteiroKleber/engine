@@ -16,11 +16,113 @@ Regras:
 
 import hashlib
 import json
+import re
 import unicodedata
 from dataclasses import dataclass, field
 from datetime import datetime
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Set
+from typing import Any, Dict, List, Optional, Set, Tuple
+
+
+# ==================== SLOT SYSTEM ====================
+
+# Diretório base dos templates
+TEMPLATE_ROOT = Path("/home/bazari/templates/react-vite")
+
+# Definição dos slots suportados
+# JSX comment syntax para arquivos .tsx dentro de JSX
+# JS comment syntax para arquivos .tsx fora de JSX (como imports)
+SLOT_MARKERS = {
+    "nav": ("{/* @engine:nav:start */}", "{/* @engine:nav:end */}"),
+    "routes": ("{/* @engine:routes:start */}", "{/* @engine:routes:end */}"),
+    "entities": ("{/* @engine:entities:start */}", "{/* @engine:entities:end */}"),
+    "imports": ("// @engine:imports:start", "// @engine:imports:end"),
+    "routes-array": ("// @engine:routes-array:start", "// @engine:routes-array:end"),
+}
+
+
+def replace_slot(content: str, slot_name: str, new_block: str, file_path: str = "") -> str:
+    """Substitui o conteúdo entre marcadores de slot.
+
+    Args:
+        content: Conteúdo original do arquivo
+        slot_name: Nome do slot (ex: "nav", "routes", "entities", "imports", "routes-array")
+        new_block: Novo conteúdo a inserir entre os marcadores
+        file_path: Caminho do arquivo (para mensagem de erro)
+
+    Returns:
+        Conteúdo com o slot substituído
+
+    Raises:
+        ValueError: Se o slot não for encontrado no conteúdo
+    """
+    if slot_name not in SLOT_MARKERS:
+        raise ValueError(f"Slot desconhecido: '{slot_name}'. Slots válidos: {list(SLOT_MARKERS.keys())}")
+
+    start_marker, end_marker = SLOT_MARKERS[slot_name]
+
+    # Verificar se os marcadores existem
+    if start_marker not in content:
+        raise ValueError(
+            f"Slot '{slot_name}' não encontrado em {file_path or 'arquivo'}: "
+            f"marcador '{start_marker}' ausente"
+        )
+    if end_marker not in content:
+        raise ValueError(
+            f"Slot '{slot_name}' não encontrado em {file_path or 'arquivo'}: "
+            f"marcador '{end_marker}' ausente"
+        )
+
+    # Escapar caracteres especiais no padrão regex
+    start_escaped = re.escape(start_marker)
+    end_escaped = re.escape(end_marker)
+
+    # Padrão para capturar:
+    # - linha do marcador start (com indentação original)
+    # - conteúdo entre os marcadores (qualquer coisa)
+    # - linha do marcador end (com indentação original)
+    pattern = (
+        rf"(^[ \t]*{start_escaped}[ \t]*\r?\n)"
+        rf"(.*?)"
+        rf"(^[ \t]*{end_escaped}[ \t]*\r?$)"
+    )
+
+    # Construir novo bloco preservando as linhas dos marcadores exatamente
+    # como estão no arquivo (sem alterar indentação fora do slot).
+    insertion = ""
+    if new_block.strip():
+        insertion = new_block.rstrip("\n") + "\n"
+
+    def _replacer(match: "re.Match[str]") -> str:
+        return match.group(1) + insertion + match.group(3)
+
+    result, count = re.subn(pattern, _replacer, content, flags=re.DOTALL | re.MULTILINE, count=1)
+
+    if count == 0:
+        raise ValueError(
+            f"Falha ao substituir slot '{slot_name}' em {file_path or 'arquivo'}: "
+            f"padrão não correspondeu"
+        )
+
+    return result
+
+
+def read_template(relative_path: str) -> str:
+    """Lê conteúdo de um template.
+
+    Args:
+        relative_path: Caminho relativo ao TEMPLATE_ROOT (ex: "src/App.tsx")
+
+    Returns:
+        Conteúdo do template
+
+    Raises:
+        FileNotFoundError: Se o template não existir
+    """
+    template_path = TEMPLATE_ROOT / relative_path
+    if not template_path.exists():
+        raise FileNotFoundError(f"Template não encontrado: {template_path}")
+    return template_path.read_text(encoding="utf-8")
 
 
 @dataclass
@@ -546,6 +648,11 @@ export default {name}List;
 
         initial_state = ", ".join([f"{self._to_camel_case(f['name'])}: ''" for f in unique_fields])
 
+        if unique_fields:
+            state_hook = f"  const [formData, setFormData] = useState({{ {initial_state} }});"
+        else:
+            state_hook = "  const [formData] = useState({});"
+
         return f"""import {{ useState, FormEvent }} from 'react';
 import {{ useMutation, useQueryClient }} from '@tanstack/react-query';
 import {{ useNavigate }} from 'react-router-dom';
@@ -554,7 +661,7 @@ import {{ api }} from '../../api/client';
 export function {name}New() {{
   const navigate = useNavigate();
   const queryClient = useQueryClient();
-  const [formData, setFormData] = useState({{ {initial_state} }});
+{state_hook}
 
   const mutation = useMutation({{
     mutationFn: (data: typeof formData) => api.post('/{snake_name}s', data),
@@ -710,11 +817,27 @@ api.interceptors.request.use((config) => {{
     # ==================== ROUTES.TSX GENERATION ====================
 
     def _generate_routes_tsx(self, entities: List[Dict[str, Any]]) -> str:
-        """Gera arquivo routes.tsx com todas as rotas das entidades."""
+        """Gera routes.tsx preenchendo slots do template.
+
+        Usa o template base e substitui apenas o conteúdo dos slots:
+        - imports: Imports das páginas de cada entidade
+        - routes-array: Array de rotas para cada entidade
+
+        Args:
+            entities: Lista de entidades do IR
+
+        Returns:
+            Conteúdo completo do routes.tsx com slots preenchidos
+        """
+        # Ler template base
+        template_content = read_template("src/routes.tsx")
+
+        # Gerar conteúdo do slot IMPORTS (ordem alfabética por entity.name)
+        sorted_entities = sorted(entities, key=lambda e: e["name"])
         imports = []
         routes = []
 
-        for entity in entities:
+        for entity in sorted_entities:
             name = self._to_pascal_case(entity["name"])
             snake_name = self._to_snake_case(entity["name"])
 
@@ -726,114 +849,86 @@ api.interceptors.request.use((config) => {{
             routes.append(f"  {{ path: '/{snake_name}/new', element: <{name}New /> }},")
             routes.append(f"  {{ path: '/{snake_name}/:id', element: <{name}Detail /> }},")
 
-        imports_str = "\n".join(imports)
-        routes_str = "\n".join(routes)
+        imports_content = "\n".join(imports)
+        routes_content = "\n".join(routes)
 
-        return f"""/**
- * Rotas geradas automaticamente pelo Bazari Engine.
- * NAO EDITE MANUALMENTE - sera sobrescrito na proxima geracao.
- */
+        # Substituir slots
+        result = replace_slot(template_content, "imports", imports_content, "routes.tsx")
+        result = replace_slot(result, "routes-array", routes_content, "routes.tsx")
 
-import type {{ RouteObject }} from 'react-router-dom';
+        return result
 
-{imports_str}
-
-export const routes: RouteObject[] = [
-{routes_str}
-];
-
-export default routes;
-"""
-
-    # ==================== APP.TSX GENERATION ====================
+    # ==================== APP.TSX GENERATION (SLOT-BASED) ====================
 
     def _generate_app_tsx(self, entities: List[Dict[str, Any]]) -> str:
-        """Gera App.tsx atualizado com navegacao e rotas."""
+        """Gera App.tsx preenchendo slots do template.
+
+        Usa o template base e substitui apenas o conteúdo dos slots:
+        - nav: Links de navegação para cada entidade
+        - routes: Mapeamento de rotas usando array importado
+
+        Args:
+            entities: Lista de entidades do IR
+
+        Returns:
+            Conteúdo completo do App.tsx com slots preenchidos
+        """
+        # Ler template base
+        template_content = read_template("src/App.tsx")
+
+        # Gerar conteúdo do slot NAV (ordem alfabética por entity.name)
+        sorted_entities = sorted(entities, key=lambda e: e["name"])
         nav_links = []
-        for entity in entities:
+        for entity in sorted_entities:
             name = self._to_pascal_case(entity["name"])
             snake_name = self._to_snake_case(entity["name"])
-            # Pluraliza para o label do menu
-            label = name + "s" if not name.endswith("s") else name
-            nav_links.append(f'            <Link to="/{snake_name}" className="nav-link">{label}</Link>')
+            nav_links.append(f'          <Link to="/{snake_name}" className="nav-link">{name}</Link>')
 
-        nav_links_str = "\n".join(nav_links)
+        nav_content = "\n".join(nav_links)
 
-        return f"""/**
- * Componente principal da aplicacao.
- * Gerado automaticamente pelo Bazari Engine.
- */
+        # Gerar conteúdo do slot ROUTES
+        routes_content = """          {routes.map((route, index) => (
+            <Route key={index} path={route.path} element={route.element} />
+          ))}"""
 
-import {{ Routes, Route, Link }} from 'react-router-dom';
-import HomePage from './pages/HomePage';
-import {{ routes }} from './routes';
+        # Substituir slots
+        result = replace_slot(template_content, "nav", nav_content, "App.tsx")
+        result = replace_slot(result, "routes", routes_content, "App.tsx")
 
-function App() {{
-  return (
-    <div className="app">
-      <nav className="main-nav">
-        <div className="nav-brand">
-          <Link to="/">Sistema</Link>
-        </div>
-        <div className="nav-links">
-{nav_links_str}
-        </div>
-      </nav>
+        return result
 
-      <main className="main-content">
-        <Routes>
-          <Route path="/" element={{<HomePage />}} />
-          {{routes.map((route, index) => (
-            <Route key={{index}} path={{route.path}} element={{route.element}} />
-          ))}}
-        </Routes>
-      </main>
-    </div>
-  );
-}}
-
-export default App;
-"""
-
-    # ==================== HOMEPAGE.TSX GENERATION ====================
+    # ==================== HOMEPAGE.TSX GENERATION (SLOT-BASED) ====================
 
     def _generate_homepage_tsx(self, entities: List[Dict[str, Any]]) -> str:
-        """Gera HomePage.tsx com links para todas as entidades."""
+        """Gera HomePage.tsx preenchendo slots do template.
+
+        Usa o template base e substitui apenas o conteúdo do slot:
+        - entities: Lista de links para cada entidade
+
+        Args:
+            entities: Lista de entidades do IR
+
+        Returns:
+            Conteúdo completo do HomePage.tsx com slot preenchido
+        """
+        # Ler template base
+        template_content = read_template("src/pages/HomePage.tsx")
+
+        # Gerar conteúdo do slot ENTITIES (ordem alfabética por entity.name)
+        sorted_entities = sorted(entities, key=lambda e: e["name"])
         entity_links = []
-        for entity in entities:
+        for entity in sorted_entities:
+            # Title Case simples: primeira letra maiúscula
             name = self._to_pascal_case(entity["name"])
             snake_name = self._to_snake_case(entity["name"])
-            # Pluraliza para o label
-            label = name + "s" if not name.endswith("s") else name
-            entity_links.append(f'          <li><Link to="/{snake_name}">{label}</Link></li>')
+            entity_links.append(f'          <li><Link to="/{snake_name}">{name}</Link></li>')
 
-        entity_links_str = "\n".join(entity_links)
+        entities_content = "\n".join(entity_links)
 
-        return f"""/**
- * Pagina inicial com navegacao para entidades.
- * Gerado automaticamente pelo Bazari Engine.
- */
+        # Substituir slot
+        result = replace_slot(template_content, "entities", entities_content, "HomePage.tsx")
 
-import {{ Link }} from 'react-router-dom';
-
-function HomePage() {{
-  return (
-    <div className="container">
-      <h1>Bem-vindo ao Sistema</h1>
-      <p>Selecione uma opcao abaixo para comecar:</p>
-
-      <div className="entity-list">
-        <h2>Cadastros</h2>
-        <ul>
-{entity_links_str}
-        </ul>
-      </div>
-    </div>
-  );
-}}
-
-export default HomePage;
-"""
+        return result
 
     # ==================== MAIN GENERATION ====================
 
@@ -893,11 +988,12 @@ export default HomePage;
         """Gera patches globais do frontend: routes.tsx, App.tsx, HomePage.tsx."""
         patches = []
 
-        # 1. routes.tsx - Define todas as rotas das entidades (arquivo novo)
+        # 1. routes.tsx - Define todas as rotas das entidades
+        # Usa "modify" pois o template ja copia um routes.tsx basico
         routes_content = self._generate_routes_tsx(entities)
         patches.append(Patch(
             file_path="frontend/src/routes.tsx",
-            operation="create",
+            operation="modify",
             content=routes_content,
             task_id="global_frontend_routes",
             order=self._next_order(),

@@ -1,0 +1,152 @@
+{
+  "roles": [
+    "authenticated",
+    "admin"
+  ],
+  "permissions": [
+    {
+      "operation_id": "listCustomer",
+      "required_role": "authenticated"
+    },
+    {
+      "operation_id": "createCustomer",
+      "required_role": "authenticated"
+    },
+    {
+      "operation_id": "getCustomer",
+      "required_role": "authenticated"
+    },
+    {
+      "operation_id": "updateCustomer",
+      "required_role": "authenticated"
+    },
+    {
+      "operation_id": "deleteCustomer",
+      "required_role": "authenticated"
+    },
+    {
+      "operation_id": "listAgent",
+      "required_role": "authenticated"
+    },
+    {
+      "operation_id": "createAgent",
+      "required_role": "authenticated"
+    },
+    {
+      "operation_id": "getAgent",
+      "required_role": "authenticated"
+    },
+    {
+      "operation_id": "updateAgent",
+      "required_role": "authenticated"
+    },
+    {
+      "operation_id": "deleteAgent",
+      "required_role": "authenticated"
+    },
+    {
+      "operation_id": "listResolution",
+      "required_role": "authenticated"
+    },
+    {
+      "operation_id": "createResolution",
+      "required_role": "authenticated"
+    },
+    {
+      "operation_id": "getResolution",
+      "required_role": "authenticated"
+    },
+    {
+      "operation_id": "updateResolution",
+      "required_role": "authenticated"
+    },
+    {
+      "operation_id": "deleteResolution",
+      "required_role": "authenticated"
+    },
+    {
+      "operation_id": "listAssignticket",
+      "required_role": "authenticated"
+    },
+    {
+      "operation_id": "createAssignticket",
+      "required_role": "authenticated"
+    },
+    {
+      "operation_id": "getAssignticket",
+      "required_role": "authenticated"
+    },
+    {
+      "operation_id": "updateAssignticket",
+      "required_role": "authenticated"
+    },
+    {
+      "operation_id": "deleteAssignticket",
+      "required_role": "authenticated"
+    },
+    {
+      "operation_id": "listResolveticket",
+      "required_role": "authenticated"
+    },
+    {
+      "operation_id": "createResolveticket",
+      "required_role": "authenticated"
+    },
+    {
+      "operation_id": "getResolveticket",
+      "required_role": "authenticated"
+    },
+    {
+      "operation_id": "updateResolveticket",
+      "required_role": "authenticated"
+    },
+    {
+      "operation_id": "deleteResolveticket",
+      "required_role": "authenticated"
+    },
+    {
+      "operation_id": "listEscalateticket",
+      "required_role": "authenticated"
+    },
+    {
+      "operation_id": "createEscalateticket",
+      "required_role": "authenticated"
+    },
+    {
+      "operation_id": "getEscalateticket",
+      "required_role": "authenticated"
+    },
+    {
+      "operation_id": "updateEscalateticket",
+      "required_role": "authenticated"
+    },
+    {
+      "operation_id": "deleteEscalateticket",
+      "required_role": "authenticated"
+    },
+    {
+      "operation_id": "listListticket",
+      "required_role": "authenticated"
+    },
+    {
+      "operation_id": "createListticket",
+      "required_role": "authenticated"
+    },
+    {
+      "operation_id": "getListticket",
+      "required_role": "authenticated"
+    },
+    {
+      "operation_id": "updateListticket",
+      "required_role": "authenticated"
+    },
+    {
+      "operation_id": "deleteListticket",
+      "required_role": "authenticated"
+    }
+  ],
+  "meta": {
+    "created_at": "2026-01-08T18:43:14.000119",
+    "version": "1.0.0"
+  }
+}

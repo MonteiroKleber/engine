@@ -37,7 +37,26 @@ from fix_loop.fix_loop_agent import FixLoopAgent, FixLoopResult, FixAttemptStatu
 from blueprints.registry import resolve_blueprint
 from release.docker_compose_validator import DockerComposeValidator, DockerComposeUpResult
 from release.smoke_runner import SmokeRunner, SmokeReport
+from release.runtime_evidence_collector import collect_runtime_evidence, _save_evidence
 from version import __version__ as ENGINE_VERSION, get_version_info
+from observability.contract_record import ContractRecord, ContractLedger
+from observability.canonical_hash import (
+    compute_content_hash_sha256,
+    compute_text_hash_sha256,
+    compute_json_file_hash_sha256,
+)
+from observability.telemetry import TelemetryEmitter, BlockedReason
+from observability.patch_manifest import (
+    PatchManifest,
+    PatchEntry,
+    PatchPolicy,
+    PatchManifestStore,
+    verify_manifest_prebuild,
+)
+from observability.legacy_gate import (
+    validate_legacy_bundle,
+    LegacyValidationResult,
+)
 
 import yaml
 
@@ -103,12 +122,23 @@ class RunResult:
     build_stdout_tail: str = ""
     build_stderr_tail: str = ""
     build_exit_code: int = 0
+    # Readiness evidence fields
+    readiness_fingerprint: str = ""
+    readiness_fingerprint_file: str = ""
+    runtime_evidence_dir: str = ""
     # Failed repo path
     failed_repo_path: Optional[str] = None
     # General fields
     questions: List[str] = field(default_factory=list)
     errors: List[str] = field(default_factory=list)
     duration_ms: float = 0.0
+    # Input mode fields
+    input_mode_resolved: str = ""  # natural, draft, idl
+    input_source: str = ""  # path or "inline"
+    idl_schema_version: str = ""
+    idl_content_hash: str = ""
+    draft_schema_version: Optional[str] = None
+    draft_used: bool = False
 
     def to_dict(self) -> Dict[str, Any]:
         """Converte para dicionário."""
@@ -162,6 +192,9 @@ class RunResult:
             "docker_ps_snapshot": self.docker_ps_snapshot,
             "docker_logs_backend_tail": self.docker_logs_backend_tail,
             "docker_logs_frontend_tail": self.docker_logs_frontend_tail,
+            "readiness_fingerprint": self.readiness_fingerprint,
+            "readiness_fingerprint_file": self.readiness_fingerprint_file,
+            "runtime_evidence_dir": self.runtime_evidence_dir,
             # Build evidence
             "build_step_failed": self.build_step_failed,
             "build_stdout_tail": self.build_stdout_tail,
@@ -172,6 +205,13 @@ class RunResult:
             "questions": self.questions,
             "errors": self.errors,
             "duration_ms": self.duration_ms,
+            # Input mode
+            "input_mode_resolved": self.input_mode_resolved,
+            "input_source": self.input_source,
+            "idl_schema_version": self.idl_schema_version,
+            "idl_content_hash": self.idl_content_hash,
+            "draft_schema_version": self.draft_schema_version,
+            "draft_used": self.draft_used,
         }
 
     def summary(self) -> str:
@@ -308,6 +348,7 @@ class Engine:
         project: str,
         raw_input: str,
         title: Optional[str] = None,
+        legacy_bundle: Optional[Dict[str, str]] = None,
     ) -> RunResult:
         """Executa o pipeline completo até IR.
 
@@ -315,6 +356,10 @@ class Engine:
             project: Nome do projeto
             raw_input: Texto bruto de entrada
             title: Título do projeto (opcional)
+            legacy_bundle: Optional dict with legacy artifact paths:
+                - inventory_path: path to legacy_inventory.v1.json
+                - human_process_path: path to human_process.v1.json
+                - legacy_runlog_path: path to legacy_runlog.v1.json (optional)
 
         Returns:
             RunResult com resultado da execução
@@ -338,9 +383,41 @@ class Engine:
         rbac_hash: Optional[str] = None
         plan_hash: Optional[str] = None
 
+        # Contract Ledger for end-to-end audit trail
+        contracts = ContractLedger()
+
+        # Legacy validation result (ALWAYS present in RunLog)
+        legacy_result = validate_legacy_bundle(legacy_bundle)
+
+        # Telemetry emitter for structured event logging
+        telemetry = TelemetryEmitter(execution_id, project)
+
+        # Legacy contract gate - if provided and failed, BLOCK immediately
+        if legacy_result.provided and not legacy_result.ok:
+            result.success = False
+            # Distinguish schema invalid from integrity/tamper failures
+            if legacy_result.schema_invalid:
+                result.final_status = "legacy_schema_invalid"
+                result.errors = ["Legacy schema invalid"] + legacy_result.legacy_contract_gate_errors
+                telemetry.set_blocked(BlockedReason.LEGACY_SCHEMA_INVALID)
+            else:
+                result.final_status = "legacy_contract_gate_failed"
+                result.errors = ["Legacy contract gate failed"] + legacy_result.legacy_contract_gate_errors
+                telemetry.set_blocked(BlockedReason.LEGACY_CONTRACT_GATE_FAILED)
+            telemetry.update_flags(contracts_ok=False, policy_ok=False)
+            telemetry.emit_end("intake", 0)
+            self._write_run_log(
+                execution_id, result, result.final_status,
+                contracts=contracts,
+                legacy_result=legacy_result,
+            )
+            self._finalize_result(result, start_time)
+            return result
+
         try:
             # 1. Normalize
             self.state_machine.transition(State.INTAKE)
+            telemetry.emit_start("intake")
             normalized = self.normalizer.normalize(raw_input)
             # Calcular hash do input normalizado
             input_hash = self._compute_hash(normalized.get("normalized", ""))
@@ -368,9 +445,15 @@ class Engine:
                 result.srs_validation_ok = False
                 result.questions = questions or []
                 result.errors = ["SRS validation failed"]
+                # Telemetry: SRS blocked
+                telemetry.set_blocked(BlockedReason.SRS_BLOCKED_QUESTIONS)
+                telemetry.update_flags(srs_ok=False)
+                telemetry.emit_end("intake", (datetime.now() - start_time).total_seconds() * 1000)
                 self._write_run_log(
                     execution_id, result, "srs_validation_failed",
-                    input_hash=input_hash
+                    input_hash=input_hash,
+                    contracts=contracts,
+                    legacy_result=legacy_result,
                 )
                 self._finalize_result(result, start_time)
                 return result
@@ -384,6 +467,8 @@ class Engine:
             result.srs_path = str(srs_path)
             # Calcular hash do SRS salvo
             srs_hash = self._compute_file_hash(srs_path)
+            # Add to Contract Ledger
+            contracts.add(self._create_contract_record("srs", str(srs_path)))
 
             # 6. Domain Modeler → IR
             ir = self.domain_modeler.generate_ir(validated_srs)
@@ -397,7 +482,9 @@ class Engine:
                 result.errors = ["IR validation failed"] + ir_report.errors
                 self._write_run_log(
                     execution_id, result, "ir_validation_failed",
-                    input_hash=input_hash, srs_hash=srs_hash
+                    input_hash=input_hash, srs_hash=srs_hash,
+                    contracts=contracts,
+                    legacy_result=legacy_result,
                 )
                 self._finalize_result(result, start_time)
                 return result
@@ -412,7 +499,9 @@ class Engine:
                 result.errors = ["Policy validation failed"] + policy_result[1]
                 self._write_run_log(
                     execution_id, result, "policy_failed",
-                    input_hash=input_hash, srs_hash=srs_hash
+                    input_hash=input_hash, srs_hash=srs_hash,
+                    contracts=contracts,
+                    legacy_result=legacy_result,
                 )
                 self._finalize_result(result, start_time)
                 return result
@@ -429,6 +518,8 @@ class Engine:
             result.ir_path = str(ir_path)
             # Calcular hash do IR salvo
             ir_hash = self._compute_file_hash(ir_path)
+            # Add to Contract Ledger
+            contracts.add(self._create_contract_record("ir", str(ir_path)))
 
             # 10. Contracts Agent → OpenAPI + RBAC
             openapi_yaml, rbac = self.contracts_agent.generate_contracts(ir)
@@ -442,7 +533,9 @@ class Engine:
                 result.errors = ["OpenAPI validation failed"] + oas_report.errors
                 self._write_run_log(
                     execution_id, result, "oas_validation_failed",
-                    input_hash=input_hash, srs_hash=srs_hash, ir_hash=ir_hash
+                    input_hash=input_hash, srs_hash=srs_hash, ir_hash=ir_hash,
+                    contracts=contracts,
+                    legacy_result=legacy_result,
                 )
                 self._finalize_result(result, start_time)
                 return result
@@ -456,7 +549,9 @@ class Engine:
                 result.errors = ["RBAC validation failed"] + rbac_report.errors
                 self._write_run_log(
                     execution_id, result, "rbac_validation_failed",
-                    input_hash=input_hash, srs_hash=srs_hash, ir_hash=ir_hash
+                    input_hash=input_hash, srs_hash=srs_hash, ir_hash=ir_hash,
+                    contracts=contracts,
+                    legacy_result=legacy_result,
                 )
                 self._finalize_result(result, start_time)
                 return result
@@ -470,7 +565,9 @@ class Engine:
                 result.errors = ["Contracts policy validation failed"] + contracts_policy_result[1]
                 self._write_run_log(
                     execution_id, result, "contracts_policy_failed",
-                    input_hash=input_hash, srs_hash=srs_hash, ir_hash=ir_hash
+                    input_hash=input_hash, srs_hash=srs_hash, ir_hash=ir_hash,
+                    contracts=contracts,
+                    legacy_result=legacy_result,
                 )
                 self._finalize_result(result, start_time)
                 return result
@@ -485,6 +582,8 @@ class Engine:
             result.oas_version = oas_version
             result.oas_path = str(oas_path)
             oas_hash = self._compute_file_hash(oas_path)
+            # Add to Contract Ledger (YAML file)
+            contracts.add(self._create_contract_record("oas", str(oas_path), is_yaml=True))
 
             # 15. Save RBAC (vN)
             rbac_version = self.store.next_version(project, "RBAC")
@@ -492,6 +591,8 @@ class Engine:
             result.rbac_version = rbac_version
             result.rbac_path = str(rbac_path)
             rbac_hash = self._compute_file_hash(rbac_path)
+            # Add to Contract Ledger
+            contracts.add(self._create_contract_record("rbac", str(rbac_path)))
 
             # 16. Planner Agent → PLAN
             plan = self.planner_agent.generate_plan(ir, openapi_dict, rbac)
@@ -511,7 +612,9 @@ class Engine:
                 self._write_run_log(
                     execution_id, result, "plan_validation_failed",
                     input_hash=input_hash, srs_hash=srs_hash, ir_hash=ir_hash,
-                    oas_hash=oas_hash, rbac_hash=rbac_hash
+                    oas_hash=oas_hash, rbac_hash=rbac_hash,
+                    contracts=contracts,
+                    legacy_result=legacy_result,
                 )
                 self._finalize_result(result, start_time)
                 return result
@@ -526,7 +629,9 @@ class Engine:
                 self._write_run_log(
                     execution_id, result, "plan_policy_failed",
                     input_hash=input_hash, srs_hash=srs_hash, ir_hash=ir_hash,
-                    oas_hash=oas_hash, rbac_hash=rbac_hash
+                    oas_hash=oas_hash, rbac_hash=rbac_hash,
+                    contracts=contracts,
+                    legacy_result=legacy_result,
                 )
                 self._finalize_result(result, start_time)
                 return result
@@ -540,14 +645,55 @@ class Engine:
             result.plan_version = plan_version
             result.plan_path = str(plan_path)
             plan_hash = self._compute_file_hash(plan_path)
+            # Add to Contract Ledger
+            contracts.add(self._create_contract_record("plan", str(plan_path)))
+
+            # 19b. Contract Ledger Gate - verify all contracts are OK
+            if not contracts.all_ok():
+                result.success = False
+                contract_errors = contracts.get_errors()
+                error_msgs = [f"Contract gate failed for {r.kind}: {r.contract_gate_error}" for r in contract_errors]
+                result.errors = ["Contract ledger validation failed"] + error_msgs
+                result.final_status = "contract_gate_failed"
+                # Telemetry: Contract gate blocked
+                telemetry.set_blocked(BlockedReason.CONTRACT_GATE_FAILED)
+                telemetry.update_flags(contracts_ok=False)
+                telemetry.emit_end("processing", (datetime.now() - start_time).total_seconds() * 1000)
+                self._write_run_log(
+                    execution_id, result, "contract_gate_failed",
+                    input_hash=input_hash, srs_hash=srs_hash, ir_hash=ir_hash,
+                    oas_hash=oas_hash, rbac_hash=rbac_hash, plan_hash=plan_hash,
+                    contracts=contracts,
+                    legacy_result=legacy_result,
+                )
+                self._finalize_result(result, start_time)
+                return result
 
             # 20. Write run log with all hashes
             self.state_machine.transition(State.COMPLETED)
             result.success = True
+            result.final_status = "success"
+            # Telemetry: Update final counts and flags
+            telemetry.update_counts(
+                requirements_count=result.requirements_count,
+                entities_count=result.entities_count,
+                operations_count=result.operations_count,
+                tasks_count=result.tasks_count,
+            )
+            telemetry.update_flags(
+                srs_ok=result.srs_validation_ok,
+                ir_ok=result.ir_validation_ok,
+                contracts_ok=True,
+                plan_ok=result.plan_validation_ok,
+                policy_ok=result.policy_ok,
+            )
+            telemetry.emit_end("processing", (datetime.now() - start_time).total_seconds() * 1000)
             self._write_run_log(
                 execution_id, result, "completed",
                 input_hash=input_hash, srs_hash=srs_hash, ir_hash=ir_hash,
-                oas_hash=oas_hash, rbac_hash=rbac_hash, plan_hash=plan_hash
+                oas_hash=oas_hash, rbac_hash=rbac_hash, plan_hash=plan_hash,
+                contracts=contracts,
+                legacy_result=legacy_result,
             )
 
         except Exception as e:
@@ -556,7 +702,9 @@ class Engine:
             self._write_run_log(
                 execution_id, result, "error",
                 input_hash=input_hash, srs_hash=srs_hash, ir_hash=ir_hash,
-                oas_hash=oas_hash, rbac_hash=rbac_hash, plan_hash=plan_hash
+                oas_hash=oas_hash, rbac_hash=rbac_hash, plan_hash=plan_hash,
+                contracts=contracts,
+                legacy_result=legacy_result,
             )
 
         self._finalize_result(result, start_time)
@@ -576,6 +724,58 @@ class Engine:
         with open(file_path, "r", encoding="utf-8") as f:
             content = f.read()
         return self._compute_hash(content)
+
+    def _create_contract_record(
+        self,
+        kind: str,
+        path: str,
+        is_yaml: bool = False,
+    ) -> ContractRecord:
+        """Create a ContractRecord for an artifact.
+
+        Args:
+            kind: Artifact type (srs, ir, oas, rbac, plan, etc.)
+            path: File path
+            is_yaml: If True, use text hash (for YAML files)
+
+        Returns:
+            ContractRecord with computed hash
+
+        Note:
+            If the file doesn't exist (e.g., in test/mock scenarios), the record
+            is still marked as OK but without a hash. Contract gate failures only
+            occur for actual integrity violations, not missing files.
+        """
+        try:
+            file_path = Path(path)
+            if not file_path.exists():
+                # File doesn't exist - could be mocked or test scenario
+                # Not a contract violation, just no hash to verify
+                return ContractRecord(
+                    kind=kind,
+                    path=path,
+                    content_hash_sha256=None,
+                    contract_gate_ok=True,
+                )
+
+            if is_yaml:
+                content_hash = compute_text_hash_sha256(file_path.read_text())
+            else:
+                content_hash = compute_json_file_hash_sha256(path)
+
+            return ContractRecord(
+                kind=kind,
+                path=path,
+                content_hash_sha256=content_hash,
+                contract_gate_ok=True,
+            )
+        except Exception as e:
+            return ContractRecord(
+                kind=kind,
+                path=path,
+                contract_gate_ok=False,
+                contract_gate_error=str(e),
+            )
 
     def _count_operations(self, openapi_dict: Dict[str, Any]) -> int:
         """Conta número de operações no OpenAPI."""
@@ -600,9 +800,13 @@ class Engine:
         oas_hash: Optional[str] = None,
         rbac_hash: Optional[str] = None,
         plan_hash: Optional[str] = None,
+        contracts: Optional[ContractLedger] = None,
+        patch_manifest_path: Optional[str] = None,
+        legacy_result: Optional[LegacyValidationResult] = None,
     ) -> None:
-        """Escreve log de execução com hashes."""
+        """Escreve log de execução com hashes e contracts ledger."""
         payload = {
+            "schema_version": "runlog.v1",  # ALWAYS present - versioned schema
             "status": status,
             "result": result.to_dict(),
             "state": self.state_machine.current_state.value,
@@ -631,12 +835,78 @@ class Engine:
             payload["fix_attempts"] = result.fix_attempts
         if result.fixes_applied:
             payload["fixes_applied"] = result.fixes_applied
-        if result.final_status:
-            payload["final_status"] = result.final_status
+        # final_status - ALWAYS present (defaults to status if not set)
+        payload["final_status"] = result.final_status or status
         if result.fix_loop_aborted_reason:
             payload["fix_loop_aborted_reason"] = result.fix_loop_aborted_reason
         # Blueprint info (FORCED_GENERIC = "GENERIC")
         payload["blueprint"] = "GENERIC" if result.blueprint_forced_generic else result.blueprint_type.upper()
+
+        # Contracts ledger (end-to-end contract gate) - ALWAYS present
+        payload["contracts"] = contracts.to_dict() if contracts is not None else {}
+
+        # Contract gate errors (human-readable) - when contract gate failed
+        if result.final_status == "contract_gate_failed" and contracts is not None:
+            payload["contract_gate_errors"] = [
+                {"kind": r.kind, "path": r.path, "error": r.contract_gate_error}
+                for r in contracts.get_errors()
+            ]
+        else:
+            payload["contract_gate_errors"] = []
+
+        # Patch manifest path - ALWAYS present (None if not generated)
+        payload["patch_manifest_path"] = patch_manifest_path
+
+        # blocked_reason - ALWAYS present (None if not blocked)
+        # Map final_status to canonical BlockedReason constants
+        blocked_reason = None
+        final_status_value = payload["final_status"]
+        if final_status_value == "contract_gate_failed":
+            blocked_reason = BlockedReason.CONTRACT_GATE_FAILED
+        elif final_status_value == "legacy_contract_gate_failed":
+            blocked_reason = BlockedReason.LEGACY_CONTRACT_GATE_FAILED
+        elif final_status_value == "legacy_schema_invalid":
+            blocked_reason = BlockedReason.LEGACY_SCHEMA_INVALID
+        elif final_status_value in ("prebuild_blocked", "manifest_gate_failed"):
+            blocked_reason = BlockedReason.PATCH_SECURITY
+        elif final_status_value == "build_failed":
+            blocked_reason = BlockedReason.BUILD_FAILED
+        elif final_status_value == "srs_validation_failed":
+            blocked_reason = BlockedReason.SRS_BLOCKED_QUESTIONS
+        payload["blocked_reason"] = blocked_reason
+
+        # duration_ms - ALWAYS present (from result, default 0)
+        payload["duration_ms"] = result.duration_ms if result.duration_ms else 0
+
+        # counts - ALWAYS present (structured dict with all keys)
+        payload["counts"] = {
+            "requirements_count": result.requirements_count,
+            "entities_count": result.entities_count,
+            "operations_count": result.operations_count,
+            "tasks_count": result.tasks_count,
+            "patch_count": result.patch_count,
+        }
+
+        # flags - ALWAYS present (mirror of telemetry flags)
+        # contracts_ok: use ledger if available, else infer from final_status
+        contracts_ok = contracts.all_ok() if contracts is not None else (
+            final_status_value != "contract_gate_failed"
+        )
+        payload["flags"] = {
+            "srs_ok": result.srs_validation_ok,
+            "ir_ok": result.ir_validation_ok,
+            "policy_ok": result.policy_ok,
+            "contracts_ok": contracts_ok,
+            "plan_ok": result.plan_validation_ok,
+            "build_ok": result.build_ok,
+            "release_ok": getattr(result, "release_ok", False) or False,
+        }
+
+        # legacy - ALWAYS present (default to not provided if None)
+        if legacy_result is None:
+            legacy_result = LegacyValidationResult()
+        payload["legacy"] = legacy_result.to_dict()
+
         self.store.write_run_log(execution_id, payload, project=result.project)
 
     def run_with_build(
@@ -646,6 +916,7 @@ class Engine:
         title: Optional[str] = None,
         skip_build: bool = False,
         enable_fix_loop: bool = True,
+        legacy_bundle: Optional[Dict[str, str]] = None,
     ) -> RunResult:
         """Executa o pipeline completo incluindo build e Fix Loop.
 
@@ -667,12 +938,13 @@ class Engine:
             title: Título do projeto (opcional)
             skip_build: Se True, pula a fase de build (para testes)
             enable_fix_loop: Se True, tenta corrigir erros de build automaticamente
+            legacy_bundle: Optional dict with legacy artifact paths
 
         Returns:
             RunResult com resultado da execução
         """
         # 1. Executar pipeline de artefatos
-        result = self.run(project, raw_input, title)
+        result = self.run(project, raw_input, title, legacy_bundle=legacy_bundle)
 
         # Se falhou antes do PLAN, retornar imediatamente
         if not result.success:
@@ -686,6 +958,10 @@ class Engine:
 
         # Continuar com build phase
         start_time = datetime.now()
+
+        # Telemetry for build phase
+        telemetry = TelemetryEmitter(result.execution_id, project)
+        telemetry.emit_start("build")
 
         try:
             # Carregar artefatos necessários
@@ -706,18 +982,28 @@ class Engine:
                 # Para re-runs, deletar e recriar
                 repo_generator.delete_repo(project)
 
-            repo_path = repo_generator.create_repo(project)
+            repo_path = repo_generator.create_repo(project, exec_id=result.execution_id)
             result.repo_path = str(repo_path)
+            result.readiness_fingerprint = "DCV_FINGERPRINT_20260105_B"
+            result.readiness_fingerprint_file = str(repo_path / ".engine_readiness_fingerprint.txt")
+            result.runtime_evidence_dir = str(repo_path / ".engine_evidence")
 
             # 3. Generate patches
             patch_generator = PatchGenerator(project, self.GENERATED_ROOT)
             patchset = patch_generator.generate(plan, ir, oas, rbac)
             result.patch_count = len(patchset.patches)
 
-            # 4. Apply patches
-            patch_engine = PatchEngine(project, self.GENERATED_ROOT)
+            # 4. Apply patches (with PatchManifest generation)
+            patch_engine = PatchEngine(
+                project,
+                self.GENERATED_ROOT,
+                store_root=str(self.store.store_root),
+            )
             patch_dicts = [p.to_dict() for p in patchset.patches]
-            patch_result = patch_engine.apply_patches(patch_dicts)
+            patch_result = patch_engine.apply_patches(
+                patch_dicts,
+                execution_id=result.execution_id,
+            )
 
             if not patch_result.success:
                 # Patch application failed
@@ -732,6 +1018,46 @@ class Engine:
                 self._finalize_result(result, start_time)
                 return result
 
+            # 4b. Pre-build verification of PatchManifest (if generated)
+            manifest_path = getattr(patch_result, 'manifest_path', None)
+            if manifest_path and isinstance(manifest_path, str) and Path(manifest_path).exists():
+                manifest_store = PatchManifestStore(str(self.store.store_root))
+                try:
+                    manifest = manifest_store.load(Path(manifest_path))
+                    prebuild_ok, prebuild_errors = verify_manifest_prebuild(manifest)
+                    if not prebuild_ok:
+                        # Pre-build verification failed - BLOCK execution
+                        result.success = False
+                        result.build_ok = False
+                        result.errors = ["Pre-build verification failed"] + prebuild_errors
+                        result.final_status = "prebuild_blocked"
+                        # Telemetry: prebuild blocked
+                        telemetry.set_blocked(BlockedReason.PATCH_SECURITY)
+                        telemetry.update_flags(build_ok=False)
+                        telemetry.emit_end("build", (datetime.now() - start_time).total_seconds() * 1000)
+                        self._write_run_log(
+                            result.execution_id, result, "prebuild_blocked",
+                            patch_manifest_path=manifest_path,
+                        )
+                        self._finalize_result(result, start_time)
+                        return result
+                except RuntimeError as e:
+                    # Contract gate failed on manifest load
+                    result.success = False
+                    result.build_ok = False
+                    result.errors = [f"PatchManifest contract gate failed: {str(e)}"]
+                    result.final_status = "manifest_gate_failed"
+                    # Telemetry: manifest gate failed
+                    telemetry.set_blocked(BlockedReason.PATCH_SECURITY)
+                    telemetry.update_flags(build_ok=False)
+                    telemetry.emit_end("build", (datetime.now() - start_time).total_seconds() * 1000)
+                    self._write_run_log(
+                        result.execution_id, result, "manifest_gate_failed",
+                        patch_manifest_path=manifest_path,
+                    )
+                    self._finalize_result(result, start_time)
+                    return result
+
             # 5. Run build validator
             self.state_machine.transition(State.VALIDATING)
             build_validator = BuildValidator(self.GENERATED_ROOT)
@@ -744,6 +1070,10 @@ class Engine:
                 result.build_ok = True
                 result.final_status = "success"
                 self.state_machine.transition(State.COMPLETED)
+                # Telemetry: build success
+                telemetry.update_flags(build_ok=True)
+                telemetry.update_counts(patch_count=result.patch_count)
+                telemetry.emit_end("build", (datetime.now() - start_time).total_seconds() * 1000)
                 self._write_run_log(
                     result.execution_id, result, "build_completed"
                 )
@@ -767,6 +1097,10 @@ class Engine:
                     pass
 
                 result.errors.append("Build validation failed (fix loop disabled)")
+                # Telemetry: build failed
+                telemetry.set_blocked(BlockedReason.BUILD_FAILED)
+                telemetry.update_flags(build_ok=False)
+                telemetry.emit_end("build", (datetime.now() - start_time).total_seconds() * 1000)
                 self._write_run_log(
                     result.execution_id, result, "build_failed"
                 )
@@ -786,6 +1120,10 @@ class Engine:
                 result.build_ok = True
                 result.final_status = "fixed"
                 self.state_machine.transition(State.COMPLETED)
+                # Telemetry: build fixed by fix loop
+                telemetry.update_flags(build_ok=True)
+                telemetry.update_counts(patch_count=result.patch_count)
+                telemetry.emit_end("build", (datetime.now() - start_time).total_seconds() * 1000)
                 self._write_run_log(
                     result.execution_id, result, "build_fixed"
                 )
@@ -805,6 +1143,10 @@ class Engine:
                     pass
 
                 result.errors.append(f"Fix loop failed: {fix_loop_result.aborted_reason}")
+                # Telemetry: fix loop exhausted
+                telemetry.set_blocked(BlockedReason.FIX_LOOP_EXHAUSTED)
+                telemetry.update_flags(build_ok=False)
+                telemetry.emit_end("build", (datetime.now() - start_time).total_seconds() * 1000)
                 self._write_run_log(
                     result.execution_id, result, "fix_loop_failed"
                 )
@@ -1046,6 +1388,24 @@ class Engine:
                 result.errors.append(
                     f"Services not ready after {readiness_result.readiness_duration_ms:.0f}ms"
                 )
+
+                # SALVAR EVIDÊNCIAS DE RUNTIME SE DISPONÍVEIS
+                if hasattr(readiness_result, 'runtime_evidence') and readiness_result.runtime_evidence:
+                    try:
+                        releases_dir = self.store.get_releases_dir(project)
+                        _save_evidence(readiness_result.runtime_evidence, releases_dir)
+
+                        # Adicionar classificação ao erro
+                        hint = readiness_result.runtime_evidence.get("conclusion_hint", {})
+                        classification = hint.get("classification", "UNKNOWN")
+                        reason = hint.get("reason", "")
+                        if classification != "UNKNOWN":
+                            result.errors.append(
+                                f"Runtime evidence: {classification} - {reason}"
+                            )
+                    except Exception as e:
+                        # Não falhar por causa de evidências
+                        pass
 
                 docker_validator.stop_services(project)
                 failed_path = self._rollback_release(

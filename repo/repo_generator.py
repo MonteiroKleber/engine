@@ -54,11 +54,14 @@ class RepoGenerator:
         self.templates_root = Path(templates_root)
         self.output_root = Path(output_root)
 
-    def create_repo(self, project: str) -> Path:
+    def create_repo(self, project: str, exec_id: Optional[str] = None) -> Path:
         """Cria repositório para um projeto.
 
         Args:
             project: Nome do projeto
+            exec_id: ID de execução para isolar volume do DB (opcional).
+                     Se fornecido, o volume postgres será nomeado com este ID
+                     para evitar conflitos entre execuções.
 
         Returns:
             Path do diretório criado
@@ -89,8 +92,8 @@ class RepoGenerator:
             for template_name, dest_name in self.TEMPLATE_MAPPING.items():
                 self._copy_template(template_name, project_dir / dest_name)
 
-            # Copiar arquivos docker
-            self._copy_docker_files(project_dir)
+            # Copiar arquivos docker (com exec_id para volume isolado)
+            self._copy_docker_files(project_dir, exec_id=exec_id)
 
             return project_dir
 
@@ -114,21 +117,39 @@ class RepoGenerator:
 
         shutil.copytree(src, dest)
 
-    def _copy_docker_files(self, project_dir: Path) -> None:
+    def _copy_docker_files(
+        self, project_dir: Path, exec_id: Optional[str] = None
+    ) -> None:
         """Copia arquivos Docker para o projeto.
 
         Args:
             project_dir: Diretório do projeto
+            exec_id: ID de execução para isolar volume do DB.
+                     Se fornecido, substitui 'postgres_data' por
+                     'postgres_data_<exec_id>' no docker-compose.yml
         """
         docker_src = self.templates_root / "docker"
 
         if not docker_src.exists():
             raise FileNotFoundError(f"Docker template not found: {docker_src}")
 
-        # Copiar docker-compose.yml
+        # Copiar docker-compose.yml (com substituição de volume se exec_id fornecido)
         compose_src = docker_src / "docker-compose.yml"
         if compose_src.exists():
-            shutil.copy2(compose_src, project_dir / "docker-compose.yml")
+            compose_content = compose_src.read_text(encoding="utf-8")
+
+            # Se exec_id fornecido, substituir nome do volume para isolamento
+            if exec_id:
+                # Substituir o nome do volume em todas as ocorrências
+                # Ex: postgres_data -> postgres_data_petclinic_abc123
+                old_volume = "postgres_data"
+                new_volume = f"postgres_data_{exec_id}"
+                compose_content = compose_content.replace(old_volume, new_volume)
+
+            # Escrever o compose modificado
+            (project_dir / "docker-compose.yml").write_text(
+                compose_content, encoding="utf-8"
+            )
 
         # Copiar docker-compose.dev.yml
         compose_dev_src = docker_src / "docker-compose.dev.yml"

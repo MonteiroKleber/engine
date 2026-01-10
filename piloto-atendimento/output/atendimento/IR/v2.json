@@ -1,0 +1,313 @@
+{
+  "meta": {
+    "project_name": "Sistema Atendimento",
+    "created_at": "2026-01-08T18:47:18.346104",
+    "version": "v2",
+    "srs_version": "v4"
+  },
+  "domain": {
+    "entities": [
+      {
+        "name": "customer",
+        "primary_key": "id",
+        "fields": [
+          {
+            "name": "id",
+            "type": "string",
+            "required": true,
+            "unique": false,
+            "indexed": false
+          },
+          {
+            "name": "name",
+            "type": "string",
+            "required": true,
+            "unique": false,
+            "indexed": false
+          },
+          {
+            "name": "email",
+            "type": "string",
+            "required": true,
+            "unique": true,
+            "indexed": false
+          },
+          {
+            "name": "phone",
+            "type": "string",
+            "required": false,
+            "unique": false,
+            "indexed": false
+          },
+          {
+            "name": "tier",
+            "type": "string",
+            "required": true,
+            "unique": false,
+            "indexed": false
+          }
+        ]
+      },
+      {
+        "name": "agent",
+        "primary_key": "id",
+        "fields": [
+          {
+            "name": "id",
+            "type": "string",
+            "required": true,
+            "unique": false,
+            "indexed": false
+          },
+          {
+            "name": "name",
+            "type": "string",
+            "required": true,
+            "unique": false,
+            "indexed": false
+          },
+          {
+            "name": "department",
+            "type": "string",
+            "required": true,
+            "unique": false,
+            "indexed": false
+          },
+          {
+            "name": "skills",
+            "type": "string",
+            "required": true,
+            "unique": false,
+            "indexed": false
+          }
+        ]
+      },
+      {
+        "name": "resolution",
+        "primary_key": "id",
+        "fields": [
+          {
+            "name": "id",
+            "type": "string",
+            "required": true,
+            "unique": false,
+            "indexed": false
+          },
+          {
+            "name": "ticket_id",
+            "type": "uuid",
+            "required": true,
+            "unique": false,
+            "indexed": false
+          },
+          {
+            "name": "agent_id",
+            "type": "uuid",
+            "required": true,
+            "unique": false,
+            "indexed": false
+          },
+          {
+            "name": "resolution_text",
+            "type": "string",
+            "required": true,
+            "unique": false,
+            "indexed": false
+          },
+          {
+            "name": "resolved_at",
+            "type": "string",
+            "required": true,
+            "unique": false,
+            "indexed": false
+          }
+        ]
+      },
+      {
+        "name": "checkslabreach",
+        "primary_key": "id",
+        "fields": [
+          {
+            "name": "id",
+            "type": "uuid",
+            "required": true,
+            "unique": true,
+            "indexed": true
+          },
+          {
+            "name": "manager_verifica_tickets_que_passaram_prazo_sla",
+            "type": "string",
+            "required": true,
+            "unique": false,
+            "indexed": false
+          }
+        ]
+      }
+    ],
+    "relations": [],
+    "workflows": [],
+    "rules": []
+  },
+  "api_intent": {
+    "resources": [
+      "customer",
+      "agent",
+      "resolution",
+      "checkslabreach"
+    ]
+  },
+  "ui": {
+    "pages": [
+      {
+        "path": "/app/customer/list",
+        "title": "Listar Customer",
+        "components": [
+          "table",
+          "pagination",
+          "search"
+        ],
+        "actions": [
+          "list",
+          "view",
+          "delete"
+        ]
+      },
+      {
+        "path": "/app/customer/new",
+        "title": "Novo Customer",
+        "components": [
+          "form"
+        ],
+        "actions": [
+          "create"
+        ]
+      },
+      {
+        "path": "/app/customer/:id",
+        "title": "Detalhes Customer",
+        "components": [
+          "form"
+        ],
+        "actions": [
+          "view",
+          "update",
+          "delete"
+        ]
+      },
+      {
+        "path": "/app/agent/list",
+        "title": "Listar Agent",
+        "components": [
+          "table",
+          "pagination",
+          "search"
+        ],
+        "actions": [
+          "list",
+          "view",
+          "delete"
+        ]
+      },
+      {
+        "path": "/app/agent/new",
+        "title": "Novo Agent",
+        "components": [
+          "form"
+        ],
+        "actions": [
+          "create"
+        ]
+      },
+      {
+        "path": "/app/agent/:id",
+        "title": "Detalhes Agent",
+        "components": [
+          "form"
+        ],
+        "actions": [
+          "view",
+          "update",
+          "delete"
+        ]
+      },
+      {
+        "path": "/app/resolution/list",
+        "title": "Listar Resolution",
+        "components": [
+          "table",
+          "pagination",
+          "search"
+        ],
+        "actions": [
+          "list",
+          "view",
+          "delete"
+        ]
+      },
+      {
+        "path": "/app/resolution/new",
+        "title": "Novo Resolution",
+        "components": [
+          "form"
+        ],
+        "actions": [
+          "create"
+        ]
+      },
+      {
+        "path": "/app/resolution/:id",
+        "title": "Detalhes Resolution",
+        "components": [
+          "form"
+        ],
+        "actions": [
+          "view",
+          "update",
+          "delete"
+        ]
+      },
+      {
+        "path": "/app/checkslabreach/list",
+        "title": "Listar Checkslabreach",
+        "components": [
+          "table",
+          "pagination",
+          "search"
+        ],
+        "actions": [
+          "list",
+          "view",
+          "delete"
+        ]
+      },
+      {
+        "path": "/app/checkslabreach/new",
+        "title": "Novo Checkslabreach",
+        "components": [
+          "form"
+        ],
+        "actions": [
+          "create"
+        ]
+      },
+      {
+        "path": "/app/checkslabreach/:id",
+        "title": "Detalhes Checkslabreach",
+        "components": [
+          "form"
+        ],
+        "actions": [
+          "view",
+          "update",
+          "delete"
+        ]
+      }
+    ]
+  },
+  "nfr": {
+    "security": {
+      "auth_required": true,
+      "audit_log_required": false
+    }
+  }
+}

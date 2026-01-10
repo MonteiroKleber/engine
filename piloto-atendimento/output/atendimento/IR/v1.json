@@ -1,0 +1,484 @@
+{
+  "meta": {
+    "project_name": "Sistema Atendimento",
+    "created_at": "2026-01-08T18:43:13.997843",
+    "version": "v1",
+    "srs_version": "v3"
+  },
+  "domain": {
+    "entities": [
+      {
+        "name": "customer",
+        "primary_key": "id",
+        "fields": [
+          {
+            "name": "id",
+            "type": "string",
+            "required": true,
+            "unique": false,
+            "indexed": false
+          },
+          {
+            "name": "name",
+            "type": "string",
+            "required": true,
+            "unique": false,
+            "indexed": false
+          },
+          {
+            "name": "email",
+            "type": "string",
+            "required": true,
+            "unique": true,
+            "indexed": false
+          },
+          {
+            "name": "phone",
+            "type": "string",
+            "required": false,
+            "unique": false,
+            "indexed": false
+          },
+          {
+            "name": "tier",
+            "type": "string",
+            "required": true,
+            "unique": false,
+            "indexed": false
+          }
+        ]
+      },
+      {
+        "name": "agent",
+        "primary_key": "id",
+        "fields": [
+          {
+            "name": "id",
+            "type": "string",
+            "required": true,
+            "unique": false,
+            "indexed": false
+          },
+          {
+            "name": "name",
+            "type": "string",
+            "required": true,
+            "unique": false,
+            "indexed": false
+          },
+          {
+            "name": "department",
+            "type": "string",
+            "required": true,
+            "unique": false,
+            "indexed": false
+          },
+          {
+            "name": "skills",
+            "type": "string",
+            "required": true,
+            "unique": false,
+            "indexed": false
+          }
+        ]
+      },
+      {
+        "name": "resolution",
+        "primary_key": "id",
+        "fields": [
+          {
+            "name": "id",
+            "type": "string",
+            "required": true,
+            "unique": false,
+            "indexed": false
+          },
+          {
+            "name": "ticket_id",
+            "type": "uuid",
+            "required": true,
+            "unique": false,
+            "indexed": false
+          },
+          {
+            "name": "agent_id",
+            "type": "uuid",
+            "required": true,
+            "unique": false,
+            "indexed": false
+          },
+          {
+            "name": "resolution_text",
+            "type": "string",
+            "required": true,
+            "unique": false,
+            "indexed": false
+          },
+          {
+            "name": "resolved_at",
+            "type": "string",
+            "required": true,
+            "unique": false,
+            "indexed": false
+          }
+        ]
+      },
+      {
+        "name": "assignticket",
+        "primary_key": "id",
+        "fields": [
+          {
+            "name": "id",
+            "type": "uuid",
+            "required": true,
+            "unique": true,
+            "indexed": true
+          },
+          {
+            "name": "manager_atribui_ticket_ao_agent",
+            "type": "string",
+            "required": true,
+            "unique": false,
+            "indexed": false
+          }
+        ]
+      },
+      {
+        "name": "resolveticket",
+        "primary_key": "id",
+        "fields": [
+          {
+            "name": "id",
+            "type": "uuid",
+            "required": true,
+            "unique": true,
+            "indexed": true
+          },
+          {
+            "name": "agent_resolve_ticket",
+            "type": "string",
+            "required": true,
+            "unique": false,
+            "indexed": false
+          }
+        ]
+      },
+      {
+        "name": "escalateticket",
+        "primary_key": "id",
+        "fields": [
+          {
+            "name": "id",
+            "type": "uuid",
+            "required": true,
+            "unique": true,
+            "indexed": true
+          },
+          {
+            "name": "agent_escala_ticket",
+            "type": "string",
+            "required": true,
+            "unique": false,
+            "indexed": false
+          }
+        ]
+      },
+      {
+        "name": "listticket",
+        "primary_key": "id",
+        "fields": [
+          {
+            "name": "id",
+            "type": "uuid",
+            "required": true,
+            "unique": true,
+            "indexed": true
+          },
+          {
+            "name": "agent_lista_tickets",
+            "type": "string",
+            "required": true,
+            "unique": false,
+            "indexed": false
+          }
+        ]
+      }
+    ],
+    "relations": [],
+    "workflows": [],
+    "rules": []
+  },
+  "api_intent": {
+    "resources": [
+      "customer",
+      "agent",
+      "resolution",
+      "assignticket",
+      "resolveticket",
+      "escalateticket",
+      "listticket"
+    ]
+  },
+  "ui": {
+    "pages": [
+      {
+        "path": "/app/customer/list",
+        "title": "Listar Customer",
+        "components": [
+          "table",
+          "pagination",
+          "search"
+        ],
+        "actions": [
+          "list",
+          "view",
+          "delete"
+        ]
+      },
+      {
+        "path": "/app/customer/new",
+        "title": "Novo Customer",
+        "components": [
+          "form"
+        ],
+        "actions": [
+          "create"
+        ]
+      },
+      {
+        "path": "/app/customer/:id",
+        "title": "Detalhes Customer",
+        "components": [
+          "form"
+        ],
+        "actions": [
+          "view",
+          "update",
+          "delete"
+        ]
+      },
+      {
+        "path": "/app/agent/list",
+        "title": "Listar Agent",
+        "components": [
+          "table",
+          "pagination",
+          "search"
+        ],
+        "actions": [
+          "list",
+          "view",
+          "delete"
+        ]
+      },
+      {
+        "path": "/app/agent/new",
+        "title": "Novo Agent",
+        "components": [
+          "form"
+        ],
+        "actions": [
+          "create"
+        ]
+      },
+      {
+        "path": "/app/agent/:id",
+        "title": "Detalhes Agent",
+        "components": [
+          "form"
+        ],
+        "actions": [
+          "view",
+          "update",
+          "delete"
+        ]
+      },
+      {
+        "path": "/app/resolution/list",
+        "title": "Listar Resolution",
+        "components": [
+          "table",
+          "pagination",
+          "search"
+        ],
+        "actions": [
+          "list",
+          "view",
+          "delete"
+        ]
+      },
+      {
+        "path": "/app/resolution/new",
+        "title": "Novo Resolution",
+        "components": [
+          "form"
+        ],
+        "actions": [
+          "create"
+        ]
+      },
+      {
+        "path": "/app/resolution/:id",
+        "title": "Detalhes Resolution",
+        "components": [
+          "form"
+        ],
+        "actions": [
+          "view",
+          "update",
+          "delete"
+        ]
+      },
+      {
+        "path": "/app/assignticket/list",
+        "title": "Listar Assignticket",
+        "components": [
+          "table",
+          "pagination",
+          "search"
+        ],
+        "actions": [
+          "list",
+          "view",
+          "delete"
+        ]
+      },
+      {
+        "path": "/app/assignticket/new",
+        "title": "Novo Assignticket",
+        "components": [
+          "form"
+        ],
+        "actions": [
+          "create"
+        ]
+      },
+      {
+        "path": "/app/assignticket/:id",
+        "title": "Detalhes Assignticket",
+        "components": [
+          "form"
+        ],
+        "actions": [
+          "view",
+          "update",
+          "delete"
+        ]
+      },
+      {
+        "path": "/app/resolveticket/list",
+        "title": "Listar Resolveticket",
+        "components": [
+          "table",
+          "pagination",
+          "search"
+        ],
+        "actions": [
+          "list",
+          "view",
+          "delete"
+        ]
+      },
+      {
+        "path": "/app/resolveticket/new",
+        "title": "Novo Resolveticket",
+        "components": [
+          "form"
+        ],
+        "actions": [
+          "create"
+        ]
+      },
+      {
+        "path": "/app/resolveticket/:id",
+        "title": "Detalhes Resolveticket",
+        "components": [
+          "form"
+        ],
+        "actions": [
+          "view",
+          "update",
+          "delete"
+        ]
+      },
+      {
+        "path": "/app/escalateticket/list",
+        "title": "Listar Escalateticket",
+        "components": [
+          "table",
+          "pagination",
+          "search"
+        ],
+        "actions": [
+          "list",
+          "view",
+          "delete"
+        ]
+      },
+      {
+        "path": "/app/escalateticket/new",
+        "title": "Novo Escalateticket",
+        "components": [
+          "form"
+        ],
+        "actions": [
+          "create"
+        ]
+      },
+      {
+        "path": "/app/escalateticket/:id",
+        "title": "Detalhes Escalateticket",
+        "components": [
+          "form"
+        ],
+        "actions": [
+          "view",
+          "update",
+          "delete"
+        ]
+      },
+      {
+        "path": "/app/listticket/list",
+        "title": "Listar Listticket",
+        "components": [
+          "table",
+          "pagination",
+          "search"
+        ],
+        "actions": [
+          "list",
+          "view",
+          "delete"
+        ]
+      },
+      {
+        "path": "/app/listticket/new",
+        "title": "Novo Listticket",
+        "components": [
+          "form"
+        ],
+        "actions": [
+          "create"
+        ]
+      },
+      {
+        "path": "/app/listticket/:id",
+        "title": "Detalhes Listticket",
+        "components": [
+          "form"
+        ],
+        "actions": [
+          "view",
+          "update",
+          "delete"
+        ]
+      }
+    ]
+  },
+  "nfr": {
+    "security": {
+      "auth_required": true,
+      "audit_log_required": false
+    }
+  }
+}

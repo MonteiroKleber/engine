@@ -1,0 +1,380 @@
+{
+  "id": "srs-85f9fd2f",
+  "title": "Sistema Atendimento",
+  "version": "1.0.0",
+  "requirements": [
+    {
+      "id": "FR-001",
+      "description": "O sistema deve permitir cadastrar customer",
+      "priority": "high",
+      "type": "functional"
+    },
+    {
+      "id": "FR-002",
+      "description": "O sistema deve permitir listar customer",
+      "priority": "medium",
+      "type": "functional"
+    },
+    {
+      "id": "FR-003",
+      "description": "O sistema deve permitir visualizar customer",
+      "priority": "medium",
+      "type": "functional"
+    },
+    {
+      "id": "FR-004",
+      "description": "O sistema deve permitir editar customer",
+      "priority": "medium",
+      "type": "functional"
+    },
+    {
+      "id": "FR-005",
+      "description": "O sistema deve permitir excluir customer",
+      "priority": "low",
+      "type": "functional"
+    },
+    {
+      "id": "FR-006",
+      "description": "O sistema deve permitir cadastrar agent",
+      "priority": "high",
+      "type": "functional"
+    },
+    {
+      "id": "FR-007",
+      "description": "O sistema deve permitir listar agent",
+      "priority": "medium",
+      "type": "functional"
+    },
+    {
+      "id": "FR-008",
+      "description": "O sistema deve permitir visualizar agent",
+      "priority": "medium",
+      "type": "functional"
+    },
+    {
+      "id": "FR-009",
+      "description": "O sistema deve permitir editar agent",
+      "priority": "medium",
+      "type": "functional"
+    },
+    {
+      "id": "FR-010",
+      "description": "O sistema deve permitir excluir agent",
+      "priority": "low",
+      "type": "functional"
+    },
+    {
+      "id": "FR-011",
+      "description": "O sistema deve permitir cadastrar resolution",
+      "priority": "high",
+      "type": "functional"
+    },
+    {
+      "id": "FR-012",
+      "description": "O sistema deve permitir listar resolution",
+      "priority": "medium",
+      "type": "functional"
+    },
+    {
+      "id": "FR-013",
+      "description": "O sistema deve permitir visualizar resolution",
+      "priority": "medium",
+      "type": "functional"
+    },
+    {
+      "id": "FR-014",
+      "description": "O sistema deve permitir editar resolution",
+      "priority": "medium",
+      "type": "functional"
+    },
+    {
+      "id": "FR-015",
+      "description": "O sistema deve permitir excluir resolution",
+      "priority": "low",
+      "type": "functional"
+    },
+    {
+      "id": "FR-016",
+      "description": "O sistema deve permitir cadastrar assignticket",
+      "priority": "high",
+      "type": "functional"
+    },
+    {
+      "id": "FR-017",
+      "description": "O sistema deve permitir listar assignticket",
+      "priority": "medium",
+      "type": "functional"
+    },
+    {
+      "id": "FR-018",
+      "description": "O sistema deve permitir visualizar assignticket",
+      "priority": "medium",
+      "type": "functional"
+    },
+    {
+      "id": "FR-019",
+      "description": "O sistema deve permitir editar assignticket",
+      "priority": "medium",
+      "type": "functional"
+    },
+    {
+      "id": "FR-020",
+      "description": "O sistema deve permitir excluir assignticket",
+      "priority": "low",
+      "type": "functional"
+    },
+    {
+      "id": "FR-021",
+      "description": "O sistema deve permitir cadastrar resolveticket",
+      "priority": "high",
+      "type": "functional"
+    },
+    {
+      "id": "FR-022",
+      "description": "O sistema deve permitir listar resolveticket",
+      "priority": "medium",
+      "type": "functional"
+    },
+    {
+      "id": "FR-023",
+      "description": "O sistema deve permitir visualizar resolveticket",
+      "priority": "medium",
+      "type": "functional"
+    },
+    {
+      "id": "FR-024",
+      "description": "O sistema deve permitir editar resolveticket",
+      "priority": "medium",
+      "type": "functional"
+    },
+    {
+      "id": "FR-025",
+      "description": "O sistema deve permitir excluir resolveticket",
+      "priority": "low",
+      "type": "functional"
+    },
+    {
+      "id": "FR-026",
+      "description": "O sistema deve permitir cadastrar escalateticket",
+      "priority": "high",
+      "type": "functional"
+    },
+    {
+      "id": "FR-027",
+      "description": "O sistema deve permitir listar escalateticket",
+      "priority": "medium",
+      "type": "functional"
+    },
+    {
+      "id": "FR-028",
+      "description": "O sistema deve permitir visualizar escalateticket",
+      "priority": "medium",
+      "type": "functional"
+    },
+    {
+      "id": "FR-029",
+      "description": "O sistema deve permitir editar escalateticket",
+      "priority": "medium",
+      "type": "functional"
+    },
+    {
+      "id": "FR-030",
+      "description": "O sistema deve permitir excluir escalateticket",
+      "priority": "low",
+      "type": "functional"
+    },
+    {
+      "id": "FR-031",
+      "description": "O sistema deve permitir cadastrar listticket",
+      "priority": "high",
+      "type": "functional"
+    },
+    {
+      "id": "FR-032",
+      "description": "O sistema deve permitir listar listticket",
+      "priority": "medium",
+      "type": "functional"
+    },
+    {
+      "id": "FR-033",
+      "description": "O sistema deve permitir visualizar listticket",
+      "priority": "medium",
+      "type": "functional"
+    },
+    {
+      "id": "FR-034",
+      "description": "O sistema deve permitir editar listticket",
+      "priority": "medium",
+      "type": "functional"
+    },
+    {
+      "id": "FR-035",
+      "description": "O sistema deve permitir excluir listticket",
+      "priority": "low",
+      "type": "functional"
+    }
+  ],
+  "meta": {
+    "project_name": "Sistema Atendimento"
+  },
+  "data_requirements": [
+    {
+      "entity": "customer",
+      "fields": [
+        {
+          "name": "id",
+          "type": "string",
+          "required": true
+        },
+        {
+          "name": "name",
+          "type": "string",
+          "required": true
+        },
+        {
+          "name": "email",
+          "type": "string",
+          "required": true,
+          "unique": true
+        },
+        {
+          "name": "phone",
+          "type": "string",
+          "required": false
+        },
+        {
+          "name": "tier",
+          "type": "string",
+          "required": true
+        }
+      ]
+    },
+    {
+      "entity": "agent",
+      "fields": [
+        {
+          "name": "id",
+          "type": "string",
+          "required": true
+        },
+        {
+          "name": "name",
+          "type": "string",
+          "required": true
+        },
+        {
+          "name": "department",
+          "type": "string",
+          "required": true
+        },
+        {
+          "name": "skills",
+          "type": "string",
+          "required": true
+        }
+      ]
+    },
+    {
+      "entity": "resolution",
+      "fields": [
+        {
+          "name": "id",
+          "type": "string",
+          "required": true
+        },
+        {
+          "name": "ticket_id",
+          "type": "uuid",
+          "required": true,
+          "unique": false,
+          "nullable": false
+        },
+        {
+          "name": "agent_id",
+          "type": "uuid",
+          "required": true,
+          "unique": false,
+          "nullable": false
+        },
+        {
+          "name": "resolution_text",
+          "type": "string",
+          "required": true
+        },
+        {
+          "name": "resolved_at",
+          "type": "string",
+          "required": true
+        }
+      ]
+    },
+    {
+      "entity": "assignticket",
+      "fields": [
+        {
+          "name": "manager_atribui_ticket_ao_agent",
+          "type": "string",
+          "required": true
+        }
+      ]
+    },
+    {
+      "entity": "resolveticket",
+      "fields": [
+        {
+          "name": "agent_resolve_ticket",
+          "type": "string",
+          "required": true
+        }
+      ]
+    },
+    {
+      "entity": "escalateticket",
+      "fields": [
+        {
+          "name": "agent_escala_ticket",
+          "type": "string",
+          "required": true
+        }
+      ]
+    },
+    {
+      "entity": "listticket",
+      "fields": [
+        {
+          "name": "agent_lista_tickets",
+          "type": "string",
+          "required": true
+        }
+      ]
+    }
+  ],
+  "relations": [],
+  "business_rules": [],
+  "workflows": [],
+  "non_functional_requirements": {
+    "security": {
+      "auth_required": true,
+      "audit_log_required": false
+    }
+  },
+  "metadata": {
+    "created_at": "2026-01-08T18:43:13.996241",
+    "language": "pt-BR",
+    "actors": [
+      {
+        "id": "admin",
+        "name": "Administrador",
+        "description": "Usuário administrador do sistema"
+      }
+    ],
+    "summary": "Sistema de atendimento ao cliente com entidades: Ticket (id, customer_id, subject, description, status, priority, created_at), Customer (id, name, email, phone, tier), Agent (id, name, department, ski...",
+    "open_questions": [
+      "Autenticação é necessária? Qual tipo (login/senha, OAuth, SSO)?",
+      "Quais perfis de usuário existem além de admin?",
+      "Quais são as principais entidades/recursos do sistema?"
+    ],
+    "warnings": [],
+    "generation_mode": "MINIGRAMMAR_V2"
+  }
+}

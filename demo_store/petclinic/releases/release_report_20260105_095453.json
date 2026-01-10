@@ -1,0 +1,55 @@
+{
+  "project": "petclinic",
+  "version": "1.0.0",
+  "timestamp": "2026-01-05T09:54:53.829635",
+  "engine_version": "1.0.0",
+  "repo_path": "/home/bazari/generated/petclinic",
+  "store_path": "/home/bazari/engine/demo_store/petclinic",
+  "success": false,
+  "final_status": "DOCKER_UP_FAILED",
+  "artifacts": {
+    "srs_version": 2,
+    "ir_version": 2,
+    "oas_version": 2,
+    "rbac_version": 2,
+    "plan_version": 2
+  },
+  "metrics": {
+    "requirements_count": 36,
+    "entities_count": 7,
+    "operations_count": 35,
+    "tasks_count": 56,
+    "patch_count": 59
+  },
+  "build": {
+    "build_ok": true,
+    "fix_attempts": 0,
+    "fixes_applied": 0
+  },
+  "release": {
+    "docker_compose_ok": false,
+    "services_running": [],
+    "smoke_ok": false,
+    "smoke_passed": 0,
+    "smoke_failed": 0
+  },
+  "checklist": {
+    "passed": false,
+    "total_items": 10,
+    "failures": [
+      "hashes_complete: Hashes faltando: input_hash, srs_hash, ir_hash, oas_hash, rbac_hash, plan_hash",
+      "smoke_ok: Smoke tests falharam (0 falhas)"
+    ]
+  },
+  "errors": [
+    "docker compose up failed:  petclinic-backend  Built\n petclinic-frontend  Built\n Network petclinic_default  Creating\n Network petclinic_default  Created\n Container app-db  Creating\n Container app-db  Error response from daemon:"
+  ],
+  "duration_ms": 108372.53099999999,
+  "commands": {
+    "start": "cd /home/bazari/generated/petclinic && docker compose up -d",
+    "stop": "cd /home/bazari/generated/petclinic && docker compose down",
+    "logs": "cd /home/bazari/generated/petclinic && docker compose logs -f",
+    "status": "cd /home/bazari/generated/petclinic && docker compose ps",
+    "restart": "cd /home/bazari/generated/petclinic && docker compose restart"
+  }
+}

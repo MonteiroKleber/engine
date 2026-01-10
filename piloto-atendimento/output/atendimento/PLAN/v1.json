@@ -1,0 +1,851 @@
+{
+  "meta": {
+    "version": "v1",
+    "strategy": "PATCH_ONLY",
+    "ir_version": "v1",
+    "project_name": "Sistema Atendimento",
+    "created_at": "2026-01-08T18:43:14.058567"
+  },
+  "tasks": [
+    {
+      "id": "task_agent_api_client",
+      "title": "Create API client for Agent",
+      "order": 16,
+      "files": [
+        "frontend/src/api/client.ts"
+      ],
+      "acceptance": [
+        "Build frontend passes",
+        "API client has methods for Agent CRUD"
+      ],
+      "depends_on": [
+        "task_agent_frontend_pages"
+      ]
+    },
+    {
+      "id": "task_agent_controller",
+      "title": "Create REST Controller for Agent",
+      "order": 13,
+      "files": [
+        "backend/src/main/java/com/example/app/api/AgentController.java"
+      ],
+      "acceptance": [
+        "Contract tests pass",
+        "All endpoints return correct status codes",
+        "Implements operations: listAgent, createAgent, getAgent, updateAgent, deleteAgent"
+      ],
+      "depends_on": [
+        "task_agent_service"
+      ]
+    },
+    {
+      "id": "task_agent_frontend_pages",
+      "title": "Create frontend pages for Agent",
+      "order": 15,
+      "files": [
+        "frontend/src/pages/agent/List.tsx",
+        "frontend/src/pages/agent/New.tsx",
+        "frontend/src/pages/agent/Detail.tsx"
+      ],
+      "acceptance": [
+        "TypeScript typecheck passes",
+        "Pages render without errors"
+      ],
+      "depends_on": [
+        "task_agent_controller"
+      ]
+    },
+    {
+      "id": "task_agent_migration",
+      "title": "Create database migration for Agent",
+      "order": 9,
+      "files": [
+        "backend/src/main/resources/db/migration/V9__create_agent.sql"
+      ],
+      "acceptance": [
+        "Migration compiles without errors",
+        "Table agent exists in database"
+      ]
+    },
+    {
+      "id": "task_agent_model",
+      "title": "Create JPA Entity for Agent",
+      "order": 10,
+      "files": [
+        "backend/src/main/java/com/example/app/domain/Agent.java"
+      ],
+      "acceptance": [
+        "Build backend passes",
+        "Agent entity has all required fields"
+      ],
+      "depends_on": [
+        "task_agent_migration"
+      ]
+    },
+    {
+      "id": "task_agent_repository",
+      "title": "Create Repository for Agent",
+      "order": 11,
+      "files": [
+        "backend/src/main/java/com/example/app/repo/AgentRepository.java"
+      ],
+      "acceptance": [
+        "Build backend passes",
+        "AgentRepository extends JpaRepository"
+      ],
+      "depends_on": [
+        "task_agent_model"
+      ]
+    },
+    {
+      "id": "task_agent_security",
+      "title": "Configure security for Agent endpoints",
+      "order": 14,
+      "files": [
+        "backend/src/main/java/com/example/app/security/SecurityConfig.java"
+      ],
+      "acceptance": [
+        "Endpoints require authentication",
+        "RBAC roles are enforced"
+      ],
+      "depends_on": [
+        "task_agent_controller"
+      ]
+    },
+    {
+      "id": "task_agent_service",
+      "title": "Create Service for Agent",
+      "order": 12,
+      "files": [
+        "backend/src/main/java/com/example/app/service/AgentService.java"
+      ],
+      "acceptance": [
+        "Build backend passes",
+        "AgentService has CRUD methods"
+      ],
+      "depends_on": [
+        "task_agent_repository"
+      ]
+    },
+    {
+      "id": "task_assignticket_api_client",
+      "title": "Create API client for Assignticket",
+      "order": 32,
+      "files": [
+        "frontend/src/api/client.ts"
+      ],
+      "acceptance": [
+        "Build frontend passes",
+        "API client has methods for Assignticket CRUD"
+      ],
+      "depends_on": [
+        "task_assignticket_frontend_pages"
+      ]
+    },
+    {
+      "id": "task_assignticket_controller",
+      "title": "Create REST Controller for Assignticket",
+      "order": 29,
+      "files": [
+        "backend/src/main/java/com/example/app/api/AssignticketController.java"
+      ],
+      "acceptance": [
+        "Contract tests pass",
+        "All endpoints return correct status codes",
+        "Implements operations: listAssignticket, createAssignticket, getAssignticket, updateAssignticket, deleteAssignticket"
+      ],
+      "depends_on": [
+        "task_assignticket_service"
+      ]
+    },
+    {
+      "id": "task_assignticket_frontend_pages",
+      "title": "Create frontend pages for Assignticket",
+      "order": 31,
+      "files": [
+        "frontend/src/pages/assignticket/List.tsx",
+        "frontend/src/pages/assignticket/New.tsx",
+        "frontend/src/pages/assignticket/Detail.tsx"
+      ],
+      "acceptance": [
+        "TypeScript typecheck passes",
+        "Pages render without errors"
+      ],
+      "depends_on": [
+        "task_assignticket_controller"
+      ]
+    },
+    {
+      "id": "task_assignticket_migration",
+      "title": "Create database migration for Assignticket",
+      "order": 25,
+      "files": [
+        "backend/src/main/resources/db/migration/V25__create_assignticket.sql"
+      ],
+      "acceptance": [
+        "Migration compiles without errors",
+        "Table assignticket exists in database"
+      ]
+    },
+    {
+      "id": "task_assignticket_model",
+      "title": "Create JPA Entity for Assignticket",
+      "order": 26,
+      "files": [
+        "backend/src/main/java/com/example/app/domain/Assignticket.java"
+      ],
+      "acceptance": [
+        "Build backend passes",
+        "Assignticket entity has all required fields"
+      ],
+      "depends_on": [
+        "task_assignticket_migration"
+      ]
+    },
+    {
+      "id": "task_assignticket_repository",
+      "title": "Create Repository for Assignticket",
+      "order": 27,
+      "files": [
+        "backend/src/main/java/com/example/app/repo/AssignticketRepository.java"
+      ],
+      "acceptance": [
+        "Build backend passes",
+        "AssignticketRepository extends JpaRepository"
+      ],
+      "depends_on": [
+        "task_assignticket_model"
+      ]
+    },
+    {
+      "id": "task_assignticket_security",
+      "title": "Configure security for Assignticket endpoints",
+      "order": 30,
+      "files": [
+        "backend/src/main/java/com/example/app/security/SecurityConfig.java"
+      ],
+      "acceptance": [
+        "Endpoints require authentication",
+        "RBAC roles are enforced"
+      ],
+      "depends_on": [
+        "task_assignticket_controller"
+      ]
+    },
+    {
+      "id": "task_assignticket_service",
+      "title": "Create Service for Assignticket",
+      "order": 28,
+      "files": [
+        "backend/src/main/java/com/example/app/service/AssignticketService.java"
+      ],
+      "acceptance": [
+        "Build backend passes",
+        "AssignticketService has CRUD methods"
+      ],
+      "depends_on": [
+        "task_assignticket_repository"
+      ]
+    },
+    {
+      "id": "task_customer_api_client",
+      "title": "Create API client for Customer",
+      "order": 8,
+      "files": [
+        "frontend/src/api/client.ts"
+      ],
+      "acceptance": [
+        "Build frontend passes",
+        "API client has methods for Customer CRUD"
+      ],
+      "depends_on": [
+        "task_customer_frontend_pages"
+      ]
+    },
+    {
+      "id": "task_customer_controller",
+      "title": "Create REST Controller for Customer",
+      "order": 5,
+      "files": [
+        "backend/src/main/java/com/example/app/api/CustomerController.java"
+      ],
+      "acceptance": [
+        "Contract tests pass",
+        "All endpoints return correct status codes",
+        "Implements operations: listCustomer, createCustomer, getCustomer, updateCustomer, deleteCustomer"
+      ],
+      "depends_on": [
+        "task_customer_service"
+      ]
+    },
+    {
+      "id": "task_customer_frontend_pages",
+      "title": "Create frontend pages for Customer",
+      "order": 7,
+      "files": [
+        "frontend/src/pages/customer/List.tsx",
+        "frontend/src/pages/customer/New.tsx",
+        "frontend/src/pages/customer/Detail.tsx"
+      ],
+      "acceptance": [
+        "TypeScript typecheck passes",
+        "Pages render without errors"
+      ],
+      "depends_on": [
+        "task_customer_controller"
+      ]
+    },
+    {
+      "id": "task_customer_migration",
+      "title": "Create database migration for Customer",
+      "order": 1,
+      "files": [
+        "backend/src/main/resources/db/migration/V1__create_customer.sql"
+      ],
+      "acceptance": [
+        "Migration compiles without errors",
+        "Table customer exists in database"
+      ]
+    },
+    {
+      "id": "task_customer_model",
+      "title": "Create JPA Entity for Customer",
+      "order": 2,
+      "files": [
+        "backend/src/main/java/com/example/app/domain/Customer.java"
+      ],
+      "acceptance": [
+        "Build backend passes",
+        "Customer entity has all required fields"
+      ],
+      "depends_on": [
+        "task_customer_migration"
+      ]
+    },
+    {
+      "id": "task_customer_repository",
+      "title": "Create Repository for Customer",
+      "order": 3,
+      "files": [
+        "backend/src/main/java/com/example/app/repo/CustomerRepository.java"
+      ],
+      "acceptance": [
+        "Build backend passes",
+        "CustomerRepository extends JpaRepository"
+      ],
+      "depends_on": [
+        "task_customer_model"
+      ]
+    },
+    {
+      "id": "task_customer_security",
+      "title": "Configure security for Customer endpoints",
+      "order": 6,
+      "files": [
+        "backend/src/main/java/com/example/app/security/SecurityConfig.java"
+      ],
+      "acceptance": [
+        "Endpoints require authentication",
+        "RBAC roles are enforced"
+      ],
+      "depends_on": [
+        "task_customer_controller"
+      ]
+    },
+    {
+      "id": "task_customer_service",
+      "title": "Create Service for Customer",
+      "order": 4,
+      "files": [
+        "backend/src/main/java/com/example/app/service/CustomerService.java"
+      ],
+      "acceptance": [
+        "Build backend passes",
+        "CustomerService has CRUD methods"
+      ],
+      "depends_on": [
+        "task_customer_repository"
+      ]
+    },
+    {
+      "id": "task_escalateticket_api_client",
+      "title": "Create API client for Escalateticket",
+      "order": 48,
+      "files": [
+        "frontend/src/api/client.ts"
+      ],
+      "acceptance": [
+        "Build frontend passes",
+        "API client has methods for Escalateticket CRUD"
+      ],
+      "depends_on": [
+        "task_escalateticket_frontend_pages"
+      ]
+    },
+    {
+      "id": "task_escalateticket_controller",
+      "title": "Create REST Controller for Escalateticket",
+      "order": 45,
+      "files": [
+        "backend/src/main/java/com/example/app/api/EscalateticketController.java"
+      ],
+      "acceptance": [
+        "Contract tests pass",
+        "All endpoints return correct status codes",
+        "Implements operations: listEscalateticket, createEscalateticket, getEscalateticket, updateEscalateticket, deleteEscalateticket"
+      ],
+      "depends_on": [
+        "task_escalateticket_service"
+      ]
+    },
+    {
+      "id": "task_escalateticket_frontend_pages",
+      "title": "Create frontend pages for Escalateticket",
+      "order": 47,
+      "files": [
+        "frontend/src/pages/escalateticket/List.tsx",
+        "frontend/src/pages/escalateticket/New.tsx",
+        "frontend/src/pages/escalateticket/Detail.tsx"
+      ],
+      "acceptance": [
+        "TypeScript typecheck passes",
+        "Pages render without errors"
+      ],
+      "depends_on": [
+        "task_escalateticket_controller"
+      ]
+    },
+    {
+      "id": "task_escalateticket_migration",
+      "title": "Create database migration for Escalateticket",
+      "order": 41,
+      "files": [
+        "backend/src/main/resources/db/migration/V41__create_escalateticket.sql"
+      ],
+      "acceptance": [
+        "Migration compiles without errors",
+        "Table escalateticket exists in database"
+      ]
+    },
+    {
+      "id": "task_escalateticket_model",
+      "title": "Create JPA Entity for Escalateticket",
+      "order": 42,
+      "files": [
+        "backend/src/main/java/com/example/app/domain/Escalateticket.java"
+      ],
+      "acceptance": [
+        "Build backend passes",
+        "Escalateticket entity has all required fields"
+      ],
+      "depends_on": [
+        "task_escalateticket_migration"
+      ]
+    },
+    {
+      "id": "task_escalateticket_repository",
+      "title": "Create Repository for Escalateticket",
+      "order": 43,
+      "files": [
+        "backend/src/main/java/com/example/app/repo/EscalateticketRepository.java"
+      ],
+      "acceptance": [
+        "Build backend passes",
+        "EscalateticketRepository extends JpaRepository"
+      ],
+      "depends_on": [
+        "task_escalateticket_model"
+      ]
+    },
+    {
+      "id": "task_escalateticket_security",
+      "title": "Configure security for Escalateticket endpoints",
+      "order": 46,
+      "files": [
+        "backend/src/main/java/com/example/app/security/SecurityConfig.java"
+      ],
+      "acceptance": [
+        "Endpoints require authentication",
+        "RBAC roles are enforced"
+      ],
+      "depends_on": [
+        "task_escalateticket_controller"
+      ]
+    },
+    {
+      "id": "task_escalateticket_service",
+      "title": "Create Service for Escalateticket",
+      "order": 44,
+      "files": [
+        "backend/src/main/java/com/example/app/service/EscalateticketService.java"
+      ],
+      "acceptance": [
+        "Build backend passes",
+        "EscalateticketService has CRUD methods"
+      ],
+      "depends_on": [
+        "task_escalateticket_repository"
+      ]
+    },
+    {
+      "id": "task_listticket_api_client",
+      "title": "Create API client for Listticket",
+      "order": 56,
+      "files": [
+        "frontend/src/api/client.ts"
+      ],
+      "acceptance": [
+        "Build frontend passes",
+        "API client has methods for Listticket CRUD"
+      ],
+      "depends_on": [
+        "task_listticket_frontend_pages"
+      ]
+    },
+    {
+      "id": "task_listticket_controller",
+      "title": "Create REST Controller for Listticket",
+      "order": 53,
+      "files": [
+        "backend/src/main/java/com/example/app/api/ListticketController.java"
+      ],
+      "acceptance": [
+        "Contract tests pass",
+        "All endpoints return correct status codes",
+        "Implements operations: listListticket, createListticket, getListticket, updateListticket, deleteListticket"
+      ],
+      "depends_on": [
+        "task_listticket_service"
+      ]
+    },
+    {
+      "id": "task_listticket_frontend_pages",
+      "title": "Create frontend pages for Listticket",
+      "order": 55,
+      "files": [
+        "frontend/src/pages/listticket/List.tsx",
+        "frontend/src/pages/listticket/New.tsx",
+        "frontend/src/pages/listticket/Detail.tsx"
+      ],
+      "acceptance": [
+        "TypeScript typecheck passes",
+        "Pages render without errors"
+      ],
+      "depends_on": [
+        "task_listticket_controller"
+      ]
+    },
+    {
+      "id": "task_listticket_migration",
+      "title": "Create database migration for Listticket",
+      "order": 49,
+      "files": [
+        "backend/src/main/resources/db/migration/V49__create_listticket.sql"
+      ],
+      "acceptance": [
+        "Migration compiles without errors",
+        "Table listticket exists in database"
+      ]
+    },
+    {
+      "id": "task_listticket_model",
+      "title": "Create JPA Entity for Listticket",
+      "order": 50,
+      "files": [
+        "backend/src/main/java/com/example/app/domain/Listticket.java"
+      ],
+      "acceptance": [
+        "Build backend passes",
+        "Listticket entity has all required fields"
+      ],
+      "depends_on": [
+        "task_listticket_migration"
+      ]
+    },
+    {
+      "id": "task_listticket_repository",
+      "title": "Create Repository for Listticket",
+      "order": 51,
+      "files": [
+        "backend/src/main/java/com/example/app/repo/ListticketRepository.java"
+      ],
+      "acceptance": [
+        "Build backend passes",
+        "ListticketRepository extends JpaRepository"
+      ],
+      "depends_on": [
+        "task_listticket_model"
+      ]
+    },
+    {
+      "id": "task_listticket_security",
+      "title": "Configure security for Listticket endpoints",
+      "order": 54,
+      "files": [
+        "backend/src/main/java/com/example/app/security/SecurityConfig.java"
+      ],
+      "acceptance": [
+        "Endpoints require authentication",
+        "RBAC roles are enforced"
+      ],
+      "depends_on": [
+        "task_listticket_controller"
+      ]
+    },
+    {
+      "id": "task_listticket_service",
+      "title": "Create Service for Listticket",
+      "order": 52,
+      "files": [
+        "backend/src/main/java/com/example/app/service/ListticketService.java"
+      ],
+      "acceptance": [
+        "Build backend passes",
+        "ListticketService has CRUD methods"
+      ],
+      "depends_on": [
+        "task_listticket_repository"
+      ]
+    },
+    {
+      "id": "task_resolution_api_client",
+      "title": "Create API client for Resolution",
+      "order": 24,
+      "files": [
+        "frontend/src/api/client.ts"
+      ],
+      "acceptance": [
+        "Build frontend passes",
+        "API client has methods for Resolution CRUD"
+      ],
+      "depends_on": [
+        "task_resolution_frontend_pages"
+      ]
+    },
+    {
+      "id": "task_resolution_controller",
+      "title": "Create REST Controller for Resolution",
+      "order": 21,
+      "files": [
+        "backend/src/main/java/com/example/app/api/ResolutionController.java"
+      ],
+      "acceptance": [
+        "Contract tests pass",
+        "All endpoints return correct status codes",
+        "Implements operations: listResolution, createResolution, getResolution, updateResolution, deleteResolution"
+      ],
+      "depends_on": [
+        "task_resolution_service"
+      ]
+    },
+    {
+      "id": "task_resolution_frontend_pages",
+      "title": "Create frontend pages for Resolution",
+      "order": 23,
+      "files": [
+        "frontend/src/pages/resolution/List.tsx",
+        "frontend/src/pages/resolution/New.tsx",
+        "frontend/src/pages/resolution/Detail.tsx"
+      ],
+      "acceptance": [
+        "TypeScript typecheck passes",
+        "Pages render without errors"
+      ],
+      "depends_on": [
+        "task_resolution_controller"
+      ]
+    },
+    {
+      "id": "task_resolution_migration",
+      "title": "Create database migration for Resolution",
+      "order": 17,
+      "files": [
+        "backend/src/main/resources/db/migration/V17__create_resolution.sql"
+      ],
+      "acceptance": [
+        "Migration compiles without errors",
+        "Table resolution exists in database"
+      ]
+    },
+    {
+      "id": "task_resolution_model",
+      "title": "Create JPA Entity for Resolution",
+      "order": 18,
+      "files": [
+        "backend/src/main/java/com/example/app/domain/Resolution.java"
+      ],
+      "acceptance": [
+        "Build backend passes",
+        "Resolution entity has all required fields"
+      ],
+      "depends_on": [
+        "task_resolution_migration"
+      ]
+    },
+    {
+      "id": "task_resolution_repository",
+      "title": "Create Repository for Resolution",
+      "order": 19,
+      "files": [
+        "backend/src/main/java/com/example/app/repo/ResolutionRepository.java"
+      ],
+      "acceptance": [
+        "Build backend passes",
+        "ResolutionRepository extends JpaRepository"
+      ],
+      "depends_on": [
+        "task_resolution_model"
+      ]
+    },
+    {
+      "id": "task_resolution_security",
+      "title": "Configure security for Resolution endpoints",
+      "order": 22,
+      "files": [
+        "backend/src/main/java/com/example/app/security/SecurityConfig.java"
+      ],
+      "acceptance": [
+        "Endpoints require authentication",
+        "RBAC roles are enforced"
+      ],
+      "depends_on": [
+        "task_resolution_controller"
+      ]
+    },
+    {
+      "id": "task_resolution_service",
+      "title": "Create Service for Resolution",
+      "order": 20,
+      "files": [
+        "backend/src/main/java/com/example/app/service/ResolutionService.java"
+      ],
+      "acceptance": [
+        "Build backend passes",
+        "ResolutionService has CRUD methods"
+      ],
+      "depends_on": [
+        "task_resolution_repository"
+      ]
+    },
+    {
+      "id": "task_resolveticket_api_client",
+      "title": "Create API client for Resolveticket",
+      "order": 40,
+      "files": [
+        "frontend/src/api/client.ts"
+      ],
+      "acceptance": [
+        "Build frontend passes",
+        "API client has methods for Resolveticket CRUD"
+      ],
+      "depends_on": [
+        "task_resolveticket_frontend_pages"
+      ]
+    },
+    {
+      "id": "task_resolveticket_controller",
+      "title": "Create REST Controller for Resolveticket",
+      "order": 37,
+      "files": [
+        "backend/src/main/java/com/example/app/api/ResolveticketController.java"
+      ],
+      "acceptance": [
+        "Contract tests pass",
+        "All endpoints return correct status codes",
+        "Implements operations: listResolveticket, createResolveticket, getResolveticket, updateResolveticket, deleteResolveticket"
+      ],
+      "depends_on": [
+        "task_resolveticket_service"
+      ]
+    },
+    {
+      "id": "task_resolveticket_frontend_pages",
+      "title": "Create frontend pages for Resolveticket",
+      "order": 39,
+      "files": [
+        "frontend/src/pages/resolveticket/List.tsx",
+        "frontend/src/pages/resolveticket/New.tsx",
+        "frontend/src/pages/resolveticket/Detail.tsx"
+      ],
+      "acceptance": [
+        "TypeScript typecheck passes",
+        "Pages render without errors"
+      ],
+      "depends_on": [
+        "task_resolveticket_controller"
+      ]
+    },
+    {
+      "id": "task_resolveticket_migration",
+      "title": "Create database migration for Resolveticket",
+      "order": 33,
+      "files": [
+        "backend/src/main/resources/db/migration/V33__create_resolveticket.sql"
+      ],
+      "acceptance": [
+        "Migration compiles without errors",
+        "Table resolveticket exists in database"
+      ]
+    },
+    {
+      "id": "task_resolveticket_model",
+      "title": "Create JPA Entity for Resolveticket",
+      "order": 34,
+      "files": [
+        "backend/src/main/java/com/example/app/domain/Resolveticket.java"
+      ],
+      "acceptance": [
+        "Build backend passes",
+        "Resolveticket entity has all required fields"
+      ],
+      "depends_on": [
+        "task_resolveticket_migration"
+      ]
+    },
+    {
+      "id": "task_resolveticket_repository",
+      "title": "Create Repository for Resolveticket",
+      "order": 35,
+      "files": [
+        "backend/src/main/java/com/example/app/repo/ResolveticketRepository.java"
+      ],
+      "acceptance": [
+        "Build backend passes",
+        "ResolveticketRepository extends JpaRepository"
+      ],
+      "depends_on": [
+        "task_resolveticket_model"
+      ]
+    },
+    {
+      "id": "task_resolveticket_security",
+      "title": "Configure security for Resolveticket endpoints",
+      "order": 38,
+      "files": [
+        "backend/src/main/java/com/example/app/security/SecurityConfig.java"
+      ],
+      "acceptance": [
+        "Endpoints require authentication",
+        "RBAC roles are enforced"
+      ],
+      "depends_on": [
+        "task_resolveticket_controller"
+      ]
+    },
+    {
+      "id": "task_resolveticket_service",
+      "title": "Create Service for Resolveticket",
+      "order": 36,
+      "files": [
+        "backend/src/main/java/com/example/app/service/ResolveticketService.java"
+      ],
+      "acceptance": [
+        "Build backend passes",
+        "ResolveticketService has CRUD methods"
+      ],
+      "depends_on": [
+        "task_resolveticket_repository"
+      ]
+    }
+  ]
+}

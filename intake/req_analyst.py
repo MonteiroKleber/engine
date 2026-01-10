@@ -310,6 +310,84 @@ def parse_field_list(field_text: str) -> List[str]:
     return fields
 
 
+def normalize_entity_name(raw_name: str) -> str:
+    """Normaliza nome de entidade de forma determinística e defensiva."""
+    # Usar apenas o trecho antes de "/" (evita nomes compostos por frases)
+    if "/" in raw_name:
+        raw_name = raw_name.split("/")[0]
+
+    name = remove_articles(raw_name)
+    name = singularize(name)
+    name = to_snake_case(name)
+    return name
+
+
+def is_valid_entity_name(name: str) -> bool:
+    """Valida nome de entidade para evitar nomes espúrios derivados de frases."""
+    if not name:
+        return False
+
+    if len(name) > 40:
+        return False
+
+    parts = name.split("_")
+
+    # Restringe a até 3 palavras (evita frases inteiras)
+    if len(parts) > 3:
+        return False
+
+    banned_prefixes = (
+        "quero",
+        "preciso",
+        "cadastrar",
+        "cadastro",
+        "sistema",
+        "controlar",
+        "gerenciar",
+    )
+    if name.startswith(banned_prefixes):
+        return False
+
+    banned_verbs = {
+        "quero",
+        "preciso",
+        "cadastrar",
+        "cadastro",
+        "controlar",
+        "gerenciar",
+        "criar",
+        "fazer",
+        "permitir",
+    }
+    if any(part in banned_verbs for part in parts):
+        return False
+
+    return True
+
+
+def normalize_and_validate_entity(raw_name: str) -> str:
+    """Retorna nome normalizado válido ou string vazia."""
+    name = normalize_entity_name(raw_name)
+    if is_valid_entity_name(name):
+        return name
+
+    # Fallback: última palavra (evita pegar frases completas com verbos)
+    # Somente se houver um gatilho claro de lista/cadastro
+    triggers = ("cadastrar", "cadastro", "com ")
+    raw_lower = raw_name.lower()
+    if not any(t in raw_lower for t in triggers):
+        return ""
+
+    tail_parts = raw_name.strip().split()
+    if tail_parts:
+        tail = tail_parts[-1]
+        alt = normalize_entity_name(tail)
+        if is_valid_entity_name(alt):
+            return alt
+
+    return ""
+
+
 def parse_form_a(text: str) -> List[EntityDeclaration]:
     """Forma A: entity(fields) - múltiplos matches via regex global.
 
@@ -319,16 +397,15 @@ def parse_form_a(text: str) -> List[EntityDeclaration]:
 
     # Regex para capturar "entity_name (field_list)"
     # Aceita entity_name com letras, números, espaços e hífens
-    pattern = r"([a-z][a-z0-9\s\-]*?)\s*\(([^)]+)\)"
+    boundary = rf"(?:(?<=^)|(?<=[,\.;\)])|(?<={re.escape(SEP_ENTITY)}))"
+    pattern = rf"{boundary}\s*(?:e\s+)?([a-z][a-z0-9\s\-/]*?)\s*\(([^)]+)\)"
 
     for match in re.finditer(pattern, text):
         raw_name = match.group(1).strip()
         raw_fields = match.group(2).strip()
 
         # Limpar nome da entidade
-        name = remove_articles(raw_name)
-        name = singularize(name)
-        name = to_snake_case(name)
+        name = normalize_and_validate_entity(raw_name)
 
         if not name or len(name) < 2:
             continue
@@ -358,8 +435,7 @@ def parse_form_b(text: str) -> List[EntityDeclaration]:
             raw_name = match.group(1).strip()
             raw_fields = match.group(2).strip()
 
-            name = singularize(raw_name)
-            name = to_snake_case(name)
+            name = normalize_and_validate_entity(raw_name)
 
             if not name or len(name) < 2:
                 continue
@@ -391,9 +467,7 @@ def parse_form_c(text: str) -> List[EntityDeclaration]:
         if raw_name.isdigit():
             continue
 
-        name = remove_articles(raw_name)
-        name = singularize(name)
-        name = to_snake_case(name)
+        name = normalize_and_validate_entity(raw_name)
 
         if not name or len(name) < 2:
             continue
@@ -508,13 +582,15 @@ def parse_entities(text: str) -> Tuple[List[EntityDeclaration], List[str]]:
                         seen_names.add(decl.name)
                         all_entities.append(decl)
 
-    # Forma D: aplicar no texto completo para pegar entidades soltas
-    form_d, warnings_d = parse_form_d(normalized)
-    for decl in form_d:
-        if decl.name not in seen_names:
-            seen_names.add(decl.name)
-            all_entities.append(decl)
-    all_warnings.extend(warnings_d)
+    # Forma D: Se nenhuma forma anterior encontrou entidades, tentar extrair entidades soltas.
+    # Forma D é usada apenas como fallback quando A, B, C não encontram nada.
+    if not all_entities:
+        form_d_entities, form_d_warnings = parse_form_d(normalized)
+        for decl in form_d_entities:
+            if decl.name not in seen_names:
+                seen_names.add(decl.name)
+                all_entities.append(decl)
+        all_warnings.extend(form_d_warnings)
 
     return all_entities, all_warnings
 

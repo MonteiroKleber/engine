@@ -1,0 +1,312 @@
+{
+  "schema_version": "wizard_session.v1",
+  "session_id": "a1c3ed00-a82d-4872-b18d-fa0cc4b2e4d4",
+  "project": {
+    "name": "atendimento",
+    "domain": "customer_service",
+    "objective": "Sistema de atendimento ao cliente com tickets, agentes e resoluções"
+  },
+  "steps": [
+    {
+      "step_id": "system_info",
+      "title": "System Information",
+      "status": "partial",
+      "fields": [
+        {
+          "field_id": "system_name",
+          "value": "atendimento",
+          "required": true
+        },
+        {
+          "field_id": "domain",
+          "value": "customer_service",
+          "required": true
+        },
+        {
+          "field_id": "objective",
+          "value": "Sistema de atendimento ao cliente com tickets, agentes e resoluções",
+          "required": false
+        }
+      ]
+    },
+    {
+      "step_id": "actors",
+      "title": "Actors & Roles",
+      "status": "partial",
+      "fields": [
+        {
+          "field_id": "actors_list",
+          "value": [
+            {
+              "name": "Customer",
+              "description": "End user requesting support"
+            },
+            {
+              "name": "Agent",
+              "description": "Support staff handling tickets"
+            },
+            {
+              "name": "Manager",
+              "description": "Team supervisor with escalation authority"
+            }
+          ],
+          "required": true
+        }
+      ]
+    },
+    {
+      "step_id": "entities",
+      "title": "Domain Entities",
+      "status": "partial",
+      "fields": [
+        {
+          "field_id": "entities_list",
+          "value": [
+            {
+              "name": "Ticket",
+              "description": "Customer support request",
+              "fields": [
+                {
+                  "name": "id",
+                  "type": "uuid",
+                  "required": true
+                },
+                {
+                  "name": "customer_id",
+                  "type": "uuid",
+                  "required": true
+                },
+                {
+                  "name": "subject",
+                  "type": "string",
+                  "required": true
+                },
+                {
+                  "name": "description",
+                  "type": "text",
+                  "required": true
+                },
+                {
+                  "name": "status",
+                  "type": "enum",
+                  "enum_values": [
+                    "open",
+                    "assigned",
+                    "in_progress",
+                    "resolved",
+                    "closed"
+                  ],
+                  "required": true
+                },
+                {
+                  "name": "priority",
+                  "type": "enum",
+                  "enum_values": [
+                    "low",
+                    "medium",
+                    "high",
+                    "critical"
+                  ],
+                  "required": true
+                },
+                {
+                  "name": "created_at",
+                  "type": "datetime",
+                  "required": true
+                }
+              ]
+            },
+            {
+              "name": "Customer",
+              "description": "Customer profile",
+              "fields": [
+                {
+                  "name": "id",
+                  "type": "uuid",
+                  "required": true
+                },
+                {
+                  "name": "name",
+                  "type": "string",
+                  "required": true
+                },
+                {
+                  "name": "email",
+                  "type": "email",
+                  "required": true
+                },
+                {
+                  "name": "phone",
+                  "type": "string",
+                  "required": false
+                },
+                {
+                  "name": "tier",
+                  "type": "enum",
+                  "enum_values": [
+                    "standard",
+                    "premium",
+                    "enterprise"
+                  ],
+                  "required": true
+                }
+              ]
+            },
+            {
+              "name": "Agent",
+              "description": "Support agent",
+              "fields": [
+                {
+                  "name": "id",
+                  "type": "uuid",
+                  "required": true
+                },
+                {
+                  "name": "name",
+                  "type": "string",
+                  "required": true
+                },
+                {
+                  "name": "department",
+                  "type": "string",
+                  "required": true
+                },
+                {
+                  "name": "skills",
+                  "type": "array",
+                  "required": false
+                }
+              ]
+            },
+            {
+              "name": "Resolution",
+              "description": "Ticket resolution record",
+              "fields": [
+                {
+                  "name": "id",
+                  "type": "uuid",
+                  "required": true
+                },
+                {
+                  "name": "ticket_id",
+                  "type": "uuid",
+                  "required": true
+                },
+                {
+                  "name": "agent_id",
+                  "type": "uuid",
+                  "required": true
+                },
+                {
+                  "name": "resolution_text",
+                  "type": "text",
+                  "required": true
+                },
+                {
+                  "name": "resolved_at",
+                  "type": "datetime",
+                  "required": true
+                }
+              ]
+            }
+          ],
+          "required": true
+        }
+      ]
+    },
+    {
+      "step_id": "use_cases",
+      "title": "Use Cases",
+      "status": "partial",
+      "fields": [
+        {
+          "field_id": "use_cases_list",
+          "value": [
+            {
+              "name": "CreateTicket",
+              "description": "Open a new support ticket",
+              "actor": "Customer",
+              "steps": [
+                "Customer submits ticket with subject and description",
+                "System assigns priority based on customer tier",
+                "System creates ticket with open status"
+              ]
+            },
+            {
+              "name": "AssignTicket",
+              "description": "Assign ticket to an agent",
+              "actor": "Manager",
+              "steps": [
+                "Manager selects ticket and agent",
+                "System validates agent availability",
+                "System updates ticket status to assigned"
+              ]
+            },
+            {
+              "name": "ResolveTicket",
+              "description": "Mark ticket as resolved",
+              "actor": "Agent",
+              "steps": [
+                "Agent enters resolution text",
+                "System creates resolution record",
+                "System updates ticket status to resolved"
+              ]
+            },
+            {
+              "name": "EscalateTicket",
+              "description": "Escalate ticket to higher tier",
+              "actor": "Agent",
+              "steps": [
+                "Agent requests escalation with reason",
+                "System notifies manager",
+                "System updates ticket priority"
+              ]
+            },
+            {
+              "name": "ListTickets",
+              "description": "Query tickets with filters",
+              "actor": "Agent",
+              "steps": [
+                "User specifies filter criteria",
+                "System returns matching tickets",
+                "Results sorted by priority and date"
+              ]
+            }
+          ],
+          "required": false
+        }
+      ]
+    },
+    {
+      "step_id": "integrations",
+      "title": "Integrations",
+      "status": "partial",
+      "fields": [
+        {
+          "field_id": "integrations_list",
+          "value": [],
+          "required": false
+        }
+      ]
+    },
+    {
+      "step_id": "nonfunctional",
+      "title": "Non-Functional Requirements",
+      "status": "partial",
+      "fields": [
+        {
+          "field_id": "performance",
+          "value": null,
+          "required": false
+        },
+        {
+          "field_id": "security",
+          "value": null,
+          "required": false
+        }
+      ]
+    }
+  ],
+  "evidence": [],
+  "open_questions": []
+}

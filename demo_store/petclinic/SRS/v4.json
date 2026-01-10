@@ -1,5 +1,5 @@
 {
-  "id": "srs-3b8652ee",
+  "id": "srs-22471622",
   "title": "Sistema Petclinic",
   "version": "1.0.0",
   "requirements": [
@@ -212,6 +212,12 @@
       "description": "O sistema deve permitir excluir pagamento",
       "priority": "low",
       "type": "functional"
+    },
+    {
+      "id": "FR-WF-036",
+      "description": "O sistema deve permitir converter agendamento em atendimento",
+      "priority": "medium",
+      "type": "functional"
     }
   ],
   "meta": {
@@ -292,7 +298,8 @@
           "name": "tutor_id",
           "type": "uuid",
           "required": true,
-          "unique": false
+          "unique": false,
+          "nullable": false
         }
       ]
     },
@@ -345,13 +352,15 @@
           "name": "pet_id",
           "type": "uuid",
           "required": true,
-          "unique": false
+          "unique": false,
+          "nullable": false
         },
         {
           "name": "veterinario_id",
           "type": "uuid",
           "required": true,
-          "unique": false
+          "unique": false,
+          "nullable": false
         },
         {
           "name": "motivo",
@@ -387,7 +396,8 @@
           "name": "pet_id",
           "type": "uuid",
           "required": true,
-          "unique": false
+          "unique": false,
+          "nullable": false
         },
         {
           "name": "vacina",
@@ -433,12 +443,15 @@
           "name": "pet_id",
           "type": "uuid",
           "required": true,
-          "unique": false
+          "unique": false,
+          "nullable": false
         },
         {
-          "name": "veterinario_opcional",
-          "type": "string",
-          "required": true
+          "name": "veterinario_id",
+          "type": "uuid",
+          "required": false,
+          "unique": false,
+          "nullable": true
         },
         {
           "name": "servico",
@@ -459,7 +472,8 @@
           "name": "atendimento_id",
           "type": "uuid",
           "required": true,
-          "unique": false
+          "unique": false,
+          "nullable": false
         },
         {
           "name": "forma_pagamento",
@@ -489,40 +503,74 @@
       "from": "pet",
       "to": "tutor",
       "type": "many_to_one",
-      "field": "tutor_id"
+      "field": "tutor_id",
+      "optional": false
     },
     {
       "from": "atendimento",
       "to": "pet",
       "type": "many_to_one",
-      "field": "pet_id"
+      "field": "pet_id",
+      "optional": false
     },
     {
       "from": "atendimento",
       "to": "veterinario",
       "type": "many_to_one",
-      "field": "veterinario_id"
+      "field": "veterinario_id",
+      "optional": false
     },
     {
       "from": "vacina",
       "to": "pet",
       "type": "many_to_one",
-      "field": "pet_id"
+      "field": "pet_id",
+      "optional": false
     },
     {
       "from": "agendamento",
       "to": "pet",
       "type": "many_to_one",
-      "field": "pet_id"
+      "field": "pet_id",
+      "optional": false
+    },
+    {
+      "from": "agendamento",
+      "to": "veterinario",
+      "type": "many_to_one",
+      "field": "veterinario_id",
+      "optional": true
     },
     {
       "from": "pagamento",
       "to": "atendimento",
       "type": "many_to_one",
-      "field": "atendimento_id"
+      "field": "atendimento_id",
+      "optional": false
     }
   ],
-  "business_rules": [],
+  "business_rules": [
+    {
+      "type": "ownership_required",
+      "entity": "sempre",
+      "target_entity": "um",
+      "raw_text": "sempre pertence a um"
+    },
+    {
+      "type": "conversion",
+      "entity": "agendamento",
+      "target_entity": "atendimento",
+      "raw_text": "agendamento pode virar atendimento"
+    }
+  ],
+  "workflows": [
+    {
+      "source": "agendamento",
+      "target": "atendimento",
+      "action": "convert",
+      "endpoint": "/api/agendamento/{id}/convert-to-atendimento"
+    }
+  ],
   "non_functional_requirements": {
     "security": {
       "auth_required": true,
@@ -530,7 +578,7 @@
     }
   },
   "metadata": {
-    "created_at": "2026-01-04T18:43:51.510704",
+    "created_at": "2026-01-05T10:39:34.344886",
     "language": "pt-BR",
     "actors": [
       {
@@ -539,13 +587,13 @@
         "description": "Usuário administrador do sistema"
       }
     ],
-    "summary": "tutores (nome, cpf, telefone, email, endereço); pets (nome, espécie, raça, sexo, data de nascimento, peso, observações, tutor); veterinários (nome, CRMV, especialidade, telefone, email); atendimentos...",
+    "summary": "Quero um sistema web para controle de clínica veterinária (clínica pet)",
     "open_questions": [
       "Autenticação é necessária? Qual tipo (login/senha, OAuth, SSO)?",
-      "Quais perfis de usuário existem além de admin?",
-      "Quais são as principais entidades/recursos do sistema?"
+      "Quais são as principais entidades/recursos do sistema?",
+      "Existem regras de permissão específicas por perfil?"
     ],
     "warnings": [],
-    "generation_mode": "MINIGRAMMAR"
+    "generation_mode": "MINIGRAMMAR_V2"
   }
 }

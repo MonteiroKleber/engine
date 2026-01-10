@@ -1,0 +1,90 @@
+{
+  "id": "srs-113236bf",
+  "title": "Sistema Petclinic",
+  "version": "1.0.0",
+  "requirements": [
+    {
+      "id": "FR-001",
+      "description": "O sistema deve permitir cadastrar role",
+      "priority": "high",
+      "type": "functional"
+    },
+    {
+      "id": "FR-002",
+      "description": "O sistema deve permitir listar role",
+      "priority": "medium",
+      "type": "functional"
+    },
+    {
+      "id": "FR-003",
+      "description": "O sistema deve permitir visualizar role",
+      "priority": "medium",
+      "type": "functional"
+    },
+    {
+      "id": "FR-004",
+      "description": "O sistema deve permitir editar role",
+      "priority": "medium",
+      "type": "functional"
+    },
+    {
+      "id": "FR-005",
+      "description": "O sistema deve permitir excluir role",
+      "priority": "low",
+      "type": "functional"
+    }
+  ],
+  "meta": {
+    "project_name": "Sistema Petclinic"
+  },
+  "data_requirements": [
+    {
+      "entity": "role",
+      "fields": [
+        {
+          "name": "admin",
+          "type": "string",
+          "required": true
+        },
+        {
+          "name": "vet",
+          "type": "string",
+          "required": true
+        },
+        {
+          "name": "recepcionist",
+          "type": "string",
+          "required": true
+        }
+      ]
+    }
+  ],
+  "relations": [],
+  "business_rules": [],
+  "workflows": [],
+  "non_functional_requirements": {
+    "security": {
+      "auth_required": true,
+      "audit_log_required": false
+    }
+  },
+  "metadata": {
+    "created_at": "2026-01-05T16:02:14.046684",
+    "language": "pt-BR",
+    "actors": [
+      {
+        "id": "admin",
+        "name": "Administrador",
+        "description": "Usuário administrador do sistema"
+      }
+    ],
+    "summary": "Quero um sistema web para controle de clínica veterinária",
+    "open_questions": [
+      "Quais são as principais entidades/recursos do sistema?",
+      "Existem regras de permissão específicas por perfil?",
+      "Há necessidade de auditoria/log de ações?"
+    ],
+    "warnings": [],
+    "generation_mode": "MINIGRAMMAR_V2"
+  }
+}

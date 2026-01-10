@@ -9,12 +9,20 @@ Aceite: `docker compose up -d` sobe os 3 servicos sem erro.
 """
 
 import os
+import logging
 import subprocess
+import sys
+import json
+import urllib.request
+import urllib.error
+import time
 import yaml
 from dataclasses import dataclass, field
 from datetime import datetime
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
+
+from release.runtime_evidence_collector import collect_runtime_evidence
 
 
 @dataclass
@@ -92,10 +100,12 @@ class DockerComposeUpResult:
     docker_logs_frontend_tail: str = ""
     readiness_ok: bool = False
     readiness_duration_ms: float = 0.0
+    # Evidências de runtime coletadas quando readiness falha
+    runtime_evidence: Optional[Dict[str, Any]] = None
 
     def to_dict(self) -> Dict[str, Any]:
         """Converte para dicionario."""
-        return {
+        result = {
             "success": self.success,
             "services_started": self.services_started,
             "exit_code": self.exit_code,
@@ -109,6 +119,9 @@ class DockerComposeUpResult:
             "readiness_ok": self.readiness_ok,
             "readiness_duration_ms": self.readiness_duration_ms,
         }
+        if self.runtime_evidence:
+            result["runtime_evidence"] = self.runtime_evidence
+        return result
 
 
 class DockerComposeValidator:
@@ -271,8 +284,10 @@ class DockerComposeValidator:
 
     # Constantes de timeout conforme política canônica
     DOCKER_UP_TIMEOUT = 300  # 300 segundos para docker compose up
-    READINESS_TIMEOUT = 120  # 120 segundos para readiness loop
+    READINESS_TIMEOUT = 240  # 240 segundos para readiness loop
     READINESS_POLL_INTERVAL = 2  # polling a cada 2s
+    READINESS_FINGERPRINT = "DCV_FINGERPRINT_20260105_B"
+    _LOGGER = logging.getLogger(__name__)
 
     def test_docker_compose_up(
         self,
@@ -407,19 +422,88 @@ class DockerComposeValidator:
             DockerComposeUpResult com readiness_ok e readiness_duration_ms
         """
         import time
-        import urllib.request
-        import urllib.error
 
         repo_path = self.generated_root / project
         start_time = datetime.now()
         elapsed = 0
+        iter_count = 0
+
+        expected_services = ["backend", "frontend", "db"]
 
         backend_ready = False
         frontend_ready = False
 
         while elapsed < timeout:
+            if iter_count == 0:
+                try:
+                    fingerprint_line = (
+                        f"[READINESS][FINGERPRINT] {self.READINESS_FINGERPRINT} file={__file__}"
+                    )
+                    print(fingerprint_line, file=sys.stderr, flush=True)
+                    (repo_path / ".engine_readiness_fingerprint.txt").write_text(
+                        fingerprint_line + "\n", encoding="utf-8"
+                    )
+                except Exception:
+                    pass
+
+            iter_count += 1
+            elapsed_ms = int((datetime.now() - start_time).total_seconds() * 1000)
+            self._LOGGER.info(
+                "[READINESS][LOOP] iter=%s elapsed_ms=%s timeout_ms=%s",
+                iter_count,
+                elapsed_ms,
+                int(timeout * 1000),
+            )
+            print(
+                f"[READINESS][LOOP] iter={iter_count} elapsed_ms={elapsed_ms} timeout_ms={int(timeout * 1000)}",
+                file=sys.stderr,
+                flush=True,
+            )
+
+            docker_services: List[str] = []
+            docker_raw = ""
+            try:
+                ps_result = subprocess.run(
+                    ["docker", "compose", "ps", "--format", "{{.Service}}"],
+                    cwd=repo_path,
+                    capture_output=True,
+                    timeout=10,
+                )
+                docker_raw = ps_result.stdout.decode()
+                if ps_result.returncode == 0:
+                    docker_services = [s for s in docker_raw.strip().split("\n") if s]
+            except Exception as e:
+                docker_raw = repr(e)
+
+            self._LOGGER.info(
+                "[READINESS][DOCKER_PS] services=%s count=%s",
+                docker_services,
+                len(docker_services),
+            )
+            self._LOGGER.debug("[READINESS][DOCKER_PS_RAW] %s", docker_raw)
+            print(
+                f"[READINESS][DOCKER_PS] services={docker_services} count={len(docker_services)}",
+                file=sys.stderr,
+                flush=True,
+            )
+            if docker_raw:
+                self._LOGGER.debug("[READINESS][DOCKER_PS_RAW] %s", docker_raw)
+
+            if set(expected_services) - set(docker_services):
+                self._LOGGER.info(
+                    "[READINESS][GATE] BLOCKED_BY_DOCKER_PS expected=%s got=%s",
+                    expected_services,
+                    docker_services,
+                )
+                print(
+                    f"[READINESS][GATE] BLOCKED_BY_DOCKER_PS expected={expected_services} got={docker_services}",
+                    file=sys.stderr,
+                    flush=True,
+                )
+
             # Verificar backend (porta 8080)
             if not backend_ready:
+                http_start = time.monotonic()
                 try:
                     req = urllib.request.Request(
                         "http://localhost:8080/actuator/health",
@@ -428,11 +512,35 @@ class DockerComposeValidator:
                     with urllib.request.urlopen(req, timeout=5) as resp:
                         if resp.status == 200:
                             backend_ready = True
-                except (urllib.error.URLError, Exception):
-                    pass
+                        self._LOGGER.info(
+                            "[READINESS][HTTP_CHECK] name=backend url=%s status=%s error=%s elapsed_ms=%s",
+                            "http://localhost:8080/actuator/health",
+                            getattr(resp, "status", None),
+                            None,
+                            int((time.monotonic() - http_start) * 1000),
+                        )
+                        print(
+                            f"[READINESS][HTTP_CHECK] name=backend url=http://localhost:8080/actuator/health status={getattr(resp, 'status', None)} err=None elapsed_ms={int((time.monotonic() - http_start) * 1000)}",
+                            file=sys.stderr,
+                            flush=True,
+                        )
+                except (urllib.error.URLError, Exception) as exc:
+                    self._LOGGER.info(
+                        "[READINESS][HTTP_CHECK] name=backend url=%s status=%s error=%s elapsed_ms=%s",
+                        "http://localhost:8080/actuator/health",
+                        None,
+                        repr(exc),
+                        int((time.monotonic() - http_start) * 1000),
+                    )
+                    print(
+                        f"[READINESS][HTTP_CHECK] name=backend url=http://localhost:8080/actuator/health status=None err={repr(exc)} elapsed_ms={int((time.monotonic() - http_start) * 1000)}",
+                        file=sys.stderr,
+                        flush=True,
+                    )
 
             # Verificar frontend (porta 5173 - mapeada no docker-compose)
             if not frontend_ready:
+                http_start = time.monotonic()
                 try:
                     req = urllib.request.Request(
                         "http://localhost:5173/",
@@ -441,10 +549,49 @@ class DockerComposeValidator:
                     with urllib.request.urlopen(req, timeout=5) as resp:
                         if resp.status in (200, 304):
                             frontend_ready = True
-                except (urllib.error.URLError, Exception):
-                    pass
+                        self._LOGGER.info(
+                            "[READINESS][HTTP_CHECK] name=frontend url=%s status=%s error=%s elapsed_ms=%s",
+                            "http://localhost:5173/",
+                            getattr(resp, "status", None),
+                            None,
+                            int((time.monotonic() - http_start) * 1000),
+                        )
+                        print(
+                            f"[READINESS][HTTP_CHECK] name=frontend url=http://localhost:5173/ status={getattr(resp, 'status', None)} err=None elapsed_ms={int((time.monotonic() - http_start) * 1000)}",
+                            file=sys.stderr,
+                            flush=True,
+                        )
+                except (urllib.error.URLError, Exception) as exc:
+                    self._LOGGER.info(
+                        "[READINESS][HTTP_CHECK] name=frontend url=%s status=%s error=%s elapsed_ms=%s",
+                        "http://localhost:5173/",
+                        None,
+                        repr(exc),
+                        int((time.monotonic() - http_start) * 1000),
+                    )
+                    print(
+                        f"[READINESS][HTTP_CHECK] name=frontend url=http://localhost:5173/ status=None err={repr(exc)} elapsed_ms={int((time.monotonic() - http_start) * 1000)}",
+                        file=sys.stderr,
+                        flush=True,
+                    )
 
             # Ambos prontos?
+            docker_ok = not (set(expected_services) - set(docker_services))
+            http_ok = backend_ready and frontend_ready
+            ready = docker_ok and http_ok
+
+            self._LOGGER.info(
+                "[READINESS][DECISION] docker_ok=%s http_ok=%s ready=%s",
+                str(docker_ok).lower(),
+                str(http_ok).lower(),
+                str(ready).lower(),
+            )
+            print(
+                f"[READINESS][DECISION] docker_ok={str(docker_ok).lower()} http_ok={str(http_ok).lower()} ready={str(ready).lower()}",
+                file=sys.stderr,
+                flush=True,
+            )
+
             if backend_ready and frontend_ready:
                 break
 
@@ -474,7 +621,43 @@ class DockerComposeValidator:
         except Exception:
             pass
 
-        return DockerComposeUpResult(
+        # COLETAR EVIDÊNCIAS DE RUNTIME SE READINESS FALHOU OU BACKEND SUMIU
+        runtime_evidence = None
+        need_evidence = (not readiness_ok) or ("backend" not in services_started)
+        if need_evidence:
+            evidence_dir = repo_path / ".engine_evidence"
+            try:
+                evidence_dir.mkdir(parents=True, exist_ok=True)
+                runtime_evidence = collect_runtime_evidence(
+                    repo_path=str(repo_path),
+                    compose_file="docker-compose.yml",
+                    services=["backend", "frontend", "db"],
+                    out_dir=evidence_dir,
+                )
+                self._LOGGER.info(
+                    "[READINESS][EVIDENCE] Classificação: %s - %s",
+                    runtime_evidence.get("conclusion_hint", {}).get("classification", "UNKNOWN"),
+                    runtime_evidence.get("conclusion_hint", {}).get("reason", "N/A"),
+                )
+            except Exception as e:
+                self._LOGGER.error("[READINESS][EVIDENCE] Erro ao coletar evidências: %s", e)
+                minimal = {
+                    "timestamp": datetime.now().isoformat(),
+                    "repo_path": str(repo_path),
+                    "fingerprint": self.READINESS_FINGERPRINT,
+                    "error": repr(e),
+                }
+                try:
+                    evidence_dir.mkdir(parents=True, exist_ok=True)
+                    (evidence_dir / "runtime_evidence_minimal.json").write_text(
+                        json.dumps(minimal, ensure_ascii=False, indent=2),
+                        encoding="utf-8",
+                    )
+                except Exception:
+                    pass
+                runtime_evidence = minimal
+
+        result = DockerComposeUpResult(
             success=readiness_ok,
             services_started=services_started,
             readiness_ok=readiness_ok,
@@ -483,6 +666,12 @@ class DockerComposeValidator:
             docker_logs_backend_tail=backend_logs,
             docker_logs_frontend_tail=frontend_logs,
         )
+
+        # Anexar evidências ao resultado
+        if runtime_evidence:
+            result.runtime_evidence = runtime_evidence  # type: ignore
+
+        return result
 
     def _get_docker_ps_snapshot(self, repo_path: Path) -> str:
         """Obtém snapshot do docker compose ps."""

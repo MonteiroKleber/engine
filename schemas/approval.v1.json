@@ -1,0 +1,138 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "approval.v1.json",
+  "title": "Approval v1",
+  "description": "Contrato de aprovação humana explícita para governança enterprise. Nenhum release sem aprovação.",
+  "type": "object",
+  "required": [
+    "schema_version",
+    "approval_id",
+    "episode_id",
+    "approver",
+    "decision",
+    "reason",
+    "scope",
+    "signatures"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": {
+      "type": "string",
+      "const": "approval.v1",
+      "description": "Versão fixa do schema"
+    },
+    "approval_id": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Identificador único da aprovação"
+    },
+    "episode_id": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Identificador do episódio sendo aprovado"
+    },
+    "approver": {
+      "$ref": "#/definitions/approver",
+      "description": "Informações do aprovador"
+    },
+    "decision": {
+      "type": "string",
+      "enum": ["approve", "reject"],
+      "description": "Decisão de aprovação"
+    },
+    "reason": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Justificativa obrigatória (enterprise audit)"
+    },
+    "scope": {
+      "$ref": "#/definitions/scope",
+      "description": "Escopo do que está sendo aprovado"
+    },
+    "signatures": {
+      "type": "array",
+      "items": {
+        "$ref": "#/definitions/signature"
+      },
+      "description": "Lista de assinaturas (pode ser vazia, mas deve existir)"
+    },
+    "volatile": {
+      "type": "object",
+      "additionalProperties": true,
+      "description": "Campos voláteis que NÃO afetam hash/canonização",
+      "properties": {
+        "timestamp": {
+          "type": ["string", "null"],
+          "description": "Timestamp da aprovação (ISO 8601)"
+        },
+        "client_info": {
+          "type": ["object", "null"],
+          "description": "Informações do cliente"
+        }
+      }
+    }
+  },
+  "definitions": {
+    "approver": {
+      "type": "object",
+      "required": ["display_name", "role"],
+      "additionalProperties": false,
+      "properties": {
+        "display_name": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Nome de exibição do aprovador"
+        },
+        "role": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Papel/função do aprovador"
+        },
+        "org": {
+          "type": ["string", "null"],
+          "description": "Organização do aprovador"
+        }
+      }
+    },
+    "scope": {
+      "type": "object",
+      "required": ["what"],
+      "additionalProperties": false,
+      "properties": {
+        "what": {
+          "type": "string",
+          "enum": ["release", "plan", "contracts", "idl"],
+          "description": "Tipo de artefato sendo aprovado"
+        },
+        "artifact_hashes": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "pattern": "^sha256:[a-f0-9]{64}$"
+          },
+          "description": "Hashes dos artefatos aprovados (opcional)"
+        }
+      }
+    },
+    "signature": {
+      "type": "object",
+      "required": ["scheme"],
+      "additionalProperties": false,
+      "properties": {
+        "scheme": {
+          "type": "string",
+          "enum": ["attestation", "pgp", "x509", "manual"],
+          "description": "Esquema de assinatura"
+        },
+        "signature": {
+          "type": ["string", "null"],
+          "description": "Valor da assinatura"
+        },
+        "public_key_id": {
+          "type": ["string", "null"],
+          "description": "Identificador da chave pública"
+        }
+      }
+    }
+  }
+}

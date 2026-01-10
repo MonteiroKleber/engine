@@ -1,0 +1,36 @@
+{
+  "schema_version": "idl_change_request.v1",
+  "change_request_id": "CR-XXX-001",
+  "previous_episode_id": "EPISODE_ID_HERE",
+  "reason": "Descreva o motivo da mudanca de forma clara e objetiva.",
+  "requested_by": {
+    "display_name": "Nome do Solicitante",
+    "role": "Product Owner",
+    "org": "Nome da Organizacao"
+  },
+  "scope": {
+    "summary": "Resumo em uma linha do que sera alterado",
+    "target": "backend",
+    "entities_affected": [],
+    "usecases_affected": []
+  },
+  "acceptance_criteria": [
+    "Criterio 1: O que deve funcionar apos a mudanca",
+    "Criterio 2: Outro comportamento esperado"
+  ],
+  "invariants": [
+    {
+      "name": "backward_compatible",
+      "description": "APIs existentes devem continuar funcionando",
+      "severity": "must"
+    }
+  ],
+  "risk": {
+    "level": "low",
+    "notes": "Justificativa do nivel de risco"
+  },
+  "attachments": [],
+  "volatile": {
+    "timestamp": "YYYY-MM-DDTHH:MM:SSZ"
+  }
+}

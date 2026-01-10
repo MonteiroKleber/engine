@@ -113,7 +113,7 @@ class TestPipelineToIR:
 
         result = engine.run(
             project="ref_test",
-            raw_input="cadastros (nome, tipo)",
+            raw_input="produtos (nome, tipo)",
         )
 
         with open(result.ir_path) as f:
@@ -358,7 +358,7 @@ class TestPipelineIRValidation:
 
         result = engine.run(
             project="validation_test",
-            raw_input="cadastros (nome, tipo)",
+            raw_input="produtos (nome, tipo)",
         )
 
         # Deve ter passado validação

@@ -792,7 +792,7 @@ components:
           type: string
         pet_id:
           type: string
-        veterinario_opcional:
+        veterinario_id:
           type: string
         servico:
           type: string
@@ -803,7 +803,6 @@ components:
       - data
       - hora
       - pet_id
-      - veterinario_opcional
       - servico
       - status
     Pagamento:

@@ -27,9 +27,11 @@ from release.docker_compose_validator import (
     DockerComposeValidator,
     DockerComposeValidationResult,
     DockerComposeUpResult,
+    DockerContextValidationResult,
 )
 from release.smoke_runner import SmokeRunner, SmokeReport, SmokeResult
 from release import smoke_runner as smoke_runner_module
+from repo.repo_generator import ReleaseFailureCategory
 
 
 @pytest.fixture
@@ -151,7 +153,7 @@ class TestRunReleaseBuildFailure:
 
             assert result.success is False
             assert result.build_ok is False
-            assert result.final_status == "build_failed"
+            assert result.final_status == ReleaseFailureCategory.BUILD_FAILED.value
             assert result.docker_compose_ok is False
             assert result.smoke_ok is False
 
@@ -191,11 +193,13 @@ class TestRunReleaseDockerCompose:
                 with patch.object(engine, "_rollback_release") as mock_rollback:
                     result = engine.run_release("biblioteca", sample_input)
 
-                    mock_rollback.assert_called_once_with("biblioteca")
+                    mock_rollback.assert_called_once_with(
+                        "biblioteca", ReleaseFailureCategory.DOCKER_UP_FAILED
+                    )
 
         assert result.success is False
         assert result.docker_compose_ok is False
-        assert result.final_status == "docker_compose_invalid"
+        assert result.final_status == ReleaseFailureCategory.DOCKER_UP_FAILED.value
 
     def test_docker_compose_up_failed_triggers_rollback(self, engine, sample_input):
         """docker compose up falhar deve fazer rollback."""
@@ -213,21 +217,25 @@ class TestRunReleaseDockerCompose:
                     file_exists=True,
                     services_found=["postgres", "backend", "frontend"],
                 ))
-                with patch.object(DockerComposeValidator, "test_docker_compose_up") as mock_up:
-                    mock_up.return_value = DockerComposeUpResult(
-                        success=False,
-                        exit_code=1,
-                        stderr="Error: port already in use",
-                    )
-                    with patch.object(DockerComposeValidator, "stop_services") as mock_stop:
-                        with patch.object(engine, "_rollback_release") as mock_rollback:
-                            result = engine.run_release("biblioteca", sample_input)
+                with patch.object(DockerComposeValidator, "validate_build_contexts") as mock_ctx:
+                    mock_ctx.return_value = DockerContextValidationResult(valid=True)
+                    with patch.object(DockerComposeValidator, "test_docker_compose_up") as mock_up:
+                        mock_up.return_value = DockerComposeUpResult(
+                            success=False,
+                            exit_code=1,
+                            stderr="Error: port already in use",
+                        )
+                        with patch.object(DockerComposeValidator, "stop_services") as mock_stop:
+                            with patch.object(engine, "_rollback_release") as mock_rollback:
+                                result = engine.run_release("biblioteca", sample_input)
 
-                            mock_stop.assert_called_once_with("biblioteca")
-                            mock_rollback.assert_called_once_with("biblioteca")
+                                mock_stop.assert_called_once_with("biblioteca")
+                                mock_rollback.assert_called_once_with(
+                                    "biblioteca", ReleaseFailureCategory.DOCKER_UP_FAILED
+                                )
 
         assert result.success is False
-        assert result.final_status == "docker_up_failed"
+        assert result.final_status == ReleaseFailureCategory.DOCKER_UP_FAILED.value
         assert "port already in use" in result.errors[0]
 
 
@@ -250,31 +258,40 @@ class TestRunReleaseSmokeTests:
                     file_exists=True,
                     services_found=["postgres", "backend", "frontend"],
                 ))
-                with patch.object(DockerComposeValidator, "test_docker_compose_up") as mock_up:
-                    mock_up.return_value = DockerComposeUpResult(
-                        success=True,
-                        services_started=["postgres", "backend", "frontend"],
-                    )
-                    with patch.object(SmokeRunner, "run_smoke_tests") as mock_smoke:
-                        mock_smoke.return_value = SmokeReport(
-                            project="biblioteca",
-                            repo_path="/tmp/generated/biblioteca",
-                            timestamp="2024-01-01T00:00:00",
-                            overall_status="FAIL",
-                            results=[
-                                SmokeResult(name="backend_healthcheck", category="backend", status="FAIL", message="Connection refused"),
-                            ],
+                with patch.object(DockerComposeValidator, "validate_build_contexts") as mock_ctx:
+                    mock_ctx.return_value = DockerContextValidationResult(valid=True)
+                    with patch.object(DockerComposeValidator, "test_docker_compose_up") as mock_up:
+                        mock_up.return_value = DockerComposeUpResult(
+                            success=True,
+                            services_started=["postgres", "backend", "frontend"],
                         )
-                        with patch.object(DockerComposeValidator, "stop_services") as mock_stop:
-                            with patch.object(engine, "_rollback_release") as mock_rollback:
-                                result = engine.run_release("biblioteca", sample_input)
+                        with patch.object(DockerComposeValidator, "wait_for_readiness") as mock_ready:
+                            mock_ready.return_value = DockerComposeUpResult(
+                                success=True,
+                                readiness_ok=True,
+                            )
+                            with patch.object(SmokeRunner, "run_smoke_tests") as mock_smoke:
+                                mock_smoke.return_value = SmokeReport(
+                                    project="biblioteca",
+                                    repo_path="/tmp/generated/biblioteca",
+                                    timestamp="2024-01-01T00:00:00",
+                                    overall_status="FAIL",
+                                    results=[
+                                        SmokeResult(name="backend_healthcheck", category="backend", status="FAIL", message="Connection refused"),
+                                    ],
+                                )
+                                with patch.object(DockerComposeValidator, "stop_services") as mock_stop:
+                                    with patch.object(engine, "_rollback_release") as mock_rollback:
+                                        result = engine.run_release("biblioteca", sample_input)
 
-                                mock_stop.assert_called_once_with("biblioteca")
-                                mock_rollback.assert_called_once_with("biblioteca")
+                                        mock_stop.assert_called_once_with("biblioteca")
+                                        mock_rollback.assert_called_once_with(
+                                            "biblioteca", ReleaseFailureCategory.SMOKE_FAILED
+                                        )
 
         assert result.success is False
         assert result.smoke_ok is False
-        assert result.final_status == "smoke_failed"
+        assert result.final_status == ReleaseFailureCategory.SMOKE_FAILED.value
         assert result.smoke_passed == 0
         assert result.smoke_failed == 1
 
@@ -293,26 +310,33 @@ class TestRunReleaseSmokeTests:
                     valid=True,
                     file_exists=True,
                 ))
-                with patch.object(DockerComposeValidator, "test_docker_compose_up") as mock_up:
-                    mock_up.return_value = DockerComposeUpResult(
-                        success=True,
-                        services_started=["postgres", "backend", "frontend"],
-                    )
-                    with patch.object(SmokeRunner, "run_smoke_tests") as mock_smoke:
-                        mock_smoke.return_value = SmokeReport(
-                            project="biblioteca",
-                            repo_path="/tmp/generated/biblioteca",
-                            timestamp="2024-01-01T00:00:00",
-                            overall_status="FAIL",  # Pelo menos 1 falhou
-                            results=[
-                                SmokeResult(name="backend_exists", category="backend", status="PASS", message="OK"),
-                                SmokeResult(name="frontend_exists", category="frontend", status="PASS", message="OK"),
-                                SmokeResult(name="backend_healthcheck", category="backend", status="FAIL", message="Failed"),
-                            ],
+                with patch.object(DockerComposeValidator, "validate_build_contexts") as mock_ctx:
+                    mock_ctx.return_value = DockerContextValidationResult(valid=True)
+                    with patch.object(DockerComposeValidator, "test_docker_compose_up") as mock_up:
+                        mock_up.return_value = DockerComposeUpResult(
+                            success=True,
+                            services_started=["postgres", "backend", "frontend"],
                         )
-                        with patch.object(DockerComposeValidator, "stop_services"):
-                            with patch.object(engine, "_rollback_release"):
-                                result = engine.run_release("biblioteca", sample_input)
+                        with patch.object(DockerComposeValidator, "wait_for_readiness") as mock_ready:
+                            mock_ready.return_value = DockerComposeUpResult(
+                                success=True,
+                                readiness_ok=True,
+                            )
+                            with patch.object(SmokeRunner, "run_smoke_tests") as mock_smoke:
+                                mock_smoke.return_value = SmokeReport(
+                                    project="biblioteca",
+                                    repo_path="/tmp/generated/biblioteca",
+                                    timestamp="2024-01-01T00:00:00",
+                                    overall_status="FAIL",  # Pelo menos 1 falhou
+                                    results=[
+                                        SmokeResult(name="backend_exists", category="backend", status="PASS", message="OK"),
+                                        SmokeResult(name="frontend_exists", category="frontend", status="PASS", message="OK"),
+                                        SmokeResult(name="backend_healthcheck", category="backend", status="FAIL", message="Failed"),
+                                    ],
+                                )
+                                with patch.object(DockerComposeValidator, "stop_services"):
+                                    with patch.object(engine, "_rollback_release"):
+                                        result = engine.run_release("biblioteca", sample_input)
 
         assert result.smoke_passed == 2
         assert result.smoke_failed == 1
@@ -337,29 +361,36 @@ class TestRunReleaseSuccess:
                     file_exists=True,
                     services_found=["postgres", "backend", "frontend"],
                 ))
-                with patch.object(DockerComposeValidator, "test_docker_compose_up") as mock_up:
-                    mock_up.return_value = DockerComposeUpResult(
-                        success=True,
-                        services_started=["postgres", "backend", "frontend"],
-                    )
-                    with patch.object(SmokeRunner, "run_smoke_tests") as mock_smoke:
-                        mock_smoke.return_value = SmokeReport(
-                            project="biblioteca",
-                            repo_path="/tmp/generated/biblioteca",
-                            timestamp="2024-01-01T00:00:00",
-                            overall_status="PASS",
-                            results=[
-                                SmokeResult(name="backend_healthcheck", category="backend", status="PASS", message="OK"),
-                                SmokeResult(name="frontend_exists", category="frontend", status="PASS", message="OK"),
-                            ],
+                with patch.object(DockerComposeValidator, "validate_build_contexts") as mock_ctx:
+                    mock_ctx.return_value = DockerContextValidationResult(valid=True)
+                    with patch.object(DockerComposeValidator, "test_docker_compose_up") as mock_up:
+                        mock_up.return_value = DockerComposeUpResult(
+                            success=True,
+                            services_started=["postgres", "backend", "frontend"],
                         )
-                        with patch.object(DockerComposeValidator, "stop_services") as mock_stop:
-                            with patch.object(engine, "_rollback_release") as mock_rollback:
-                                result = engine.run_release("biblioteca", sample_input)
+                        with patch.object(DockerComposeValidator, "wait_for_readiness") as mock_ready:
+                            mock_ready.return_value = DockerComposeUpResult(
+                                success=True,
+                                readiness_ok=True,
+                            )
+                            with patch.object(SmokeRunner, "run_smoke_tests") as mock_smoke:
+                                mock_smoke.return_value = SmokeReport(
+                                    project="biblioteca",
+                                    repo_path="/tmp/generated/biblioteca",
+                                    timestamp="2024-01-01T00:00:00",
+                                    overall_status="PASS",
+                                    results=[
+                                        SmokeResult(name="backend_healthcheck", category="backend", status="PASS", message="OK"),
+                                        SmokeResult(name="frontend_exists", category="frontend", status="PASS", message="OK"),
+                                    ],
+                                )
+                                with patch.object(DockerComposeValidator, "stop_services") as mock_stop:
+                                    with patch.object(engine, "_rollback_release") as mock_rollback:
+                                        result = engine.run_release("biblioteca", sample_input)
 
-                                # NÃO deve ter chamado stop_services ou rollback
-                                mock_stop.assert_not_called()
-                                mock_rollback.assert_not_called()
+                                        # NÃO deve ter chamado stop_services ou rollback
+                                        mock_stop.assert_not_called()
+                                        mock_rollback.assert_not_called()
 
         assert result.success is True
         assert result.docker_compose_ok is True
@@ -387,23 +418,30 @@ class TestRunReleaseSuccess:
                     valid=True,
                     file_exists=True,
                 ))
-                with patch.object(DockerComposeValidator, "test_docker_compose_up") as mock_up:
-                    mock_up.return_value = DockerComposeUpResult(
-                        success=True,
-                        services_started=["postgres", "backend", "frontend"],
-                    )
-                    with patch.object(SmokeRunner, "run_smoke_tests") as mock_smoke:
-                        mock_smoke.return_value = SmokeReport(
-                            project="biblioteca",
-                            repo_path="/tmp/generated/biblioteca",
-                            timestamp="2024-01-01T00:00:00",
-                            overall_status="PASS",
-                            results=[
-                                SmokeResult(name="test1", category="backend", status="PASS", message="OK"),
-                                SmokeResult(name="test2", category="frontend", status="PASS", message="OK"),
-                            ],
+                with patch.object(DockerComposeValidator, "validate_build_contexts") as mock_ctx:
+                    mock_ctx.return_value = DockerContextValidationResult(valid=True)
+                    with patch.object(DockerComposeValidator, "test_docker_compose_up") as mock_up:
+                        mock_up.return_value = DockerComposeUpResult(
+                            success=True,
+                            services_started=["postgres", "backend", "frontend"],
                         )
-                        result = engine.run_release("biblioteca", sample_input)
+                        with patch.object(DockerComposeValidator, "wait_for_readiness") as mock_ready:
+                            mock_ready.return_value = DockerComposeUpResult(
+                                success=True,
+                                readiness_ok=True,
+                            )
+                            with patch.object(SmokeRunner, "run_smoke_tests") as mock_smoke:
+                                mock_smoke.return_value = SmokeReport(
+                                    project="biblioteca",
+                                    repo_path="/tmp/generated/biblioteca",
+                                    timestamp="2024-01-01T00:00:00",
+                                    overall_status="PASS",
+                                    results=[
+                                        SmokeResult(name="test1", category="backend", status="PASS", message="OK"),
+                                        SmokeResult(name="test2", category="frontend", status="PASS", message="OK"),
+                                    ],
+                                )
+                                result = engine.run_release("biblioteca", sample_input)
 
         assert result.success is True
         assert result.release_mode is True
@@ -434,10 +472,12 @@ class TestRunReleaseErrorHandling:
                     with patch.object(engine, "_rollback_release") as mock_rollback:
                         result = engine.run_release("biblioteca", sample_input)
 
-                        mock_rollback.assert_called_once_with("biblioteca")
+                        mock_rollback.assert_called_once_with(
+                            "biblioteca", ReleaseFailureCategory.UNKNOWN_RELEASE_FAILED
+                        )
 
         assert result.success is False
-        assert result.final_status == "release_error"
+        assert result.final_status == ReleaseFailureCategory.UNKNOWN_RELEASE_FAILED.value
         assert "Unexpected error" in result.errors[0]
 
 
@@ -605,29 +645,38 @@ class TestRunReleaseIntegration:
                     services_found=["postgres", "backend", "frontend"],
                 ))
 
-                with patch.object(DockerComposeValidator, "test_docker_compose_up") as mock_up:
-                    mock_up.return_value = DockerComposeUpResult(
-                        success=True,
-                        services_started=["postgres", "backend", "frontend"],
-                    )
+                with patch.object(DockerComposeValidator, "validate_build_contexts") as mock_ctx:
+                    mock_ctx.return_value = DockerContextValidationResult(valid=True)
 
-                    with patch.object(SmokeRunner, "run_smoke_tests") as mock_smoke:
-                        mock_smoke.return_value = SmokeReport(
-                            project="biblioteca",
-                            repo_path="/tmp/generated/biblioteca",
-                            timestamp="2024-01-01T00:00:00",
-                            overall_status="PASS",
-                            results=[
-                                SmokeResult(name="backend_healthcheck", category="backend", status="PASS", message="200 OK"),
-                                SmokeResult(name="frontend_build", category="frontend", status="PASS", message="Build OK"),
-                            ],
+                    with patch.object(DockerComposeValidator, "test_docker_compose_up") as mock_up:
+                        mock_up.return_value = DockerComposeUpResult(
+                            success=True,
+                            services_started=["postgres", "backend", "frontend"],
                         )
 
-                        result = engine.run_release(
-                            "biblioteca",
-                            sample_input,
-                            title="Sistema de Biblioteca",
-                        )
+                        with patch.object(DockerComposeValidator, "wait_for_readiness") as mock_ready:
+                            mock_ready.return_value = DockerComposeUpResult(
+                                success=True,
+                                readiness_ok=True,
+                            )
+
+                            with patch.object(SmokeRunner, "run_smoke_tests") as mock_smoke:
+                                mock_smoke.return_value = SmokeReport(
+                                    project="biblioteca",
+                                    repo_path="/tmp/generated/biblioteca",
+                                    timestamp="2024-01-01T00:00:00",
+                                    overall_status="PASS",
+                                    results=[
+                                        SmokeResult(name="backend_healthcheck", category="backend", status="PASS", message="200 OK"),
+                                        SmokeResult(name="frontend_build", category="frontend", status="PASS", message="Build OK"),
+                                    ],
+                                )
+
+                                result = engine.run_release(
+                                    "biblioteca",
+                                    sample_input,
+                                    title="Sistema de Biblioteca",
+                                )
 
         # Verificar resultado final
         assert result.success is True

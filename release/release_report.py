@@ -72,6 +72,16 @@ class ReleaseReport:
 
     # Duracao
     duration_ms: float = 0.0
+    # Readiness evidence
+    readiness_fingerprint: str = ""
+    readiness_fingerprint_file: str = ""
+    runtime_evidence_dir: str = ""
+
+    # DB volume isolation
+    db_volume_name: str = ""
+
+    # Execution ID
+    execution_id: str = ""
 
     def to_dict(self) -> Dict[str, Any]:
         """Converte para dicionario."""
@@ -80,6 +90,7 @@ class ReleaseReport:
             "version": self.version,
             "timestamp": self.timestamp,
             "engine_version": self.engine_version,
+            "execution_id": self.execution_id,
             "repo_path": self.repo_path,
             "store_path": self.store_path,
             "success": self.success,
@@ -109,6 +120,10 @@ class ReleaseReport:
                 "smoke_ok": self.smoke_ok,
                 "smoke_passed": self.smoke_passed,
                 "smoke_failed": self.smoke_failed,
+                "readiness_fingerprint": self.readiness_fingerprint,
+                "readiness_fingerprint_file": self.readiness_fingerprint_file,
+                "runtime_evidence_dir": self.runtime_evidence_dir,
+                "db_volume_name": self.db_volume_name,
             },
             "checklist": {
                 "passed": self.checklist_passed,
@@ -118,6 +133,9 @@ class ReleaseReport:
             "errors": self.errors,
             "duration_ms": self.duration_ms,
             "commands": self.get_commands(),
+            "readiness_fingerprint": self.readiness_fingerprint,
+            "readiness_fingerprint_file": self.readiness_fingerprint_file,
+            "runtime_evidence_dir": self.runtime_evidence_dir,
         }
 
     def get_commands(self) -> Dict[str, str]:
@@ -177,6 +195,7 @@ class ReleaseReport:
             f"- **Docker Compose:** {'✅ OK' if self.docker_compose_ok else '❌ FAILED'}",
             f"- **Services:** {', '.join(self.services_running) if self.services_running else 'None'}",
             f"- **Smoke Tests:** {'✅ OK' if self.smoke_ok else '❌ FAILED'} ({self.smoke_passed}/{self.smoke_passed + self.smoke_failed})",
+            f"- **DB Volume:** `{self.db_volume_name}`" if self.db_volume_name else "",
             "",
             "## Paths",
             "",
@@ -270,6 +289,19 @@ class ReleaseReportGenerator:
         self.store_root = Path(store_root or self.DEFAULT_STORE_ROOT)
         self.generated_root = Path(generated_root or self.DEFAULT_GENERATED_ROOT)
 
+    def _compute_db_volume_name(self, execution_id: Optional[str]) -> str:
+        """Computa o nome do volume DB baseado no execution_id.
+
+        Args:
+            execution_id: ID de execução (ex: petclinic_abc123)
+
+        Returns:
+            Nome do volume: postgres_data_<exec_id> ou postgres_data se sem exec_id
+        """
+        if execution_id:
+            return f"postgres_data_{execution_id}"
+        return "postgres_data"
+
     def generate(
         self,
         project: str,
@@ -320,6 +352,13 @@ class ReleaseReportGenerator:
             smoke_ok=result.get("smoke_ok", False),
             smoke_passed=result.get("smoke_passed", 0),
             smoke_failed=result.get("smoke_failed", 0),
+            readiness_fingerprint=result.get("readiness_fingerprint", ""),
+            readiness_fingerprint_file=result.get("readiness_fingerprint_file", ""),
+            runtime_evidence_dir=result.get("runtime_evidence_dir", ""),
+            # DB volume isolation
+            db_volume_name=self._compute_db_volume_name(result.get("execution_id")),
+            # Execution ID
+            execution_id=result.get("execution_id", ""),
             # Erros
             errors=result.get("errors", []),
             duration_ms=result.get("duration_ms", 0.0),

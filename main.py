@@ -11,6 +11,12 @@ Uso:
     # Release mode (docker compose up + smoke tests)
     python main.py --project demo --input "Sistema de cadastro" --release
 
+    # Input modes
+    python main.py --project demo --input "Sistema X" --input-mode natural
+    python main.py --project demo --input draft.json --input-mode draft
+    python main.py --project demo --input spec.idl --input-mode idl
+    python main.py --project demo --input spec.idl --input-mode auto
+
 Demo FINAL:
     python main.py --project demo --input "Quero um sistema de cadastro de empresas com nome, cnpj e endereço" --release
 
@@ -29,14 +35,20 @@ Regras absolutas:
 """
 
 import argparse
+import hashlib
 import sys
 from pathlib import Path
+from typing import Optional
 
 from orchestrator.engine import Engine
+from episodes.episode_store import EpisodeStore
+from orchestrator.input_mode import InputMode, parse_input_mode, InputModeError
+from orchestrator.input_dispatcher import InputDispatcher, InputDispatchResult
 from version import __version__, version_string
 from release.release_report import ReleaseReportGenerator
 from release.release_checklist import ReleaseChecklist
 from release.diagnostic_report import DiagnosticReportGenerator
+from wizard.wizard_cli import main as wizard_main
 
 
 def parse_args() -> argparse.Namespace:
@@ -105,6 +117,25 @@ Exemplos:
         "--version",
         action="version",
         version=version_string(),
+    )
+
+    parser.add_argument(
+        "--input-mode",
+        choices=["auto", "natural", "draft", "idl"],
+        default="auto",
+        help="Modo de entrada: auto (detecta), natural (texto livre), draft (IDL Draft JSON), idl (IDL v1)",
+    )
+
+    parser.add_argument(
+        "--idl-only",
+        action="store_true",
+        help="Apenas processar IDL (não executar pipeline completo)",
+    )
+
+    parser.add_argument(
+        "--create-episode",
+        action="store_true",
+        help="Criar episódio automaticamente após pipeline (registra contratos e finaliza)",
     )
 
     return parser.parse_args()
@@ -180,14 +211,225 @@ def print_release_report(report: dict, quiet: bool = False) -> None:
     print("=" * 60)
 
 
+def run_idl_only(args: argparse.Namespace) -> int:
+    """Executa apenas processamento de IDL (sem pipeline completo).
+
+    Args:
+        args: Argumentos da linha de comando
+
+    Returns:
+        0 se sucesso, 1 se falha
+    """
+    # Parse input mode
+    try:
+        input_mode = parse_input_mode(args.input_mode)
+    except ValueError as e:
+        print(f"Error: {e}", file=sys.stderr)
+        return 1
+
+    # Carregar conteúdo do input
+    input_path = None
+    if Path(args.input).exists():
+        input_path = args.input
+        input_payload = Path(args.input).read_text(encoding="utf-8")
+    else:
+        input_payload = args.input
+
+    if not args.quiet:
+        print(f"Bazari Engine v{__version__} - IDL Processing")
+        print(f"Project: {args.project}")
+        print(f"Input Mode: {input_mode.value}")
+        print(f"Input: {input_path or 'inline'}")
+        print()
+
+    # Dispatch
+    dispatcher = InputDispatcher(args.store_root)
+    result = dispatcher.dispatch(
+        project=args.project,
+        input_mode=input_mode,
+        input_payload=input_payload,
+        input_path=input_path,
+    )
+
+    # Mostrar resultado
+    if result.success:
+        if not args.quiet:
+            print("IDL Processing: SUCCESS")
+            print()
+            print(f"Input Mode Resolved: {result.input_mode_resolved.value}")
+            print(f"Detection Reason: {result.detection_reason}")
+            print()
+            print(f"IDL Schema Version: {result.idl_schema_version}")
+            print(f"IDL Content Hash: {result.idl_content_hash[:16]}...")
+            print()
+            print("Files:")
+            print(f"  - JSON: {result.idl_json_path}")
+            print(f"  - Markdown: {result.idl_markdown_path}")
+
+            if result.draft_used:
+                print()
+                print(f"Draft Used: Yes (schema: {result.draft_schema_version})")
+        return 0
+    else:
+        if not args.quiet:
+            print("IDL Processing: FAILED")
+            print()
+            print(f"Input Mode Resolved: {result.input_mode_resolved.value}")
+            print(f"Detection Reason: {result.detection_reason}")
+            print()
+            print("Errors:")
+            for error in result.errors:
+                print(f"  - {error}")
+
+            if result.gate1_errors:
+                print()
+                print("GATE 1 Errors (Draft Structural Validation):")
+                for err in result.gate1_errors[:5]:
+                    print(f"  - {err.get('error_type', 'ERROR')}: {err.get('message', '')} at {err.get('location', '')}")
+
+            if result.gate2_errors:
+                print()
+                print("GATE 2 Errors (Draft → IDL Compilation):")
+                for err in result.gate2_errors[:5]:
+                    print(f"  - {err.get('error', 'ERROR')}: {err.get('reason', '')} at {err.get('location', '')}")
+        return 1
+
+
+def create_episode_from_result(
+    result,
+    store_root: str,
+    raw_input: str,
+    input_mode: str,
+    quiet: bool = False,
+) -> Optional[str]:
+    """Create an episode from a successful pipeline run.
+
+    This function:
+    1. Creates an episode with the execution_id
+    2. Registers all contracts (SRS, IR, OpenAPI, Plan)
+    3. Registers the runlog
+    4. Finalizes the episode
+
+    Args:
+        result: The RunResult from the pipeline
+        store_root: Base path for the store
+        raw_input: The original input text
+        input_mode: The input mode used (natural, draft, idl)
+        quiet: Whether to suppress output
+
+    Returns:
+        The episode_id if created successfully, None otherwise
+    """
+    if not result.success:
+        if not quiet:
+            print("Cannot create episode: pipeline did not succeed")
+        return None
+
+    store = EpisodeStore(store_root)
+    execution_id = result.execution_id
+
+    # Compute input hash
+    input_hash = f"sha256:{hashlib.sha256(raw_input.encode()).hexdigest()}"
+
+    # Map input mode string to proper mode
+    mode_map = {
+        "auto": "natural",  # auto resolves to natural for episode purposes
+        "natural": "natural",
+        "draft": "draft",
+        "idl": "idl",
+    }
+    episode_input_mode = mode_map.get(input_mode, "natural")
+
+    try:
+        # Create episode
+        episode_dir = store.create_episode(
+            episode_id=execution_id,
+            execution_id=execution_id,
+            input_mode=episode_input_mode,
+            input_hash=input_hash,
+        )
+
+        if not quiet:
+            print()
+            print(f"Episode created: {execution_id}")
+
+        # Register contracts
+        contracts_registered = 0
+
+        # SRS
+        if result.srs_path:
+            srs_path = Path(result.srs_path)
+            if srs_path.exists():
+                store.register_contract(execution_id, "srs", srs_path.read_bytes())
+                contracts_registered += 1
+
+        # IR
+        if result.ir_path:
+            ir_path = Path(result.ir_path)
+            if ir_path.exists():
+                store.register_contract(execution_id, "ir", ir_path.read_bytes())
+                contracts_registered += 1
+
+        # OpenAPI
+        if result.oas_path:
+            oas_path = Path(result.oas_path)
+            if oas_path.exists():
+                store.register_contract(execution_id, "openapi", oas_path.read_bytes())
+                contracts_registered += 1
+
+        # Plan
+        if result.plan_path:
+            plan_path = Path(result.plan_path)
+            if plan_path.exists():
+                store.register_contract(execution_id, "plan", plan_path.read_bytes())
+                contracts_registered += 1
+
+        if not quiet:
+            print(f"  Contracts registered: {contracts_registered}")
+
+        # Register runlog
+        runlog = {
+            "schema_version": "runlog.v1",
+            "status": "completed",
+            "result": result.to_dict(),
+        }
+        store.register_runlog(execution_id, runlog)
+
+        # Finalize episode
+        manifest = store.finalize_episode(execution_id)
+        root_hash = manifest["integrity"]["episode_root_hash_sha256"]
+
+        if not quiet:
+            print(f"  Episode finalized: {root_hash[:30]}...")
+            print(f"  Status: pending (awaiting approval)")
+
+        return execution_id
+
+    except Exception as e:
+        if not quiet:
+            print(f"Error creating episode: {e}")
+        return None
+
+
 def main() -> int:
     """Ponto de entrada principal."""
+    # Check for wizard subcommand BEFORE parsing regular args
+    # This allows: python main.py wizard start --project X --domain Y
+    if len(sys.argv) > 1 and sys.argv[1] == "wizard":
+        # Delegate to wizard CLI with remaining args
+        return wizard_main(sys.argv[2:])
+
     args = parse_args()
+
+    # Se --idl-only, processar apenas IDL
+    if args.idl_only:
+        return run_idl_only(args)
 
     # Criar Engine
     if not args.quiet:
         print(f"Bazari Engine v{__version__} - Gerando projeto: {args.project}")
         print(f"Store: {args.store_root}")
+        print(f"Input Mode: {args.input_mode}")
         print(f"Input: {args.input[:50]}...")
         print()
 
@@ -336,6 +578,20 @@ def main() -> int:
                 print(f"  - OAS: v{result.oas_version}")
                 print(f"  - RBAC: v{result.rbac_version}")
                 print(f"  - PLAN: v{result.plan_version}")
+
+        # Create episode if requested
+        if args.create_episode:
+            episode_id = create_episode_from_result(
+                result=result,
+                store_root=args.store_root,
+                raw_input=args.input,
+                input_mode=args.input_mode,
+                quiet=args.quiet,
+            )
+            if episode_id and not args.quiet:
+                print()
+                print(f"To approve this episode, run:")
+                print(f"  python -m episodes.episodes_cli approve --episode-id {episode_id} --decision approve --reason \"...\" --approver-name \"...\" --role \"...\" --base-path {args.store_root}")
 
         return 0
 

@@ -1,0 +1,185 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "idl_change_request.v1.json",
+  "title": "IDL Change Request v1",
+  "description": "Change Request para mudanças governadas sobre sistema já gerado",
+  "type": "object",
+  "required": [
+    "schema_version",
+    "change_request_id",
+    "previous_episode_id",
+    "requested_by",
+    "reason",
+    "scope",
+    "invariants",
+    "acceptance_criteria",
+    "risk",
+    "attachments"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": {
+      "type": "string",
+      "const": "idl_change_request.v1",
+      "description": "Versão fixa do schema"
+    },
+    "change_request_id": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Identificador único do Change Request"
+    },
+    "previous_episode_id": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Episode ID do sistema base que será modificado"
+    },
+    "requested_by": {
+      "type": "object",
+      "description": "Quem solicitou a mudança",
+      "required": ["display_name", "role"],
+      "additionalProperties": false,
+      "properties": {
+        "display_name": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Nome do solicitante"
+        },
+        "role": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Papel do solicitante"
+        },
+        "org": {
+          "type": ["string", "null"],
+          "description": "Organização do solicitante"
+        }
+      }
+    },
+    "reason": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Justificativa para a mudança"
+    },
+    "scope": {
+      "type": "object",
+      "description": "Escopo da mudança",
+      "required": ["target", "summary", "entities_affected", "usecases_affected"],
+      "additionalProperties": false,
+      "properties": {
+        "target": {
+          "type": "string",
+          "enum": ["frontend", "backend", "db", "api", "rbac", "infra", "docs"],
+          "description": "Área alvo da mudança"
+        },
+        "summary": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Resumo da mudança"
+        },
+        "entities_affected": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "description": "Lista de entidades afetadas"
+        },
+        "usecases_affected": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "description": "Lista de casos de uso afetados"
+        }
+      }
+    },
+    "invariants": {
+      "type": "array",
+      "description": "Invariantes que devem ser mantidas",
+      "items": {
+        "type": "object",
+        "required": ["name", "description", "severity"],
+        "additionalProperties": false,
+        "properties": {
+          "name": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Nome da invariante"
+          },
+          "description": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Descrição da invariante"
+          },
+          "severity": {
+            "type": "string",
+            "enum": ["must", "should"],
+            "description": "Severidade da invariante"
+          }
+        }
+      }
+    },
+    "acceptance_criteria": {
+      "type": "array",
+      "description": "Critérios de aceitação",
+      "items": {
+        "type": "string",
+        "minLength": 1
+      }
+    },
+    "risk": {
+      "type": "object",
+      "description": "Avaliação de risco",
+      "required": ["level"],
+      "additionalProperties": false,
+      "properties": {
+        "level": {
+          "type": "string",
+          "enum": ["low", "medium", "high"],
+          "description": "Nível de risco"
+        },
+        "notes": {
+          "type": ["string", "null"],
+          "description": "Notas sobre o risco"
+        }
+      }
+    },
+    "attachments": {
+      "type": "array",
+      "description": "Anexos relacionados",
+      "items": {
+        "type": "object",
+        "required": ["kind", "ref"],
+        "additionalProperties": false,
+        "properties": {
+          "kind": {
+            "type": "string",
+            "enum": ["link", "doc", "diff", "note"],
+            "description": "Tipo do anexo"
+          },
+          "ref": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Referência do anexo"
+          },
+          "content_hash_sha256": {
+            "type": ["string", "null"],
+            "pattern": "^sha256:[a-f0-9]{64}$",
+            "description": "Hash SHA256 do conteúdo (opcional)"
+          }
+        }
+      }
+    },
+    "volatile": {
+      "type": ["object", "null"],
+      "description": "Dados voláteis (não incluídos no hash)",
+      "properties": {
+        "timestamp": {
+          "type": ["string", "null"],
+          "description": "Timestamp de criação/atualização"
+        }
+      }
+    }
+  }
+}

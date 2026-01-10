@@ -1,34 +1,14 @@
 {
   "meta": {
     "project_name": "Sistema Petclinic",
-    "created_at": "2026-01-04T18:43:08.580629",
+    "created_at": "2026-01-05T10:25:45.595728",
     "version": "v3",
     "srs_version": "v3"
   },
   "domain": {
     "entities": [
       {
-        "name": "quero_um_sistema_web_para_controle_de_clinica_veterinaria",
-        "primary_key": "id",
-        "fields": [
-          {
-            "name": "id",
-            "type": "uuid",
-            "required": true,
-            "unique": true,
-            "indexed": true
-          },
-          {
-            "name": "clinica_pet",
-            "type": "string",
-            "required": true,
-            "unique": false,
-            "indexed": false
-          }
-        ]
-      },
-      {
-        "name": "preciso_cadastrar_tutor",
+        "name": "tutor",
         "primary_key": "id",
         "fields": [
           {
@@ -94,22 +74,22 @@
             "indexed": false
           },
           {
-            "name": "especie_id",
-            "type": "uuid",
+            "name": "especie",
+            "type": "string",
             "required": true,
             "unique": false,
             "indexed": false
           },
           {
-            "name": "raca_id",
-            "type": "uuid",
+            "name": "raca",
+            "type": "string",
             "required": true,
             "unique": false,
             "indexed": false
           },
           {
-            "name": "sexo_id",
-            "type": "uuid",
+            "name": "sexo",
+            "type": "string",
             "required": true,
             "unique": false,
             "indexed": false
@@ -163,15 +143,15 @@
             "indexed": false
           },
           {
-            "name": "crmv_id",
-            "type": "uuid",
+            "name": "crmv",
+            "type": "string",
             "required": true,
-            "unique": false,
+            "unique": true,
             "indexed": false
           },
           {
-            "name": "especialidade_id",
-            "type": "uuid",
+            "name": "especialidade",
+            "type": "string",
             "required": true,
             "unique": false,
             "indexed": false
@@ -193,7 +173,7 @@
         ]
       },
       {
-        "name": "consulta",
+        "name": "atendimento",
         "primary_key": "id",
         "fields": [
           {
@@ -232,36 +212,36 @@
             "indexed": false
           },
           {
-            "name": "motivo_id",
-            "type": "uuid",
+            "name": "motivo",
+            "type": "string",
             "required": true,
             "unique": false,
             "indexed": false
           },
           {
-            "name": "anotacao_id",
-            "type": "uuid",
+            "name": "anotacoes",
+            "type": "string",
             "required": true,
             "unique": false,
             "indexed": false
           },
           {
-            "name": "diagnostico_id",
-            "type": "uuid",
+            "name": "diagnostico",
+            "type": "string",
             "required": true,
             "unique": false,
             "indexed": false
           },
           {
-            "name": "prescricao_id",
-            "type": "uuid",
+            "name": "prescricao",
+            "type": "string",
             "required": true,
             "unique": false,
             "indexed": false
           },
           {
-            "name": "statu_id",
-            "type": "uuid",
+            "name": "status",
+            "type": "string",
             "required": true,
             "unique": false,
             "indexed": false
@@ -294,22 +274,22 @@
             "indexed": false
           },
           {
-            "name": "data_aplicacao_id",
-            "type": "uuid",
+            "name": "data_aplicacao",
+            "type": "date",
             "required": true,
             "unique": false,
             "indexed": false
           },
           {
-            "name": "proxima_dose_id",
-            "type": "uuid",
+            "name": "proxima_dose",
+            "type": "string",
             "required": true,
             "unique": false,
             "indexed": false
           },
           {
-            "name": "lote_id",
-            "type": "uuid",
+            "name": "lote",
+            "type": "string",
             "required": true,
             "unique": false,
             "indexed": false
@@ -356,22 +336,22 @@
             "indexed": false
           },
           {
-            "name": "veterinario_opcional_id",
+            "name": "veterinario_id",
             "type": "uuid",
+            "required": false,
+            "unique": false,
+            "indexed": false
+          },
+          {
+            "name": "servico",
+            "type": "string",
             "required": true,
             "unique": false,
             "indexed": false
           },
           {
-            "name": "servico_id",
-            "type": "uuid",
-            "required": true,
-            "unique": false,
-            "indexed": false
-          },
-          {
-            "name": "statu_id",
-            "type": "uuid",
+            "name": "status",
+            "type": "string",
             "required": true,
             "unique": false,
             "indexed": false
@@ -379,7 +359,7 @@
         ]
       },
       {
-        "name": "e_pagamento",
+        "name": "pagamento",
         "primary_key": "id",
         "fields": [
           {
@@ -390,8 +370,8 @@
             "indexed": true
           },
           {
-            "name": "atendimento",
-            "type": "string",
+            "name": "atendimento_id",
+            "type": "uuid",
             "required": true,
             "unique": false,
             "indexed": false
@@ -411,8 +391,8 @@
             "indexed": false
           },
           {
-            "name": "statu_id",
-            "type": "uuid",
+            "name": "status",
+            "type": "string",
             "required": true,
             "unique": false,
             "indexed": false
@@ -425,365 +405,39 @@
             "indexed": false
           }
         ]
-      },
-      {
-        "name": "dashboard_inicial_com_atalho",
-        "primary_key": "id",
-        "fields": [
-          {
-            "name": "id",
-            "type": "uuid",
-            "required": true,
-            "unique": true,
-            "indexed": true
-          },
-          {
-            "name": "novo_agendamento",
-            "type": "string",
-            "required": true,
-            "unique": false,
-            "indexed": false
-          },
-          {
-            "name": "novo_atendimento",
-            "type": "string",
-            "required": true,
-            "unique": false,
-            "indexed": false
-          },
-          {
-            "name": "cadastrar_tutor",
-            "type": "string",
-            "required": true,
-            "unique": false,
-            "indexed": false
-          },
-          {
-            "name": "cadastrar_pet_id",
-            "type": "uuid",
-            "required": true,
-            "unique": false,
-            "indexed": false
-          }
-        ]
-      },
-      {
-        "name": "especie",
-        "primary_key": "id",
-        "fields": [
-          {
-            "name": "id",
-            "type": "uuid",
-            "required": true,
-            "unique": true,
-            "indexed": true
-          }
-        ]
-      },
-      {
-        "name": "raca",
-        "primary_key": "id",
-        "fields": [
-          {
-            "name": "id",
-            "type": "uuid",
-            "required": true,
-            "unique": true,
-            "indexed": true
-          }
-        ]
-      },
-      {
-        "name": "sexo",
-        "primary_key": "id",
-        "fields": [
-          {
-            "name": "id",
-            "type": "uuid",
-            "required": true,
-            "unique": true,
-            "indexed": true
-          }
-        ]
-      },
-      {
-        "name": "tutor",
-        "primary_key": "id",
-        "fields": [
-          {
-            "name": "id",
-            "type": "uuid",
-            "required": true,
-            "unique": true,
-            "indexed": true
-          }
-        ]
-      },
-      {
-        "name": "crmv",
-        "primary_key": "id",
-        "fields": [
-          {
-            "name": "id",
-            "type": "uuid",
-            "required": true,
-            "unique": true,
-            "indexed": true
-          }
-        ]
-      },
-      {
-        "name": "especialidade",
-        "primary_key": "id",
-        "fields": [
-          {
-            "name": "id",
-            "type": "uuid",
-            "required": true,
-            "unique": true,
-            "indexed": true
-          }
-        ]
-      },
-      {
-        "name": "motivo",
-        "primary_key": "id",
-        "fields": [
-          {
-            "name": "id",
-            "type": "uuid",
-            "required": true,
-            "unique": true,
-            "indexed": true
-          }
-        ]
-      },
-      {
-        "name": "anotacao",
-        "primary_key": "id",
-        "fields": [
-          {
-            "name": "id",
-            "type": "uuid",
-            "required": true,
-            "unique": true,
-            "indexed": true
-          }
-        ]
-      },
-      {
-        "name": "diagnostico",
-        "primary_key": "id",
-        "fields": [
-          {
-            "name": "id",
-            "type": "uuid",
-            "required": true,
-            "unique": true,
-            "indexed": true
-          }
-        ]
-      },
-      {
-        "name": "prescricao",
-        "primary_key": "id",
-        "fields": [
-          {
-            "name": "id",
-            "type": "uuid",
-            "required": true,
-            "unique": true,
-            "indexed": true
-          }
-        ]
-      },
-      {
-        "name": "data_aplicacao",
-        "primary_key": "id",
-        "fields": [
-          {
-            "name": "id",
-            "type": "uuid",
-            "required": true,
-            "unique": true,
-            "indexed": true
-          }
-        ]
-      },
-      {
-        "name": "proxima_dose",
-        "primary_key": "id",
-        "fields": [
-          {
-            "name": "id",
-            "type": "uuid",
-            "required": true,
-            "unique": true,
-            "indexed": true
-          }
-        ]
-      },
-      {
-        "name": "lote",
-        "primary_key": "id",
-        "fields": [
-          {
-            "name": "id",
-            "type": "uuid",
-            "required": true,
-            "unique": true,
-            "indexed": true
-          }
-        ]
-      },
-      {
-        "name": "observacoes",
-        "primary_key": "id",
-        "fields": [
-          {
-            "name": "id",
-            "type": "uuid",
-            "required": true,
-            "unique": true,
-            "indexed": true
-          }
-        ]
-      },
-      {
-        "name": "veterinario_opcional",
-        "primary_key": "id",
-        "fields": [
-          {
-            "name": "id",
-            "type": "uuid",
-            "required": true,
-            "unique": true,
-            "indexed": true
-          }
-        ]
-      },
-      {
-        "name": "servico",
-        "primary_key": "id",
-        "fields": [
-          {
-            "name": "id",
-            "type": "uuid",
-            "required": true,
-            "unique": true,
-            "indexed": true
-          }
-        ]
-      },
-      {
-        "name": "statu",
-        "primary_key": "id",
-        "fields": [
-          {
-            "name": "id",
-            "type": "uuid",
-            "required": true,
-            "unique": true,
-            "indexed": true
-          }
-        ]
-      },
-      {
-        "name": "data_regras_nao_pode_ter_atendimento_sem_pet",
-        "primary_key": "id",
-        "fields": [
-          {
-            "name": "id",
-            "type": "uuid",
-            "required": true,
-            "unique": true,
-            "indexed": true
-          }
-        ]
-      },
-      {
-        "name": "sem_veterinario",
-        "primary_key": "id",
-        "fields": [
-          {
-            "name": "id",
-            "type": "uuid",
-            "required": true,
-            "unique": true,
-            "indexed": true
-          }
-        ]
-      },
-      {
-        "name": "cadastrar_pet",
-        "primary_key": "id",
-        "fields": [
-          {
-            "name": "id",
-            "type": "uuid",
-            "required": true,
-            "unique": true,
-            "indexed": true
-          }
-        ]
-      },
-      {
-        "name": "clinica",
-        "primary_key": "id",
-        "fields": [
-          {
-            "name": "id",
-            "type": "uuid",
-            "required": true,
-            "unique": true,
-            "indexed": true
-          }
-        ]
       }
     ],
     "relations": [],
     "workflows": [],
-    "rules": []
+    "rules": [
+      {
+        "id": "BR-001",
+        "description": "{'type': 'ownership_required', 'entity': 'sempre', 'target_entity': 'um', 'raw_text': 'sempre pertence a um'}",
+        "severity": "ERROR"
+      },
+      {
+        "id": "BR-002",
+        "description": "{'type': 'conversion', 'entity': 'agendamento', 'target_entity': 'atendimento', 'raw_text': 'agendamento pode virar atendimento'}",
+        "severity": "ERROR"
+      }
+    ]
   },
   "api_intent": {
     "resources": [
-      "quero_um_sistema_web_para_controle_de_clinica_veterinaria",
-      "preciso_cadastrar_tutor",
+      "tutor",
       "pet",
       "veterinario",
-      "consulta",
+      "atendimento",
       "vacina",
       "agendamento",
-      "e_pagamento",
-      "dashboard_inicial_com_atalho",
-      "especie",
-      "raca",
-      "sexo",
-      "tutor",
-      "crmv",
-      "especialidade",
-      "motivo",
-      "anotacao",
-      "diagnostico",
-      "prescricao",
-      "data_aplicacao",
-      "proxima_dose",
-      "lote",
-      "observacoes",
-      "veterinario_opcional",
-      "servico",
-      "statu",
-      "data_regras_nao_pode_ter_atendimento_sem_pet",
-      "sem_veterinario",
-      "cadastrar_pet",
-      "clinica"
+      "pagamento"
     ]
   },
   "ui": {
     "pages": [
       {
-        "path": "/app/quero_um_sistema_web_para_controle_de_clinica_veterinaria/list",
-        "title": "Listar Quero_Um_Sistema_Web_Para_Controle_De_Clinica_Veterinaria",
+        "path": "/app/tutor/list",
+        "title": "Listar Tutor",
         "components": [
           "table",
           "pagination",
@@ -796,8 +450,8 @@
         ]
       },
       {
-        "path": "/app/quero_um_sistema_web_para_controle_de_clinica_veterinaria/new",
-        "title": "Novo Quero_Um_Sistema_Web_Para_Controle_De_Clinica_Veterinaria",
+        "path": "/app/tutor/new",
+        "title": "Novo Tutor",
         "components": [
           "form"
         ],
@@ -806,44 +460,8 @@
         ]
       },
       {
-        "path": "/app/quero_um_sistema_web_para_controle_de_clinica_veterinaria/:id",
-        "title": "Detalhes Quero_Um_Sistema_Web_Para_Controle_De_Clinica_Veterinaria",
-        "components": [
-          "form"
-        ],
-        "actions": [
-          "view",
-          "update",
-          "delete"
-        ]
-      },
-      {
-        "path": "/app/preciso_cadastrar_tutor/list",
-        "title": "Listar Preciso_Cadastrar_Tutor",
-        "components": [
-          "table",
-          "pagination",
-          "search"
-        ],
-        "actions": [
-          "list",
-          "view",
-          "delete"
-        ]
-      },
-      {
-        "path": "/app/preciso_cadastrar_tutor/new",
-        "title": "Novo Preciso_Cadastrar_Tutor",
-        "components": [
-          "form"
-        ],
-        "actions": [
-          "create"
-        ]
-      },
-      {
-        "path": "/app/preciso_cadastrar_tutor/:id",
-        "title": "Detalhes Preciso_Cadastrar_Tutor",
+        "path": "/app/tutor/:id",
+        "title": "Detalhes Tutor",
         "components": [
           "form"
         ],
@@ -926,8 +544,8 @@
         ]
       },
       {
-        "path": "/app/consulta/list",
-        "title": "Listar Consulta",
+        "path": "/app/atendimento/list",
+        "title": "Listar Atendimento",
         "components": [
           "table",
           "pagination",
@@ -940,8 +558,8 @@
         ]
       },
       {
-        "path": "/app/consulta/new",
-        "title": "Novo Consulta",
+        "path": "/app/atendimento/new",
+        "title": "Novo Atendimento",
         "components": [
           "form"
         ],
@@ -950,8 +568,8 @@
         ]
       },
       {
-        "path": "/app/consulta/:id",
-        "title": "Detalhes Consulta",
+        "path": "/app/atendimento/:id",
+        "title": "Detalhes Atendimento",
         "components": [
           "form"
         ],
@@ -1034,8 +652,8 @@
         ]
       },
       {
-        "path": "/app/e_pagamento/list",
-        "title": "Listar E_Pagamento",
+        "path": "/app/pagamento/list",
+        "title": "Listar Pagamento",
         "components": [
           "table",
           "pagination",
@@ -1048,8 +666,8 @@
         ]
       },
       {
-        "path": "/app/e_pagamento/new",
-        "title": "Novo E_Pagamento",
+        "path": "/app/pagamento/new",
+        "title": "Novo Pagamento",
         "components": [
           "form"
         ],
@@ -1058,800 +676,8 @@
         ]
       },
       {
-        "path": "/app/e_pagamento/:id",
-        "title": "Detalhes E_Pagamento",
-        "components": [
-          "form"
-        ],
-        "actions": [
-          "view",
-          "update",
-          "delete"
-        ]
-      },
-      {
-        "path": "/app/dashboard_inicial_com_atalho/list",
-        "title": "Listar Dashboard_Inicial_Com_Atalho",
-        "components": [
-          "table",
-          "pagination",
-          "search"
-        ],
-        "actions": [
-          "list",
-          "view",
-          "delete"
-        ]
-      },
-      {
-        "path": "/app/dashboard_inicial_com_atalho/new",
-        "title": "Novo Dashboard_Inicial_Com_Atalho",
-        "components": [
-          "form"
-        ],
-        "actions": [
-          "create"
-        ]
-      },
-      {
-        "path": "/app/dashboard_inicial_com_atalho/:id",
-        "title": "Detalhes Dashboard_Inicial_Com_Atalho",
-        "components": [
-          "form"
-        ],
-        "actions": [
-          "view",
-          "update",
-          "delete"
-        ]
-      },
-      {
-        "path": "/app/especie/list",
-        "title": "Listar Especie",
-        "components": [
-          "table",
-          "pagination",
-          "search"
-        ],
-        "actions": [
-          "list",
-          "view",
-          "delete"
-        ]
-      },
-      {
-        "path": "/app/especie/new",
-        "title": "Novo Especie",
-        "components": [
-          "form"
-        ],
-        "actions": [
-          "create"
-        ]
-      },
-      {
-        "path": "/app/especie/:id",
-        "title": "Detalhes Especie",
-        "components": [
-          "form"
-        ],
-        "actions": [
-          "view",
-          "update",
-          "delete"
-        ]
-      },
-      {
-        "path": "/app/raca/list",
-        "title": "Listar Raca",
-        "components": [
-          "table",
-          "pagination",
-          "search"
-        ],
-        "actions": [
-          "list",
-          "view",
-          "delete"
-        ]
-      },
-      {
-        "path": "/app/raca/new",
-        "title": "Novo Raca",
-        "components": [
-          "form"
-        ],
-        "actions": [
-          "create"
-        ]
-      },
-      {
-        "path": "/app/raca/:id",
-        "title": "Detalhes Raca",
-        "components": [
-          "form"
-        ],
-        "actions": [
-          "view",
-          "update",
-          "delete"
-        ]
-      },
-      {
-        "path": "/app/sexo/list",
-        "title": "Listar Sexo",
-        "components": [
-          "table",
-          "pagination",
-          "search"
-        ],
-        "actions": [
-          "list",
-          "view",
-          "delete"
-        ]
-      },
-      {
-        "path": "/app/sexo/new",
-        "title": "Novo Sexo",
-        "components": [
-          "form"
-        ],
-        "actions": [
-          "create"
-        ]
-      },
-      {
-        "path": "/app/sexo/:id",
-        "title": "Detalhes Sexo",
-        "components": [
-          "form"
-        ],
-        "actions": [
-          "view",
-          "update",
-          "delete"
-        ]
-      },
-      {
-        "path": "/app/tutor/list",
-        "title": "Listar Tutor",
-        "components": [
-          "table",
-          "pagination",
-          "search"
-        ],
-        "actions": [
-          "list",
-          "view",
-          "delete"
-        ]
-      },
-      {
-        "path": "/app/tutor/new",
-        "title": "Novo Tutor",
-        "components": [
-          "form"
-        ],
-        "actions": [
-          "create"
-        ]
-      },
-      {
-        "path": "/app/tutor/:id",
-        "title": "Detalhes Tutor",
-        "components": [
-          "form"
-        ],
-        "actions": [
-          "view",
-          "update",
-          "delete"
-        ]
-      },
-      {
-        "path": "/app/crmv/list",
-        "title": "Listar Crmv",
-        "components": [
-          "table",
-          "pagination",
-          "search"
-        ],
-        "actions": [
-          "list",
-          "view",
-          "delete"
-        ]
-      },
-      {
-        "path": "/app/crmv/new",
-        "title": "Novo Crmv",
-        "components": [
-          "form"
-        ],
-        "actions": [
-          "create"
-        ]
-      },
-      {
-        "path": "/app/crmv/:id",
-        "title": "Detalhes Crmv",
-        "components": [
-          "form"
-        ],
-        "actions": [
-          "view",
-          "update",
-          "delete"
-        ]
-      },
-      {
-        "path": "/app/especialidade/list",
-        "title": "Listar Especialidade",
-        "components": [
-          "table",
-          "pagination",
-          "search"
-        ],
-        "actions": [
-          "list",
-          "view",
-          "delete"
-        ]
-      },
-      {
-        "path": "/app/especialidade/new",
-        "title": "Novo Especialidade",
-        "components": [
-          "form"
-        ],
-        "actions": [
-          "create"
-        ]
-      },
-      {
-        "path": "/app/especialidade/:id",
-        "title": "Detalhes Especialidade",
-        "components": [
-          "form"
-        ],
-        "actions": [
-          "view",
-          "update",
-          "delete"
-        ]
-      },
-      {
-        "path": "/app/motivo/list",
-        "title": "Listar Motivo",
-        "components": [
-          "table",
-          "pagination",
-          "search"
-        ],
-        "actions": [
-          "list",
-          "view",
-          "delete"
-        ]
-      },
-      {
-        "path": "/app/motivo/new",
-        "title": "Novo Motivo",
-        "components": [
-          "form"
-        ],
-        "actions": [
-          "create"
-        ]
-      },
-      {
-        "path": "/app/motivo/:id",
-        "title": "Detalhes Motivo",
-        "components": [
-          "form"
-        ],
-        "actions": [
-          "view",
-          "update",
-          "delete"
-        ]
-      },
-      {
-        "path": "/app/anotacao/list",
-        "title": "Listar Anotacao",
-        "components": [
-          "table",
-          "pagination",
-          "search"
-        ],
-        "actions": [
-          "list",
-          "view",
-          "delete"
-        ]
-      },
-      {
-        "path": "/app/anotacao/new",
-        "title": "Novo Anotacao",
-        "components": [
-          "form"
-        ],
-        "actions": [
-          "create"
-        ]
-      },
-      {
-        "path": "/app/anotacao/:id",
-        "title": "Detalhes Anotacao",
-        "components": [
-          "form"
-        ],
-        "actions": [
-          "view",
-          "update",
-          "delete"
-        ]
-      },
-      {
-        "path": "/app/diagnostico/list",
-        "title": "Listar Diagnostico",
-        "components": [
-          "table",
-          "pagination",
-          "search"
-        ],
-        "actions": [
-          "list",
-          "view",
-          "delete"
-        ]
-      },
-      {
-        "path": "/app/diagnostico/new",
-        "title": "Novo Diagnostico",
-        "components": [
-          "form"
-        ],
-        "actions": [
-          "create"
-        ]
-      },
-      {
-        "path": "/app/diagnostico/:id",
-        "title": "Detalhes Diagnostico",
-        "components": [
-          "form"
-        ],
-        "actions": [
-          "view",
-          "update",
-          "delete"
-        ]
-      },
-      {
-        "path": "/app/prescricao/list",
-        "title": "Listar Prescricao",
-        "components": [
-          "table",
-          "pagination",
-          "search"
-        ],
-        "actions": [
-          "list",
-          "view",
-          "delete"
-        ]
-      },
-      {
-        "path": "/app/prescricao/new",
-        "title": "Novo Prescricao",
-        "components": [
-          "form"
-        ],
-        "actions": [
-          "create"
-        ]
-      },
-      {
-        "path": "/app/prescricao/:id",
-        "title": "Detalhes Prescricao",
-        "components": [
-          "form"
-        ],
-        "actions": [
-          "view",
-          "update",
-          "delete"
-        ]
-      },
-      {
-        "path": "/app/data_aplicacao/list",
-        "title": "Listar Data_Aplicacao",
-        "components": [
-          "table",
-          "pagination",
-          "search"
-        ],
-        "actions": [
-          "list",
-          "view",
-          "delete"
-        ]
-      },
-      {
-        "path": "/app/data_aplicacao/new",
-        "title": "Novo Data_Aplicacao",
-        "components": [
-          "form"
-        ],
-        "actions": [
-          "create"
-        ]
-      },
-      {
-        "path": "/app/data_aplicacao/:id",
-        "title": "Detalhes Data_Aplicacao",
-        "components": [
-          "form"
-        ],
-        "actions": [
-          "view",
-          "update",
-          "delete"
-        ]
-      },
-      {
-        "path": "/app/proxima_dose/list",
-        "title": "Listar Proxima_Dose",
-        "components": [
-          "table",
-          "pagination",
-          "search"
-        ],
-        "actions": [
-          "list",
-          "view",
-          "delete"
-        ]
-      },
-      {
-        "path": "/app/proxima_dose/new",
-        "title": "Novo Proxima_Dose",
-        "components": [
-          "form"
-        ],
-        "actions": [
-          "create"
-        ]
-      },
-      {
-        "path": "/app/proxima_dose/:id",
-        "title": "Detalhes Proxima_Dose",
-        "components": [
-          "form"
-        ],
-        "actions": [
-          "view",
-          "update",
-          "delete"
-        ]
-      },
-      {
-        "path": "/app/lote/list",
-        "title": "Listar Lote",
-        "components": [
-          "table",
-          "pagination",
-          "search"
-        ],
-        "actions": [
-          "list",
-          "view",
-          "delete"
-        ]
-      },
-      {
-        "path": "/app/lote/new",
-        "title": "Novo Lote",
-        "components": [
-          "form"
-        ],
-        "actions": [
-          "create"
-        ]
-      },
-      {
-        "path": "/app/lote/:id",
-        "title": "Detalhes Lote",
-        "components": [
-          "form"
-        ],
-        "actions": [
-          "view",
-          "update",
-          "delete"
-        ]
-      },
-      {
-        "path": "/app/observacoes/list",
-        "title": "Listar Observacoes",
-        "components": [
-          "table",
-          "pagination",
-          "search"
-        ],
-        "actions": [
-          "list",
-          "view",
-          "delete"
-        ]
-      },
-      {
-        "path": "/app/observacoes/new",
-        "title": "Novo Observacoes",
-        "components": [
-          "form"
-        ],
-        "actions": [
-          "create"
-        ]
-      },
-      {
-        "path": "/app/observacoes/:id",
-        "title": "Detalhes Observacoes",
-        "components": [
-          "form"
-        ],
-        "actions": [
-          "view",
-          "update",
-          "delete"
-        ]
-      },
-      {
-        "path": "/app/veterinario_opcional/list",
-        "title": "Listar Veterinario_Opcional",
-        "components": [
-          "table",
-          "pagination",
-          "search"
-        ],
-        "actions": [
-          "list",
-          "view",
-          "delete"
-        ]
-      },
-      {
-        "path": "/app/veterinario_opcional/new",
-        "title": "Novo Veterinario_Opcional",
-        "components": [
-          "form"
-        ],
-        "actions": [
-          "create"
-        ]
-      },
-      {
-        "path": "/app/veterinario_opcional/:id",
-        "title": "Detalhes Veterinario_Opcional",
-        "components": [
-          "form"
-        ],
-        "actions": [
-          "view",
-          "update",
-          "delete"
-        ]
-      },
-      {
-        "path": "/app/servico/list",
-        "title": "Listar Servico",
-        "components": [
-          "table",
-          "pagination",
-          "search"
-        ],
-        "actions": [
-          "list",
-          "view",
-          "delete"
-        ]
-      },
-      {
-        "path": "/app/servico/new",
-        "title": "Novo Servico",
-        "components": [
-          "form"
-        ],
-        "actions": [
-          "create"
-        ]
-      },
-      {
-        "path": "/app/servico/:id",
-        "title": "Detalhes Servico",
-        "components": [
-          "form"
-        ],
-        "actions": [
-          "view",
-          "update",
-          "delete"
-        ]
-      },
-      {
-        "path": "/app/statu/list",
-        "title": "Listar Statu",
-        "components": [
-          "table",
-          "pagination",
-          "search"
-        ],
-        "actions": [
-          "list",
-          "view",
-          "delete"
-        ]
-      },
-      {
-        "path": "/app/statu/new",
-        "title": "Novo Statu",
-        "components": [
-          "form"
-        ],
-        "actions": [
-          "create"
-        ]
-      },
-      {
-        "path": "/app/statu/:id",
-        "title": "Detalhes Statu",
-        "components": [
-          "form"
-        ],
-        "actions": [
-          "view",
-          "update",
-          "delete"
-        ]
-      },
-      {
-        "path": "/app/data_regras_nao_pode_ter_atendimento_sem_pet/list",
-        "title": "Listar Data_Regras_Nao_Pode_Ter_Atendimento_Sem_Pet",
-        "components": [
-          "table",
-          "pagination",
-          "search"
-        ],
-        "actions": [
-          "list",
-          "view",
-          "delete"
-        ]
-      },
-      {
-        "path": "/app/data_regras_nao_pode_ter_atendimento_sem_pet/new",
-        "title": "Novo Data_Regras_Nao_Pode_Ter_Atendimento_Sem_Pet",
-        "components": [
-          "form"
-        ],
-        "actions": [
-          "create"
-        ]
-      },
-      {
-        "path": "/app/data_regras_nao_pode_ter_atendimento_sem_pet/:id",
-        "title": "Detalhes Data_Regras_Nao_Pode_Ter_Atendimento_Sem_Pet",
-        "components": [
-          "form"
-        ],
-        "actions": [
-          "view",
-          "update",
-          "delete"
-        ]
-      },
-      {
-        "path": "/app/sem_veterinario/list",
-        "title": "Listar Sem_Veterinario",
-        "components": [
-          "table",
-          "pagination",
-          "search"
-        ],
-        "actions": [
-          "list",
-          "view",
-          "delete"
-        ]
-      },
-      {
-        "path": "/app/sem_veterinario/new",
-        "title": "Novo Sem_Veterinario",
-        "components": [
-          "form"
-        ],
-        "actions": [
-          "create"
-        ]
-      },
-      {
-        "path": "/app/sem_veterinario/:id",
-        "title": "Detalhes Sem_Veterinario",
-        "components": [
-          "form"
-        ],
-        "actions": [
-          "view",
-          "update",
-          "delete"
-        ]
-      },
-      {
-        "path": "/app/cadastrar_pet/list",
-        "title": "Listar Cadastrar_Pet",
-        "components": [
-          "table",
-          "pagination",
-          "search"
-        ],
-        "actions": [
-          "list",
-          "view",
-          "delete"
-        ]
-      },
-      {
-        "path": "/app/cadastrar_pet/new",
-        "title": "Novo Cadastrar_Pet",
-        "components": [
-          "form"
-        ],
-        "actions": [
-          "create"
-        ]
-      },
-      {
-        "path": "/app/cadastrar_pet/:id",
-        "title": "Detalhes Cadastrar_Pet",
-        "components": [
-          "form"
-        ],
-        "actions": [
-          "view",
-          "update",
-          "delete"
-        ]
-      },
-      {
-        "path": "/app/clinica/list",
-        "title": "Listar Clinica",
-        "components": [
-          "table",
-          "pagination",
-          "search"
-        ],
-        "actions": [
-          "list",
-          "view",
-          "delete"
-        ]
-      },
-      {
-        "path": "/app/clinica/new",
-        "title": "Novo Clinica",
-        "components": [
-          "form"
-        ],
-        "actions": [
-          "create"
-        ]
-      },
-      {
-        "path": "/app/clinica/:id",
-        "title": "Detalhes Clinica",
+        "path": "/app/pagamento/:id",
+        "title": "Detalhes Pagamento",
         "components": [
           "form"
         ],

@@ -1,0 +1,59 @@
+{
+  "project": "petclinic",
+  "version": "1.0.0",
+  "timestamp": "2026-01-05T10:44:27.011839",
+  "engine_version": "1.0.0",
+  "repo_path": "/home/bazari/generated/petclinic",
+  "store_path": "/home/bazari/engine/demo_store/petclinic",
+  "success": false,
+  "final_status": "SMOKE_FAILED",
+  "artifacts": {
+    "srs_version": 4,
+    "ir_version": 4,
+    "oas_version": 4,
+    "rbac_version": 4,
+    "plan_version": 4
+  },
+  "metrics": {
+    "requirements_count": 36,
+    "entities_count": 7,
+    "operations_count": 35,
+    "tasks_count": 56,
+    "patch_count": 59
+  },
+  "build": {
+    "build_ok": true,
+    "fix_attempts": 0,
+    "fixes_applied": 0
+  },
+  "release": {
+    "docker_compose_ok": true,
+    "services_running": [
+      "backend",
+      "db",
+      "frontend"
+    ],
+    "smoke_ok": false,
+    "smoke_passed": 0,
+    "smoke_failed": 0
+  },
+  "checklist": {
+    "passed": false,
+    "total_items": 10,
+    "failures": [
+      "hashes_complete: Hashes faltando: input_hash, srs_hash, ir_hash, oas_hash, rbac_hash, plan_hash",
+      "smoke_ok: Smoke tests falharam (0 falhas)"
+    ]
+  },
+  "errors": [
+    "Services not ready after 240382ms"
+  ],
+  "duration_ms": 292669.154,
+  "commands": {
+    "start": "cd /home/bazari/generated/petclinic && docker compose up -d",
+    "stop": "cd /home/bazari/generated/petclinic && docker compose down",
+    "logs": "cd /home/bazari/generated/petclinic && docker compose logs -f",
+    "status": "cd /home/bazari/generated/petclinic && docker compose ps",
+    "restart": "cd /home/bazari/generated/petclinic && docker compose restart"
+  }
+}

@@ -1,0 +1,698 @@
+{
+  "meta": {
+    "project_name": "Sistema Petclinic",
+    "created_at": "2026-01-05T14:48:06.536140",
+    "version": "v9",
+    "srs_version": "v9"
+  },
+  "domain": {
+    "entities": [
+      {
+        "name": "tutor",
+        "primary_key": "id",
+        "fields": [
+          {
+            "name": "id",
+            "type": "uuid",
+            "required": true,
+            "unique": true,
+            "indexed": true
+          },
+          {
+            "name": "nome",
+            "type": "string",
+            "required": true,
+            "unique": false,
+            "indexed": false
+          },
+          {
+            "name": "cpf",
+            "type": "string",
+            "required": true,
+            "unique": true,
+            "indexed": false
+          },
+          {
+            "name": "telefone",
+            "type": "string",
+            "required": false,
+            "unique": false,
+            "indexed": false
+          },
+          {
+            "name": "email",
+            "type": "string",
+            "required": true,
+            "unique": true,
+            "indexed": false
+          },
+          {
+            "name": "endereco",
+            "type": "string",
+            "required": true,
+            "unique": false,
+            "indexed": false
+          }
+        ]
+      },
+      {
+        "name": "pet",
+        "primary_key": "id",
+        "fields": [
+          {
+            "name": "id",
+            "type": "uuid",
+            "required": true,
+            "unique": true,
+            "indexed": true
+          },
+          {
+            "name": "nome",
+            "type": "string",
+            "required": true,
+            "unique": false,
+            "indexed": false
+          },
+          {
+            "name": "especie",
+            "type": "string",
+            "required": true,
+            "unique": false,
+            "indexed": false
+          },
+          {
+            "name": "raca",
+            "type": "string",
+            "required": true,
+            "unique": false,
+            "indexed": false
+          },
+          {
+            "name": "sexo",
+            "type": "string",
+            "required": true,
+            "unique": false,
+            "indexed": false
+          },
+          {
+            "name": "data_nascimento",
+            "type": "date",
+            "required": true,
+            "unique": false,
+            "indexed": false
+          },
+          {
+            "name": "peso",
+            "type": "decimal",
+            "required": false,
+            "unique": false,
+            "indexed": false
+          },
+          {
+            "name": "observacoes",
+            "type": "string",
+            "required": true,
+            "unique": false,
+            "indexed": false
+          },
+          {
+            "name": "tutor_id",
+            "type": "uuid",
+            "required": true,
+            "unique": false,
+            "indexed": false
+          }
+        ]
+      },
+      {
+        "name": "veterinario",
+        "primary_key": "id",
+        "fields": [
+          {
+            "name": "id",
+            "type": "uuid",
+            "required": true,
+            "unique": true,
+            "indexed": true
+          },
+          {
+            "name": "nome",
+            "type": "string",
+            "required": true,
+            "unique": false,
+            "indexed": false
+          },
+          {
+            "name": "crmv",
+            "type": "string",
+            "required": true,
+            "unique": true,
+            "indexed": false
+          },
+          {
+            "name": "especialidade",
+            "type": "string",
+            "required": true,
+            "unique": false,
+            "indexed": false
+          },
+          {
+            "name": "telefone",
+            "type": "string",
+            "required": false,
+            "unique": false,
+            "indexed": false
+          },
+          {
+            "name": "email",
+            "type": "string",
+            "required": true,
+            "unique": true,
+            "indexed": false
+          }
+        ]
+      },
+      {
+        "name": "atendimento",
+        "primary_key": "id",
+        "fields": [
+          {
+            "name": "id",
+            "type": "uuid",
+            "required": true,
+            "unique": true,
+            "indexed": true
+          },
+          {
+            "name": "data",
+            "type": "date",
+            "required": true,
+            "unique": false,
+            "indexed": false
+          },
+          {
+            "name": "hora",
+            "type": "time",
+            "required": true,
+            "unique": false,
+            "indexed": false
+          },
+          {
+            "name": "pet_id",
+            "type": "uuid",
+            "required": true,
+            "unique": false,
+            "indexed": false
+          },
+          {
+            "name": "veterinario_id",
+            "type": "uuid",
+            "required": true,
+            "unique": false,
+            "indexed": false
+          },
+          {
+            "name": "motivo",
+            "type": "string",
+            "required": true,
+            "unique": false,
+            "indexed": false
+          },
+          {
+            "name": "anotacoes",
+            "type": "string",
+            "required": true,
+            "unique": false,
+            "indexed": false
+          },
+          {
+            "name": "diagnostico",
+            "type": "string",
+            "required": true,
+            "unique": false,
+            "indexed": false
+          },
+          {
+            "name": "prescricao",
+            "type": "string",
+            "required": true,
+            "unique": false,
+            "indexed": false
+          },
+          {
+            "name": "status",
+            "type": "string",
+            "required": true,
+            "unique": false,
+            "indexed": false
+          }
+        ]
+      },
+      {
+        "name": "vacina",
+        "primary_key": "id",
+        "fields": [
+          {
+            "name": "id",
+            "type": "uuid",
+            "required": true,
+            "unique": true,
+            "indexed": true
+          },
+          {
+            "name": "pet_id",
+            "type": "uuid",
+            "required": true,
+            "unique": false,
+            "indexed": false
+          },
+          {
+            "name": "vacina",
+            "type": "string",
+            "required": true,
+            "unique": false,
+            "indexed": false
+          },
+          {
+            "name": "data_aplicacao",
+            "type": "date",
+            "required": true,
+            "unique": false,
+            "indexed": false
+          },
+          {
+            "name": "proxima_dose",
+            "type": "string",
+            "required": true,
+            "unique": false,
+            "indexed": false
+          },
+          {
+            "name": "lote",
+            "type": "string",
+            "required": true,
+            "unique": false,
+            "indexed": false
+          },
+          {
+            "name": "observacoes",
+            "type": "string",
+            "required": true,
+            "unique": false,
+            "indexed": false
+          }
+        ]
+      },
+      {
+        "name": "agendamento",
+        "primary_key": "id",
+        "fields": [
+          {
+            "name": "id",
+            "type": "uuid",
+            "required": true,
+            "unique": true,
+            "indexed": true
+          },
+          {
+            "name": "data",
+            "type": "date",
+            "required": true,
+            "unique": false,
+            "indexed": false
+          },
+          {
+            "name": "hora",
+            "type": "time",
+            "required": true,
+            "unique": false,
+            "indexed": false
+          },
+          {
+            "name": "pet_id",
+            "type": "uuid",
+            "required": true,
+            "unique": false,
+            "indexed": false
+          },
+          {
+            "name": "veterinario_id",
+            "type": "uuid",
+            "required": false,
+            "unique": false,
+            "indexed": false
+          },
+          {
+            "name": "servico",
+            "type": "string",
+            "required": true,
+            "unique": false,
+            "indexed": false
+          },
+          {
+            "name": "status",
+            "type": "string",
+            "required": true,
+            "unique": false,
+            "indexed": false
+          }
+        ]
+      },
+      {
+        "name": "pagamento",
+        "primary_key": "id",
+        "fields": [
+          {
+            "name": "id",
+            "type": "uuid",
+            "required": true,
+            "unique": true,
+            "indexed": true
+          },
+          {
+            "name": "atendimento_id",
+            "type": "uuid",
+            "required": true,
+            "unique": false,
+            "indexed": false
+          },
+          {
+            "name": "forma_pagamento",
+            "type": "string",
+            "required": true,
+            "unique": false,
+            "indexed": false
+          },
+          {
+            "name": "valor",
+            "type": "decimal",
+            "required": true,
+            "unique": false,
+            "indexed": false
+          },
+          {
+            "name": "status",
+            "type": "string",
+            "required": true,
+            "unique": false,
+            "indexed": false
+          },
+          {
+            "name": "data",
+            "type": "date",
+            "required": true,
+            "unique": false,
+            "indexed": false
+          }
+        ]
+      }
+    ],
+    "relations": [],
+    "workflows": [],
+    "rules": [
+      {
+        "id": "BR-001",
+        "description": "{'type': 'ownership_required', 'entity': 'sempre', 'target_entity': 'um', 'raw_text': 'sempre pertence a um'}",
+        "severity": "ERROR"
+      },
+      {
+        "id": "BR-002",
+        "description": "{'type': 'conversion', 'entity': 'agendamento', 'target_entity': 'atendimento', 'raw_text': 'agendamento pode virar atendimento'}",
+        "severity": "ERROR"
+      }
+    ]
+  },
+  "api_intent": {
+    "resources": [
+      "tutor",
+      "pet",
+      "veterinario",
+      "atendimento",
+      "vacina",
+      "agendamento",
+      "pagamento"
+    ]
+  },
+  "ui": {
+    "pages": [
+      {
+        "path": "/app/tutor/list",
+        "title": "Listar Tutor",
+        "components": [
+          "table",
+          "pagination",
+          "search"
+        ],
+        "actions": [
+          "list",
+          "view",
+          "delete"
+        ]
+      },
+      {
+        "path": "/app/tutor/new",
+        "title": "Novo Tutor",
+        "components": [
+          "form"
+        ],
+        "actions": [
+          "create"
+        ]
+      },
+      {
+        "path": "/app/tutor/:id",
+        "title": "Detalhes Tutor",
+        "components": [
+          "form"
+        ],
+        "actions": [
+          "view",
+          "update",
+          "delete"
+        ]
+      },
+      {
+        "path": "/app/pet/list",
+        "title": "Listar Pet",
+        "components": [
+          "table",
+          "pagination",
+          "search"
+        ],
+        "actions": [
+          "list",
+          "view",
+          "delete"
+        ]
+      },
+      {
+        "path": "/app/pet/new",
+        "title": "Novo Pet",
+        "components": [
+          "form"
+        ],
+        "actions": [
+          "create"
+        ]
+      },
+      {
+        "path": "/app/pet/:id",
+        "title": "Detalhes Pet",
+        "components": [
+          "form"
+        ],
+        "actions": [
+          "view",
+          "update",
+          "delete"
+        ]
+      },
+      {
+        "path": "/app/veterinario/list",
+        "title": "Listar Veterinario",
+        "components": [
+          "table",
+          "pagination",
+          "search"
+        ],
+        "actions": [
+          "list",
+          "view",
+          "delete"
+        ]
+      },
+      {
+        "path": "/app/veterinario/new",
+        "title": "Novo Veterinario",
+        "components": [
+          "form"
+        ],
+        "actions": [
+          "create"
+        ]
+      },
+      {
+        "path": "/app/veterinario/:id",
+        "title": "Detalhes Veterinario",
+        "components": [
+          "form"
+        ],
+        "actions": [
+          "view",
+          "update",
+          "delete"
+        ]
+      },
+      {
+        "path": "/app/atendimento/list",
+        "title": "Listar Atendimento",
+        "components": [
+          "table",
+          "pagination",
+          "search"
+        ],
+        "actions": [
+          "list",
+          "view",
+          "delete"
+        ]
+      },
+      {
+        "path": "/app/atendimento/new",
+        "title": "Novo Atendimento",
+        "components": [
+          "form"
+        ],
+        "actions": [
+          "create"
+        ]
+      },
+      {
+        "path": "/app/atendimento/:id",
+        "title": "Detalhes Atendimento",
+        "components": [
+          "form"
+        ],
+        "actions": [
+          "view",
+          "update",
+          "delete"
+        ]
+      },
+      {
+        "path": "/app/vacina/list",
+        "title": "Listar Vacina",
+        "components": [
+          "table",
+          "pagination",
+          "search"
+        ],
+        "actions": [
+          "list",
+          "view",
+          "delete"
+        ]
+      },
+      {
+        "path": "/app/vacina/new",
+        "title": "Novo Vacina",
+        "components": [
+          "form"
+        ],
+        "actions": [
+          "create"
+        ]
+      },
+      {
+        "path": "/app/vacina/:id",
+        "title": "Detalhes Vacina",
+        "components": [
+          "form"
+        ],
+        "actions": [
+          "view",
+          "update",
+          "delete"
+        ]
+      },
+      {
+        "path": "/app/agendamento/list",
+        "title": "Listar Agendamento",
+        "components": [
+          "table",
+          "pagination",
+          "search"
+        ],
+        "actions": [
+          "list",
+          "view",
+          "delete"
+        ]
+      },
+      {
+        "path": "/app/agendamento/new",
+        "title": "Novo Agendamento",
+        "components": [
+          "form"
+        ],
+        "actions": [
+          "create"
+        ]
+      },
+      {
+        "path": "/app/agendamento/:id",
+        "title": "Detalhes Agendamento",
+        "components": [
+          "form"
+        ],
+        "actions": [
+          "view",
+          "update",
+          "delete"
+        ]
+      },
+      {
+        "path": "/app/pagamento/list",
+        "title": "Listar Pagamento",
+        "components": [
+          "table",
+          "pagination",
+          "search"
+        ],
+        "actions": [
+          "list",
+          "view",
+          "delete"
+        ]
+      },
+      {
+        "path": "/app/pagamento/new",
+        "title": "Novo Pagamento",
+        "components": [
+          "form"
+        ],
+        "actions": [
+          "create"
+        ]
+      },
+      {
+        "path": "/app/pagamento/:id",
+        "title": "Detalhes Pagamento",
+        "components": [
+          "form"
+        ],
+        "actions": [
+          "view",
+          "update",
+          "delete"
+        ]
+      }
+    ]
+  },
+  "nfr": {
+    "security": {
+      "auth_required": true,
+      "audit_log_required": false
+    }
+  }
+}

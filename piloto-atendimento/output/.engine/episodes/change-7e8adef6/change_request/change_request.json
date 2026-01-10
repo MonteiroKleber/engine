@@ -1,0 +1,58 @@
+{
+  "acceptance_criteria": [
+    "Ticket entity has optional sla_deadline datetime field",
+    "New CheckSLABreach use case returns list of tickets past SLA deadline",
+    "Existing CreateTicket and ResolveTicket use cases remain functional",
+    "API returns sla_deadline in Ticket responses when present",
+    "All existing tests continue to pass"
+  ],
+  "attachments": [
+    {
+      "kind": "note",
+      "ref": "SLA deadline is calculated as created_at + tier-based SLA hours (standard=48h, premium=24h, enterprise=4h)"
+    }
+  ],
+  "change_request_id": "CR-SLA-001",
+  "invariants": [
+    {
+      "description": "Existing tickets without sla_deadline must remain valid (nullable field)",
+      "name": "existing_tickets_unaffected",
+      "severity": "must"
+    },
+    {
+      "description": "Existing API endpoints must continue to work without sla_deadline",
+      "name": "api_backward_compatible",
+      "severity": "must"
+    },
+    {
+      "description": "No existing data can be modified or deleted by this change",
+      "name": "no_data_loss",
+      "severity": "must"
+    }
+  ],
+  "previous_episode_id": "atendimento_3b5e0202",
+  "reason": "Add SLA tracking capability to support service level compliance monitoring. Customers require visibility into whether tickets are being resolved within agreed timeframes.",
+  "requested_by": {
+    "display_name": "Operations Manager",
+    "org": "Bazari Enterprise",
+    "role": "Product Owner"
+  },
+  "risk": {
+    "level": "low",
+    "notes": "Additive change only. No modifications to existing fields or logic. New field is nullable for backward compatibility."
+  },
+  "schema_version": "idl_change_request.v1",
+  "scope": {
+    "entities_affected": [
+      "Ticket"
+    ],
+    "summary": "Add sla_deadline field to Ticket entity and CheckSLABreach use case for SLA compliance monitoring",
+    "target": "backend",
+    "usecases_affected": [
+      "CheckSLABreach"
+    ]
+  },
+  "volatile": {
+    "timestamp": "2026-01-08T21:50:00Z"
+  }
+}

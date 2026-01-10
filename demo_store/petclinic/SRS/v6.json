@@ -1,0 +1,599 @@
+{
+  "id": "srs-1b46dd0a",
+  "title": "Sistema Petclinic",
+  "version": "1.0.0",
+  "requirements": [
+    {
+      "id": "FR-001",
+      "description": "O sistema deve permitir cadastrar tutor",
+      "priority": "high",
+      "type": "functional"
+    },
+    {
+      "id": "FR-002",
+      "description": "O sistema deve permitir listar tutor",
+      "priority": "medium",
+      "type": "functional"
+    },
+    {
+      "id": "FR-003",
+      "description": "O sistema deve permitir visualizar tutor",
+      "priority": "medium",
+      "type": "functional"
+    },
+    {
+      "id": "FR-004",
+      "description": "O sistema deve permitir editar tutor",
+      "priority": "medium",
+      "type": "functional"
+    },
+    {
+      "id": "FR-005",
+      "description": "O sistema deve permitir excluir tutor",
+      "priority": "low",
+      "type": "functional"
+    },
+    {
+      "id": "FR-006",
+      "description": "O sistema deve permitir cadastrar pet",
+      "priority": "high",
+      "type": "functional"
+    },
+    {
+      "id": "FR-007",
+      "description": "O sistema deve permitir listar pet",
+      "priority": "medium",
+      "type": "functional"
+    },
+    {
+      "id": "FR-008",
+      "description": "O sistema deve permitir visualizar pet",
+      "priority": "medium",
+      "type": "functional"
+    },
+    {
+      "id": "FR-009",
+      "description": "O sistema deve permitir editar pet",
+      "priority": "medium",
+      "type": "functional"
+    },
+    {
+      "id": "FR-010",
+      "description": "O sistema deve permitir excluir pet",
+      "priority": "low",
+      "type": "functional"
+    },
+    {
+      "id": "FR-011",
+      "description": "O sistema deve permitir cadastrar veterinario",
+      "priority": "high",
+      "type": "functional"
+    },
+    {
+      "id": "FR-012",
+      "description": "O sistema deve permitir listar veterinario",
+      "priority": "medium",
+      "type": "functional"
+    },
+    {
+      "id": "FR-013",
+      "description": "O sistema deve permitir visualizar veterinario",
+      "priority": "medium",
+      "type": "functional"
+    },
+    {
+      "id": "FR-014",
+      "description": "O sistema deve permitir editar veterinario",
+      "priority": "medium",
+      "type": "functional"
+    },
+    {
+      "id": "FR-015",
+      "description": "O sistema deve permitir excluir veterinario",
+      "priority": "low",
+      "type": "functional"
+    },
+    {
+      "id": "FR-016",
+      "description": "O sistema deve permitir cadastrar atendimento",
+      "priority": "high",
+      "type": "functional"
+    },
+    {
+      "id": "FR-017",
+      "description": "O sistema deve permitir listar atendimento",
+      "priority": "medium",
+      "type": "functional"
+    },
+    {
+      "id": "FR-018",
+      "description": "O sistema deve permitir visualizar atendimento",
+      "priority": "medium",
+      "type": "functional"
+    },
+    {
+      "id": "FR-019",
+      "description": "O sistema deve permitir editar atendimento",
+      "priority": "medium",
+      "type": "functional"
+    },
+    {
+      "id": "FR-020",
+      "description": "O sistema deve permitir excluir atendimento",
+      "priority": "low",
+      "type": "functional"
+    },
+    {
+      "id": "FR-021",
+      "description": "O sistema deve permitir cadastrar vacina",
+      "priority": "high",
+      "type": "functional"
+    },
+    {
+      "id": "FR-022",
+      "description": "O sistema deve permitir listar vacina",
+      "priority": "medium",
+      "type": "functional"
+    },
+    {
+      "id": "FR-023",
+      "description": "O sistema deve permitir visualizar vacina",
+      "priority": "medium",
+      "type": "functional"
+    },
+    {
+      "id": "FR-024",
+      "description": "O sistema deve permitir editar vacina",
+      "priority": "medium",
+      "type": "functional"
+    },
+    {
+      "id": "FR-025",
+      "description": "O sistema deve permitir excluir vacina",
+      "priority": "low",
+      "type": "functional"
+    },
+    {
+      "id": "FR-026",
+      "description": "O sistema deve permitir cadastrar agendamento",
+      "priority": "high",
+      "type": "functional"
+    },
+    {
+      "id": "FR-027",
+      "description": "O sistema deve permitir listar agendamento",
+      "priority": "medium",
+      "type": "functional"
+    },
+    {
+      "id": "FR-028",
+      "description": "O sistema deve permitir visualizar agendamento",
+      "priority": "medium",
+      "type": "functional"
+    },
+    {
+      "id": "FR-029",
+      "description": "O sistema deve permitir editar agendamento",
+      "priority": "medium",
+      "type": "functional"
+    },
+    {
+      "id": "FR-030",
+      "description": "O sistema deve permitir excluir agendamento",
+      "priority": "low",
+      "type": "functional"
+    },
+    {
+      "id": "FR-031",
+      "description": "O sistema deve permitir cadastrar pagamento",
+      "priority": "high",
+      "type": "functional"
+    },
+    {
+      "id": "FR-032",
+      "description": "O sistema deve permitir listar pagamento",
+      "priority": "medium",
+      "type": "functional"
+    },
+    {
+      "id": "FR-033",
+      "description": "O sistema deve permitir visualizar pagamento",
+      "priority": "medium",
+      "type": "functional"
+    },
+    {
+      "id": "FR-034",
+      "description": "O sistema deve permitir editar pagamento",
+      "priority": "medium",
+      "type": "functional"
+    },
+    {
+      "id": "FR-035",
+      "description": "O sistema deve permitir excluir pagamento",
+      "priority": "low",
+      "type": "functional"
+    },
+    {
+      "id": "FR-WF-036",
+      "description": "O sistema deve permitir converter agendamento em atendimento",
+      "priority": "medium",
+      "type": "functional"
+    }
+  ],
+  "meta": {
+    "project_name": "Sistema Petclinic"
+  },
+  "data_requirements": [
+    {
+      "entity": "tutor",
+      "fields": [
+        {
+          "name": "nome",
+          "type": "string",
+          "required": true
+        },
+        {
+          "name": "cpf",
+          "type": "string",
+          "required": true,
+          "unique": true
+        },
+        {
+          "name": "telefone",
+          "type": "string",
+          "required": false
+        },
+        {
+          "name": "email",
+          "type": "string",
+          "required": true,
+          "unique": true
+        },
+        {
+          "name": "endereco",
+          "type": "string",
+          "required": true
+        }
+      ]
+    },
+    {
+      "entity": "pet",
+      "fields": [
+        {
+          "name": "nome",
+          "type": "string",
+          "required": true
+        },
+        {
+          "name": "especie",
+          "type": "string",
+          "required": true
+        },
+        {
+          "name": "raca",
+          "type": "string",
+          "required": true
+        },
+        {
+          "name": "sexo",
+          "type": "string",
+          "required": true
+        },
+        {
+          "name": "data_nascimento",
+          "type": "date",
+          "required": true
+        },
+        {
+          "name": "peso",
+          "type": "decimal",
+          "required": false
+        },
+        {
+          "name": "observacoes",
+          "type": "string",
+          "required": true
+        },
+        {
+          "name": "tutor_id",
+          "type": "uuid",
+          "required": true,
+          "unique": false,
+          "nullable": false
+        }
+      ]
+    },
+    {
+      "entity": "veterinario",
+      "fields": [
+        {
+          "name": "nome",
+          "type": "string",
+          "required": true
+        },
+        {
+          "name": "crmv",
+          "type": "string",
+          "required": true,
+          "unique": true
+        },
+        {
+          "name": "especialidade",
+          "type": "string",
+          "required": true
+        },
+        {
+          "name": "telefone",
+          "type": "string",
+          "required": false
+        },
+        {
+          "name": "email",
+          "type": "string",
+          "required": true,
+          "unique": true
+        }
+      ]
+    },
+    {
+      "entity": "atendimento",
+      "fields": [
+        {
+          "name": "data",
+          "type": "date",
+          "required": true
+        },
+        {
+          "name": "hora",
+          "type": "time",
+          "required": true
+        },
+        {
+          "name": "pet_id",
+          "type": "uuid",
+          "required": true,
+          "unique": false,
+          "nullable": false
+        },
+        {
+          "name": "veterinario_id",
+          "type": "uuid",
+          "required": true,
+          "unique": false,
+          "nullable": false
+        },
+        {
+          "name": "motivo",
+          "type": "string",
+          "required": true
+        },
+        {
+          "name": "anotacoes",
+          "type": "string",
+          "required": true
+        },
+        {
+          "name": "diagnostico",
+          "type": "string",
+          "required": true
+        },
+        {
+          "name": "prescricao",
+          "type": "string",
+          "required": true
+        },
+        {
+          "name": "status",
+          "type": "string",
+          "required": true
+        }
+      ]
+    },
+    {
+      "entity": "vacina",
+      "fields": [
+        {
+          "name": "pet_id",
+          "type": "uuid",
+          "required": true,
+          "unique": false,
+          "nullable": false
+        },
+        {
+          "name": "vacina",
+          "type": "string",
+          "required": true
+        },
+        {
+          "name": "data_aplicacao",
+          "type": "date",
+          "required": true
+        },
+        {
+          "name": "proxima_dose",
+          "type": "string",
+          "required": true
+        },
+        {
+          "name": "lote",
+          "type": "string",
+          "required": true
+        },
+        {
+          "name": "observacoes",
+          "type": "string",
+          "required": true
+        }
+      ]
+    },
+    {
+      "entity": "agendamento",
+      "fields": [
+        {
+          "name": "data",
+          "type": "date",
+          "required": true
+        },
+        {
+          "name": "hora",
+          "type": "time",
+          "required": true
+        },
+        {
+          "name": "pet_id",
+          "type": "uuid",
+          "required": true,
+          "unique": false,
+          "nullable": false
+        },
+        {
+          "name": "veterinario_id",
+          "type": "uuid",
+          "required": false,
+          "unique": false,
+          "nullable": true
+        },
+        {
+          "name": "servico",
+          "type": "string",
+          "required": true
+        },
+        {
+          "name": "status",
+          "type": "string",
+          "required": true
+        }
+      ]
+    },
+    {
+      "entity": "pagamento",
+      "fields": [
+        {
+          "name": "atendimento_id",
+          "type": "uuid",
+          "required": true,
+          "unique": false,
+          "nullable": false
+        },
+        {
+          "name": "forma_pagamento",
+          "type": "string",
+          "required": true
+        },
+        {
+          "name": "valor",
+          "type": "decimal",
+          "required": true
+        },
+        {
+          "name": "status",
+          "type": "string",
+          "required": true
+        },
+        {
+          "name": "data",
+          "type": "date",
+          "required": true
+        }
+      ]
+    }
+  ],
+  "relations": [
+    {
+      "from": "pet",
+      "to": "tutor",
+      "type": "many_to_one",
+      "field": "tutor_id",
+      "optional": false
+    },
+    {
+      "from": "atendimento",
+      "to": "pet",
+      "type": "many_to_one",
+      "field": "pet_id",
+      "optional": false
+    },
+    {
+      "from": "atendimento",
+      "to": "veterinario",
+      "type": "many_to_one",
+      "field": "veterinario_id",
+      "optional": false
+    },
+    {
+      "from": "vacina",
+      "to": "pet",
+      "type": "many_to_one",
+      "field": "pet_id",
+      "optional": false
+    },
+    {
+      "from": "agendamento",
+      "to": "pet",
+      "type": "many_to_one",
+      "field": "pet_id",
+      "optional": false
+    },
+    {
+      "from": "agendamento",
+      "to": "veterinario",
+      "type": "many_to_one",
+      "field": "veterinario_id",
+      "optional": true
+    },
+    {
+      "from": "pagamento",
+      "to": "atendimento",
+      "type": "many_to_one",
+      "field": "atendimento_id",
+      "optional": false
+    }
+  ],
+  "business_rules": [
+    {
+      "type": "ownership_required",
+      "entity": "sempre",
+      "target_entity": "um",
+      "raw_text": "sempre pertence a um"
+    },
+    {
+      "type": "conversion",
+      "entity": "agendamento",
+      "target_entity": "atendimento",
+      "raw_text": "agendamento pode virar atendimento"
+    }
+  ],
+  "workflows": [
+    {
+      "source": "agendamento",
+      "target": "atendimento",
+      "action": "convert",
+      "endpoint": "/api/agendamento/{id}/convert-to-atendimento"
+    }
+  ],
+  "non_functional_requirements": {
+    "security": {
+      "auth_required": true,
+      "audit_log_required": false
+    }
+  },
+  "metadata": {
+    "created_at": "2026-01-05T12:18:16.670767",
+    "language": "pt-BR",
+    "actors": [
+      {
+        "id": "admin",
+        "name": "Administrador",
+        "description": "Usuário administrador do sistema"
+      }
+    ],
+    "summary": "Quero um sistema web para controle de clínica veterinária (clínica pet)",
+    "open_questions": [
+      "Autenticação é necessária? Qual tipo (login/senha, OAuth, SSO)?",
+      "Quais são as principais entidades/recursos do sistema?",
+      "Existem regras de permissão específicas por perfil?"
+    ],
+    "warnings": [],
+    "generation_mode": "MINIGRAMMAR_V2"
+  }
+}

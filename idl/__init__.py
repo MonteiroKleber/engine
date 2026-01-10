@@ -4,6 +4,8 @@ Este modulo contem:
 - Parser para linguagem IDL v1
 - Canonizacao deterministica
 - Persistencia com Contract Gate
+- IDL Draft v1 (pre-canonico)
+- Draft → IDL Compiler
 """
 
 from .idl_v1 import (
@@ -17,13 +19,40 @@ from .idl_v1 import (
 from .idl_store import (
     IDLStore,
 )
+from .idl_draft_v1 import (
+    IDL_DRAFT_SCHEMA_VERSION,
+    IDLDraftV1,
+    DraftSource,
+    DraftActor,
+    DraftEntity,
+    DraftField,
+    DraftUseCase,
+    DraftFlowStep,
+    DraftIntegration,
+    DraftNonFunctional,
+    is_unknown,
+    UNKNOWN,
+)
+from .idl_draft_schema import (
+    DraftSchemaValidator,
+    DraftValidationResult,
+    DraftValidationError,
+)
+from .idl_compile import (
+    DraftToIDLCompiler,
+    CompileResult,
+    CompileBlockingError,
+    DraftNotCompileableError,
+    compile_draft_to_idl,
+    compile_draft_to_idl_or_raise,
+)
 
 __all__ = [
-    # Schema
+    # IDL v1 Schema
     "IDL_SCHEMA_VERSION",
-    # Document
+    # IDL Document
     "IDLDocument",
-    # Parser
+    # IDL Parser
     "IDLParser",
     # Hashing
     "compute_content_hash_sha256",
@@ -31,4 +60,28 @@ __all__ = [
     "HASHABLE_FIELDS",
     # Store
     "IDLStore",
+    # IDL Draft v1
+    "IDL_DRAFT_SCHEMA_VERSION",
+    "IDLDraftV1",
+    "DraftSource",
+    "DraftActor",
+    "DraftEntity",
+    "DraftField",
+    "DraftUseCase",
+    "DraftFlowStep",
+    "DraftIntegration",
+    "DraftNonFunctional",
+    "is_unknown",
+    "UNKNOWN",
+    # Draft Schema Validator
+    "DraftSchemaValidator",
+    "DraftValidationResult",
+    "DraftValidationError",
+    # Draft Compiler
+    "DraftToIDLCompiler",
+    "CompileResult",
+    "CompileBlockingError",
+    "DraftNotCompileableError",
+    "compile_draft_to_idl",
+    "compile_draft_to_idl_or_raise",
 ]

@@ -1,0 +1,38 @@
+{
+  "id": "srs-63bf349a",
+  "title": "Sistema Atendimento",
+  "version": "1.0.0",
+  "requirements": [],
+  "meta": {
+    "project_name": "Sistema Atendimento"
+  },
+  "data_requirements": [],
+  "relations": [],
+  "business_rules": [],
+  "workflows": [],
+  "non_functional_requirements": {
+    "security": {
+      "auth_required": true,
+      "audit_log_required": false
+    }
+  },
+  "metadata": {
+    "created_at": "2026-01-08T18:42:02.494678",
+    "language": "pt-BR",
+    "actors": [
+      {
+        "id": "admin",
+        "name": "Administrador",
+        "description": "Usuário administrador do sistema"
+      }
+    ],
+    "summary": "piloto-atendimento/input/atendimento",
+    "open_questions": [
+      "Autenticação é necessária? Qual tipo (login/senha, OAuth, SSO)?",
+      "Quais perfis de usuário existem além de admin?",
+      "Quais são as principais entidades/recursos do sistema?"
+    ],
+    "warnings": [],
+    "generation_mode": "MINIGRAMMAR_V2"
+  }
+}
