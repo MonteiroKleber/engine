@@ -17,6 +17,7 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
+from config import get_config
 from observability.canonical_hash import compute_content_hash_sha256, compute_text_hash_sha256
 
 
@@ -75,18 +76,24 @@ class PatchEntry:
         )
 
 
+def _default_blocked_paths() -> List[str]:
+    """Get default blocked paths from config."""
+    return get_config().get_blocked_paths()
+
+
+def _default_allowlist_roots() -> List[str]:
+    """Get default allowlist roots from config."""
+    config = get_config()
+    return [config.generated_root] if config.generated_root else []
+
+
 @dataclass
 class PatchPolicy:
     """Policy settings for patch application."""
 
     max_rewrite_ratio: float = 0.80
-    blocked_paths: List[str] = field(default_factory=lambda: [
-        "/home/bazari/engine",
-        "/home/bazari/templates",
-    ])
-    allowlist_roots: List[str] = field(default_factory=lambda: [
-        "/home/bazari/generated",
-    ])
+    blocked_paths: List[str] = field(default_factory=_default_blocked_paths)
+    allowlist_roots: List[str] = field(default_factory=_default_allowlist_roots)
 
     def to_dict(self) -> Dict[str, Any]:
         return {

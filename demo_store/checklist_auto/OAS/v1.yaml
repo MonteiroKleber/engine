@@ -1,0 +1,115 @@
+openapi: 3.0.0
+info:
+  title: Sistema Checklist_Auto API
+  version: 1.0.0
+  description: API gerada automaticamente para Sistema Checklist_Auto
+paths:
+  /api/stores:
+    get:
+      operationId: listStore
+      tags:
+      - Store
+      summary: Listar stores
+      responses:
+        '200':
+          description: Lista de stores
+        '400':
+          description: Bad Request
+        '500':
+          description: Internal Server Error
+    post:
+      operationId: createStore
+      tags:
+      - Store
+      summary: Criar store
+      responses:
+        '201':
+          description: Store criado
+        '400':
+          description: Bad Request
+        '500':
+          description: Internal Server Error
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Store'
+  /api/stores/{id}:
+    get:
+      operationId: getStore
+      tags:
+      - Store
+      summary: Obter store por ID
+      responses:
+        '200':
+          description: Detalhes do store
+        '400':
+          description: Bad Request
+        '500':
+          description: Internal Server Error
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+    put:
+      operationId: updateStore
+      tags:
+      - Store
+      summary: Atualizar store
+      responses:
+        '200':
+          description: Store atualizado
+        '400':
+          description: Bad Request
+        '500':
+          description: Internal Server Error
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Store'
+    delete:
+      operationId: deleteStore
+      tags:
+      - Store
+      summary: Deletar store
+      responses:
+        '200':
+          description: Store deletado
+        '400':
+          description: Bad Request
+        '500':
+          description: Internal Server Error
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+components:
+  schemas:
+    Store:
+      type: object
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        cnpj:
+          type: string
+        is_active:
+          type: boolean
+      required:
+      - id
+      - name
+      - cnpj

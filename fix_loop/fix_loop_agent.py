@@ -10,7 +10,7 @@ Fluxo fixo:
 REGRAS ABSOLUTAS:
 - MAX_FIX_ATTEMPTS = 3 (nunca loop infinito)
 - Cada iteração: 1 patch, 1 causa
-- Nunca tocar fora de /home/bazari/generated/<project>
+- Nunca tocar fora de <generated_root>/<project>
 - Patches passam pelas mesmas rules da Semana 7
 """
 
@@ -20,6 +20,7 @@ from enum import Enum
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
 
+from config import get_config
 from fix_loop.error_classifier import (
     BuildErrorClassifier,
     BuildErrorType,
@@ -128,25 +129,26 @@ class FixLoopAgent:
     def __init__(
         self,
         project: str,
-        generated_root: str = "/home/bazari/generated",
+        generated_root: Optional[str] = None,
     ) -> None:
         """Inicializa o Fix Loop Agent.
 
         Args:
             project: Nome do projeto
-            generated_root: Diretório raiz dos projetos gerados
+            generated_root: Diretório raiz dos projetos gerados (from config if None)
         """
         if not project or not project.strip():
             raise ValueError("Project name cannot be empty")
 
         self.project = project
-        self.generated_root = Path(generated_root)
+        _generated_root = generated_root or get_config().generated_root
+        self.generated_root = Path(_generated_root)
         self.project_root = self.generated_root / project
 
         # Componentes
         self.classifier = BuildErrorClassifier()
-        self.patch_engine = PatchEngine(project, generated_root)
-        self.build_validator = BuildValidator(generated_root)
+        self.patch_engine = PatchEngine(project, _generated_root)
+        self.build_validator = BuildValidator(_generated_root)
 
         # Estado do loop
         self._current_attempt = 0
@@ -526,7 +528,7 @@ def run_fix_loop(
     stdout: str,
     exit_code: int,
     step: str,
-    generated_root: str = "/home/bazari/generated",
+    generated_root: Optional[str] = None,
 ) -> FixLoopResult:
     """Função de conveniência para executar o fix loop.
 
@@ -536,7 +538,7 @@ def run_fix_loop(
         stdout: Saída padrão do build
         exit_code: Código de saída do build
         step: Etapa do build ("backend", "frontend")
-        generated_root: Diretório raiz dos projetos gerados
+        generated_root: Diretório raiz dos projetos gerados (from config if None)
 
     Returns:
         FixLoopResult com resultado do loop

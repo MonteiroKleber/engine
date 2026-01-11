@@ -17,6 +17,8 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
+from config import get_config
+
 
 @dataclass
 class SmokeTestResult:
@@ -129,9 +131,9 @@ class QAReleaseAgent:
         generated_root: Diretorio raiz dos projetos gerados
     """
 
-    # Diretorio padrao de projetos gerados
-    DEFAULT_GENERATED_ROOT = "/home/bazari/generated"
+    # Default paths for test compatibility
     DEFAULT_STORE_ROOT = "/home/bazari/engine/demo_store"
+    DEFAULT_GENERATED_ROOT = "/home/bazari/generated"
 
     def __init__(
         self,
@@ -141,11 +143,12 @@ class QAReleaseAgent:
         """Inicializa o agente.
 
         Args:
-            store_root: Diretorio raiz do store
-            generated_root: Diretorio raiz dos projetos gerados
+            store_root: Diretorio raiz do store (from config if None)
+            generated_root: Diretorio raiz dos projetos gerados (from config if None)
         """
-        self.store_root = Path(store_root or self.DEFAULT_STORE_ROOT)
-        self.generated_root = Path(generated_root or self.DEFAULT_GENERATED_ROOT)
+        config = get_config()
+        self.store_root = Path(store_root or config.store_root)
+        self.generated_root = Path(generated_root or config.generated_root)
 
     def run_smoke(self, repo_path: str) -> dict:
         """Executa smoke tests no repositorio.

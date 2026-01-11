@@ -21,6 +21,8 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Set
 
+from config import get_config
+
 
 @dataclass
 class GeneratedFile:
@@ -104,14 +106,14 @@ class FrontendCompiler:
 
     def __init__(
         self,
-        project_root: str = "/home/bazari/generated",
+        project_root: Optional[str] = None,
     ) -> None:
         """Inicializa o FrontendCompiler.
 
         Args:
-            project_root: Diretório raiz do projeto
+            project_root: Diretório raiz do projeto (from config if None)
         """
-        self.project_root = Path(project_root)
+        self.project_root = Path(project_root or get_config().generated_root)
 
     # ==================== UTILITIES ====================
 
@@ -1067,14 +1069,14 @@ export default App;
 def compile_frontend(
     ir: Dict[str, Any],
     oas: Dict[str, Any],
-    project_root: str = "/home/bazari/generated",
+    project_root: Optional[str] = None,
 ) -> FrontendOutput:
     """Função de conveniência para compilar frontend.
 
     Args:
         ir: Intermediate Representation
         oas: OpenAPI Specification
-        project_root: Diretório raiz do projeto
+        project_root: Diretório raiz do projeto (from config if None)
 
     Returns:
         FrontendOutput com todos os arquivos gerados

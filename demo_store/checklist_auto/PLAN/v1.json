@@ -1,0 +1,131 @@
+{
+  "meta": {
+    "version": "v1",
+    "strategy": "PATCH_ONLY",
+    "ir_version": "v1",
+    "project_name": "Sistema Checklist_Auto",
+    "created_at": "2026-01-10T23:01:49.399177"
+  },
+  "tasks": [
+    {
+      "id": "task_store_api_client",
+      "title": "Create API client for Store",
+      "order": 8,
+      "files": [
+        "frontend/src/api/client.ts"
+      ],
+      "acceptance": [
+        "Build frontend passes",
+        "API client has methods for Store CRUD"
+      ],
+      "depends_on": [
+        "task_store_frontend_pages"
+      ]
+    },
+    {
+      "id": "task_store_controller",
+      "title": "Create REST Controller for Store",
+      "order": 5,
+      "files": [
+        "backend/src/main/java/com/example/app/api/StoreController.java"
+      ],
+      "acceptance": [
+        "Contract tests pass",
+        "All endpoints return correct status codes",
+        "Implements operations: listStore, createStore, getStore, updateStore, deleteStore"
+      ],
+      "depends_on": [
+        "task_store_service"
+      ]
+    },
+    {
+      "id": "task_store_frontend_pages",
+      "title": "Create frontend pages for Store",
+      "order": 7,
+      "files": [
+        "frontend/src/pages/store/List.tsx",
+        "frontend/src/pages/store/New.tsx",
+        "frontend/src/pages/store/Detail.tsx"
+      ],
+      "acceptance": [
+        "TypeScript typecheck passes",
+        "Pages render without errors"
+      ],
+      "depends_on": [
+        "task_store_controller"
+      ]
+    },
+    {
+      "id": "task_store_migration",
+      "title": "Create database migration for Store",
+      "order": 1,
+      "files": [
+        "backend/src/main/resources/db/migration/V1__create_store.sql"
+      ],
+      "acceptance": [
+        "Migration compiles without errors",
+        "Table store exists in database"
+      ]
+    },
+    {
+      "id": "task_store_model",
+      "title": "Create JPA Entity for Store",
+      "order": 2,
+      "files": [
+        "backend/src/main/java/com/example/app/domain/Store.java"
+      ],
+      "acceptance": [
+        "Build backend passes",
+        "Store entity has all required fields"
+      ],
+      "depends_on": [
+        "task_store_migration"
+      ]
+    },
+    {
+      "id": "task_store_repository",
+      "title": "Create Repository for Store",
+      "order": 3,
+      "files": [
+        "backend/src/main/java/com/example/app/repo/StoreRepository.java"
+      ],
+      "acceptance": [
+        "Build backend passes",
+        "StoreRepository extends JpaRepository"
+      ],
+      "depends_on": [
+        "task_store_model"
+      ]
+    },
+    {
+      "id": "task_store_security",
+      "title": "Configure security for Store endpoints",
+      "order": 6,
+      "files": [
+        "backend/src/main/java/com/example/app/security/SecurityConfig.java"
+      ],
+      "acceptance": [
+        "Endpoints require authentication",
+        "RBAC roles are enforced"
+      ],
+      "depends_on": [
+        "task_store_controller"
+      ]
+    },
+    {
+      "id": "task_store_service",
+      "title": "Create Service for Store",
+      "order": 4,
+      "files": [
+        "backend/src/main/java/com/example/app/service/StoreService.java"
+      ],
+      "acceptance": [
+        "Build backend passes",
+        "StoreService has CRUD methods"
+      ],
+      "depends_on": [
+        "task_store_repository"
+      ]
+    }
+  ]
+}

@@ -46,6 +46,10 @@ from .idl_compile import (
     compile_draft_to_idl,
     compile_draft_to_idl_or_raise,
 )
+from .idl_to_ir import (
+    idl_to_ir,
+    IDLToIRError,
+)
 
 __all__ = [
     # IDL v1 Schema
@@ -84,4 +88,7 @@ __all__ = [
     "DraftNotCompileableError",
     "compile_draft_to_idl",
     "compile_draft_to_idl_or_raise",
+    # IDL to IR Converter
+    "idl_to_ir",
+    "IDLToIRError",
 ]

@@ -17,6 +17,7 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
 
+from config import get_config
 from store.artifacts_store import ArtifactsStore
 from blueprints.registry import resolve_blueprint
 from blueprints.generic_blueprint import GenericBlueprint
@@ -112,7 +113,8 @@ class ReleaseChecklist:
         generated_root: Diretorio raiz dos projetos gerados
     """
 
-    DEFAULT_STORE_ROOT = "./store_data"
+    # Default paths for test compatibility
+    DEFAULT_STORE_ROOT = "/home/bazari/engine/demo_store"
     DEFAULT_GENERATED_ROOT = "/home/bazari/generated"
 
     # Artefatos obrigatorios
@@ -136,11 +138,12 @@ class ReleaseChecklist:
         """Inicializa o checklist.
 
         Args:
-            store_root: Diretorio raiz do artifacts store
-            generated_root: Diretorio raiz dos projetos gerados
+            store_root: Diretorio raiz do artifacts store (from config if None)
+            generated_root: Diretorio raiz dos projetos gerados (from config if None)
         """
-        self.store_root = Path(store_root or self.DEFAULT_STORE_ROOT)
-        self.generated_root = Path(generated_root or self.DEFAULT_GENERATED_ROOT)
+        config = get_config()
+        self.store_root = Path(store_root or config.store_root)
+        self.generated_root = Path(generated_root or config.generated_root)
         self.store = ArtifactsStore(str(self.store_root))
 
     def run(

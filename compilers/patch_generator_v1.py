@@ -7,7 +7,7 @@ Entrada:
 - RBAC: Roles e permissões
 
 Saída:
-- Lista de patches apontando para /home/bazari/generated/<project>/...
+- Lista de patches apontando para <generated_root>/<project>/...
 
 Regras:
 - Mesma entrada → mesmos patches (determinístico)
@@ -23,11 +23,14 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Set, Tuple
 
+from config import get_config
+
 
 # ==================== SLOT SYSTEM ====================
 
-# Diretório base dos templates
-TEMPLATE_ROOT = Path("/home/bazari/templates/react-vite")
+def get_template_root() -> Path:
+    """Get template root from config."""
+    return Path(get_config().templates_root) / "react-vite"
 
 # Definição dos slots suportados
 # JSX comment syntax para arquivos .tsx dentro de JSX
@@ -111,7 +114,7 @@ def read_template(relative_path: str) -> str:
     """Lê conteúdo de um template.
 
     Args:
-        relative_path: Caminho relativo ao TEMPLATE_ROOT (ex: "src/App.tsx")
+        relative_path: Caminho relativo ao template root (ex: "src/App.tsx")
 
     Returns:
         Conteúdo do template
@@ -119,7 +122,7 @@ def read_template(relative_path: str) -> str:
     Raises:
         FileNotFoundError: Se o template não existir
     """
-    template_path = TEMPLATE_ROOT / relative_path
+    template_path = get_template_root() / relative_path
     if not template_path.exists():
         raise FileNotFoundError(f"Template não encontrado: {template_path}")
     return template_path.read_text(encoding="utf-8")
@@ -169,24 +172,27 @@ class PatchSet:
             "patch_count": len(self.patches),
         }
 
-    def get_absolute_paths(self, generated_root: str = "/home/bazari/generated") -> List[str]:
+    def get_absolute_paths(self, generated_root: Optional[str] = None) -> List[str]:
         """Retorna paths absolutos dos patches."""
-        return [f"{generated_root}/{self.project}/{p.file_path}" for p in self.patches]
+        root = generated_root or get_config().generated_root
+        return [f"{root}/{self.project}/{p.file_path}" for p in self.patches]
 
 
 class PatchGenerator:
     """Gera patches determinísticos a partir dos artefatos do pipeline.
 
     A geração é determinística: mesma entrada sempre produz mesma saída.
-    Todos os patches apontam apenas para /home/bazari/generated/<project>/.
+    Todos os patches apontam apenas para <generated_root>/<project>/.
 
     Attributes:
         project: Nome do projeto
         generated_root: Diretório raiz para projetos gerados
     """
 
-    # Diretório raiz onde os patches podem ser aplicados
-    GENERATED_ROOT = "/home/bazari/generated"
+    @property
+    def GENERATED_ROOT(self) -> str:
+        """Get generated root from config or instance."""
+        return self._generated_root
 
     # Type mappings para SQL e Java
     TYPE_MAP_SQL = {
@@ -228,16 +234,17 @@ class PatchGenerator:
     def __init__(
         self,
         project: str,
-        generated_root: str = GENERATED_ROOT,
+        generated_root: Optional[str] = None,
     ) -> None:
         """Inicializa o PatchGenerator.
 
         Args:
             project: Nome do projeto
-            generated_root: Diretório raiz para projetos gerados
+            generated_root: Diretório raiz para projetos gerados (from config if None)
         """
         self.project = project
-        self.generated_root = Path(generated_root)
+        self._generated_root = generated_root or get_config().generated_root
+        self.generated_root = Path(self._generated_root)
         self._order_counter = 0
 
     def _normalize_name(self, name: str) -> str:
@@ -1148,7 +1155,7 @@ def generate_patches(
     ir: Dict[str, Any],
     oas: Dict[str, Any],
     rbac: Dict[str, Any],
-    generated_root: str = "/home/bazari/generated",
+    generated_root: Optional[str] = None,
 ) -> PatchSet:
     """Função de conveniência para gerar patches.
 
@@ -1158,7 +1165,7 @@ def generate_patches(
         ir: Intermediate Representation
         oas: OpenAPI Specification
         rbac: Role-Based Access Control
-        generated_root: Diretório raiz para projetos gerados
+        generated_root: Diretório raiz para projetos gerados (from config if None)
 
     Returns:
         PatchSet com todos os patches gerados

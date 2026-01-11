@@ -14,6 +14,8 @@ from enum import Enum
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
+from config import get_config
+
 
 class BuildComponent(Enum):
     """Componentes do projeto que podem ser buildados."""
@@ -87,16 +89,16 @@ class BuildValidator:
 
     def __init__(
         self,
-        generated_root: str = "/home/bazari/generated",
+        generated_root: Optional[str] = None,
         timeout: int = DEFAULT_TIMEOUT,
     ) -> None:
         """Inicializa o BuildValidator.
 
         Args:
-            generated_root: Diretório raiz dos projetos gerados
+            generated_root: Diretório raiz dos projetos gerados (from config if None)
             timeout: Timeout padrão em segundos
         """
-        self.generated_root = Path(generated_root)
+        self.generated_root = Path(generated_root or get_config().generated_root)
         self.timeout = timeout
 
     def _run_command(
@@ -353,14 +355,14 @@ class BuildValidator:
 
 def validate_build(
     project: str,
-    generated_root: str = "/home/bazari/generated",
+    generated_root: Optional[str] = None,
     components: BuildComponent = BuildComponent.ALL,
 ) -> BuildReport:
     """Função de conveniência para validar build.
 
     Args:
         project: Nome do projeto
-        generated_root: Diretório raiz dos projetos gerados
+        generated_root: Diretório raiz dos projetos gerados (from config if None)
         components: Quais componentes validar
 
     Returns:

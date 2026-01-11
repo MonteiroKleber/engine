@@ -1,0 +1,86 @@
+{
+  "id": "srs-97c82bd7",
+  "title": "Sistema Duration_Hotfix_Test",
+  "version": "1.0.0",
+  "requirements": [
+    {
+      "id": "FR-001",
+      "description": "O sistema deve permitir cadastrar loja",
+      "priority": "high",
+      "type": "functional"
+    },
+    {
+      "id": "FR-002",
+      "description": "O sistema deve permitir listar loja",
+      "priority": "medium",
+      "type": "functional"
+    },
+    {
+      "id": "FR-003",
+      "description": "O sistema deve permitir visualizar loja",
+      "priority": "medium",
+      "type": "functional"
+    },
+    {
+      "id": "FR-004",
+      "description": "O sistema deve permitir editar loja",
+      "priority": "medium",
+      "type": "functional"
+    },
+    {
+      "id": "FR-005",
+      "description": "O sistema deve permitir excluir loja",
+      "priority": "low",
+      "type": "functional"
+    }
+  ],
+  "meta": {
+    "project_name": "Sistema Duration_Hotfix_Test"
+  },
+  "data_requirements": [
+    {
+      "entity": "loja",
+      "fields": [
+        {
+          "name": "nome",
+          "type": "string",
+          "required": true
+        },
+        {
+          "name": "cnpj",
+          "type": "string",
+          "required": true,
+          "unique": true
+        }
+      ]
+    }
+  ],
+  "relations": [],
+  "business_rules": [],
+  "workflows": [],
+  "non_functional_requirements": {
+    "security": {
+      "auth_required": true,
+      "audit_log_required": false
+    }
+  },
+  "metadata": {
+    "created_at": "2026-01-10T23:41:23.732252",
+    "language": "pt-BR",
+    "actors": [
+      {
+        "id": "admin",
+        "name": "Administrador",
+        "description": "Usuário administrador do sistema"
+      }
+    ],
+    "summary": "Sistema de cadastro de lojas com nome e CNPJ",
+    "open_questions": [
+      "Autenticação é necessária? Qual tipo (login/senha, OAuth, SSO)?",
+      "Quais perfis de usuário existem além de admin?",
+      "Quais são as principais entidades/recursos do sistema?"
+    ],
+    "warnings": [],
+    "generation_mode": "MINIGRAMMAR_V2"
+  }
+}

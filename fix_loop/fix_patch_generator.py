@@ -19,6 +19,7 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
 
+from config import get_config
 from fix_loop.error_classifier import BuildErrorType, ClassifiedError, BuildStep
 
 
@@ -197,16 +198,17 @@ class FixPatchGenerator:
     def __init__(
         self,
         project: str,
-        generated_root: str = "/home/bazari/generated",
+        generated_root: Optional[str] = None,
     ) -> None:
         """Inicializa o gerador.
 
         Args:
             project: Nome do projeto
-            generated_root: Diretório raiz dos projetos gerados
+            generated_root: Diretório raiz dos projetos gerados (from config if None)
         """
         self.project = project
-        self.generated_root = Path(generated_root)
+        config = get_config()
+        self.generated_root = Path(generated_root or config.generated_root)
         self.project_root = self.generated_root / project
 
     def generate(

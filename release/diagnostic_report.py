@@ -19,6 +19,7 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
+from config import get_config
 from version import __version__
 
 # Schema version para contrato canônico
@@ -469,15 +470,16 @@ class DiagnosticReportGenerator:
     Não substitui Run Log nem Release Report existentes.
     """
 
-    def __init__(self, store_root: str, generated_root: str = "/home/bazari/generated"):
+    def __init__(self, store_root: Optional[str] = None, generated_root: Optional[str] = None):
         """Inicializa o gerador.
 
         Args:
-            store_root: Diretório raiz do artifacts store
-            generated_root: Diretório raiz dos projetos gerados
+            store_root: Diretório raiz do artifacts store (from config if None)
+            generated_root: Diretório raiz dos projetos gerados (from config if None)
         """
-        self.store_root = Path(store_root)
-        self.generated_root = Path(generated_root)
+        config = get_config()
+        self.store_root = Path(store_root or config.store_root)
+        self.generated_root = Path(generated_root or config.generated_root)
 
     def should_generate(self, run_result: Dict[str, Any]) -> bool:
         """Verifica se deve gerar o diagnostic report.

@@ -904,7 +904,8 @@ class EpisodeStore:
             # Check if the only difference is the approval file
             stored_files = manifest.get("integrity", {}).get("file_hashes", [])
             stored_paths = {f["path"] for f in stored_files} if stored_files else set()
-            current_paths = {f[0] for f in current_files}
+            # current_files is a list of dicts with "path" and "hash" keys
+            current_paths = {f["path"] for f in current_files}
 
             # Find new files
             new_paths = current_paths - stored_paths
@@ -917,9 +918,9 @@ class EpisodeStore:
                 for stored_file in stored_files or []:
                     stored_path = stored_file["path"]
                     stored_file_hash = stored_file["hash"]
-                    for current_path, current_file_hash in current_files:
-                        if current_path == stored_path:
-                            if current_file_hash != stored_file_hash:
+                    for current_file in current_files:
+                        if current_file["path"] == stored_path:
+                            if current_file["hash"] != stored_file_hash:
                                 existing_ok = False
                                 break
                     if not existing_ok:

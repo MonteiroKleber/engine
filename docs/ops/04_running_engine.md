@@ -8,8 +8,15 @@ The engine pipeline transforms input specifications into complete, deployable sy
 |------|-------------|--------------|
 | `natural` | Free-text description | Plain text |
 | `draft` | IDL Draft JSON | `idl_draft.v1` JSON file |
-| `idl` | IDL v1 specification | IDL JSON file |
+| `idl` | IDL v1 textual specification | IDL textual file (`.idl`) |
 | `auto` | Auto-detect format | Any of the above |
+
+### Input Mode Details
+
+- **`natural`**: Free-text description processed through SRS analysis. Best for exploratory/conversational input.
+- **`draft`**: Structured JSON format for programmatic/wizard-generated specs.
+- **`idl`**: IDL v1 textual format - skips SRS and goes directly to IR. Best for precise domain modeling.
+- **`auto`**: Automatically detects format based on input content.
 
 ## Execution Modes
 
@@ -90,12 +97,61 @@ python main.py \
 
 ## Using IDL Input
 
+The IDL (Institutional Definition Language) v1 textual format allows precise domain modeling
+with entities, actors, use cases, and non-functional requirements. When using IDL mode,
+the engine skips SRS generation and converts IDL directly to IR.
+
+### Example IDL File
+
+```idl
+system lojas {
+    name: "Sistema de Cadastro de Lojas"
+    version: "1.0.0"
+    domain: "retail"
+}
+
+actors {
+    human admin {
+        name: "Administrador"
+        permissions: [manage_stores]
+    }
+}
+
+entities {
+    entity Store {
+        field id: uuid required unique
+        field name: string required
+        field cnpj: string required unique
+    }
+}
+
+usecases {
+    usecase create_store {
+        name: "Cadastrar Loja"
+        actor: admin
+        priority: high
+    }
+}
+```
+
+### Running IDL
+
 ```bash
 python main.py \
   --project myproject \
   --input /path/to/spec.idl \
   --input-mode idl \
   --release
+```
+
+### Skip Build (Artifacts Only)
+
+```bash
+python main.py \
+  --project myproject \
+  --input /path/to/spec.idl \
+  --input-mode idl \
+  --skip-build
 ```
 
 ## IDL-Only Processing

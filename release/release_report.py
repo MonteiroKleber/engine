@@ -15,6 +15,7 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
+from config import get_config
 from version import __version__, get_version_info
 
 
@@ -272,9 +273,6 @@ class ReleaseReportGenerator:
     Gera relatorios completos a partir do resultado de um run_release().
     """
 
-    DEFAULT_STORE_ROOT = "./store_data"
-    DEFAULT_GENERATED_ROOT = "/home/bazari/generated"
-
     def __init__(
         self,
         store_root: Optional[str] = None,
@@ -283,11 +281,12 @@ class ReleaseReportGenerator:
         """Inicializa o gerador.
 
         Args:
-            store_root: Diretorio raiz do artifacts store
-            generated_root: Diretorio raiz dos projetos gerados
+            store_root: Diretorio raiz do artifacts store (from config if None)
+            generated_root: Diretorio raiz dos projetos gerados (from config if None)
         """
-        self.store_root = Path(store_root or self.DEFAULT_STORE_ROOT)
-        self.generated_root = Path(generated_root or self.DEFAULT_GENERATED_ROOT)
+        config = get_config()
+        self.store_root = Path(store_root or config.store_root)
+        self.generated_root = Path(generated_root or config.generated_root)
 
     def _compute_db_volume_name(self, execution_id: Optional[str]) -> str:
         """Computa o nome do volume DB baseado no execution_id.

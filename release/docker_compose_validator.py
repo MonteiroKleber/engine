@@ -22,6 +22,7 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
 
+from config import get_config
 from release.runtime_evidence_collector import collect_runtime_evidence
 
 
@@ -137,8 +138,8 @@ class DockerComposeValidator:
         required_services: Lista de servicos obrigatorios
     """
 
-    DEFAULT_GENERATED_ROOT = "/home/bazari/generated"
     REQUIRED_SERVICES = ["postgres", "backend", "frontend"]
+    DEFAULT_GENERATED_ROOT = "/home/bazari/generated"  # For test compatibility
 
     def __init__(
         self,
@@ -148,10 +149,10 @@ class DockerComposeValidator:
         """Inicializa o validador.
 
         Args:
-            generated_root: Diretorio raiz dos projetos gerados
+            generated_root: Diretorio raiz dos projetos gerados (from config if None)
             required_services: Lista de servicos obrigatorios (opcional)
         """
-        self.generated_root = Path(generated_root or self.DEFAULT_GENERATED_ROOT)
+        self.generated_root = Path(generated_root or get_config().generated_root)
         self.required_services = required_services or self.REQUIRED_SERVICES.copy()
 
     def validate(self, project: str) -> DockerComposeValidationResult:

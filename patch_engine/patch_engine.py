@@ -1,10 +1,10 @@
 """Patch Engine - Aplica patches de código com segurança máxima.
 
-REGRA ABSOLUTA: Só pode escrever em /home/bazari/generated/<project>/**
+REGRA ABSOLUTA: Só pode escrever em <generated_root>/<project>/**
 
 Bloqueios obrigatórios:
-- Proibir tocar em /home/bazari/engine/**
-- Proibir tocar em /home/bazari/templates/**
+- Proibir tocar em <engine_root>/**
+- Proibir tocar em <templates_root>/**
 - Proibir path traversal (../)
 - Proibir rewrite de arquivo inteiro (>80%)
 
@@ -30,6 +30,22 @@ from observability.patch_manifest import (
     PatchManifestStore,
 )
 from observability.canonical_hash import compute_text_hash_sha256
+from config import get_config
+
+
+# =============================================================================
+# Portable path derivation for BLOCKED_PATHS
+# =============================================================================
+# Derive engine root from this file's location: patch_engine/patch_engine.py -> engine/
+_ENGINE_ROOT = Path(__file__).resolve().parent.parent
+
+# Templates root is a sibling to engine root (engine/../templates)
+_TEMPLATES_ROOT = _ENGINE_ROOT.parent / "templates"
+
+# Build blocked paths list: always include engine, include templates only if exists
+_BLOCKED_PATHS_LIST: List[str] = [str(_ENGINE_ROOT)]
+if _TEMPLATES_ROOT.exists():
+    _BLOCKED_PATHS_LIST.append(str(_TEMPLATES_ROOT))
 
 
 class PatchStatus(Enum):
@@ -94,16 +110,20 @@ class PatchEngine:
         max_rewrite_ratio: Porcentagem máxima de reescrita permitida (0.0-1.0)
     """
 
-    # Paths ABSOLUTAMENTE proibidos
-    BLOCKED_PATHS = [
-        "/home/bazari/engine",
-        "/home/bazari/templates",
-    ]
+    # Class-level blocked paths for backwards compatibility with tests
+    # Derived portably from module location (no hardcoded absolutes)
+    # Templates included only if directory exists
+    BLOCKED_PATHS: List[str] = _BLOCKED_PATHS_LIST
+
+    @property
+    def blocked_paths(self) -> List[str]:
+        """Get list of blocked paths from config."""
+        return get_config().get_blocked_paths()
 
     def __init__(
         self,
         project: str,
-        generated_root: str = "/home/bazari/generated",
+        generated_root: Optional[str] = None,
         max_rewrite_ratio: float = 0.80,
         store_root: Optional[str] = None,
     ) -> None:
@@ -111,9 +131,9 @@ class PatchEngine:
 
         Args:
             project: Nome do projeto
-            generated_root: Diretório raiz dos projetos gerados
+            generated_root: Diretório raiz dos projetos gerados (from config if None)
             max_rewrite_ratio: Porcentagem máxima de reescrita (default: 80%)
-            store_root: Root for artifact storage (for PatchManifest). If None, uses ./store_data
+            store_root: Root for artifact storage (for PatchManifest). If None, uses config
 
         Raises:
             ValueError: Se project estiver vazio
@@ -121,11 +141,12 @@ class PatchEngine:
         if not project or not project.strip():
             raise ValueError("Project name cannot be empty")
 
+        config = get_config()
         self.project = project
-        self.generated_root = Path(generated_root).resolve()
+        self.generated_root = Path(generated_root or config.generated_root).resolve()
         self.project_root = self.generated_root / project
         self.max_rewrite_ratio = max_rewrite_ratio
-        self.store_root = store_root or "./store_data"
+        self.store_root = store_root or config.store_root
 
         # Backup para rollback
         self._backup_dir: Optional[Path] = None
@@ -238,8 +259,8 @@ class PatchEngine:
 
         # Verificar paths bloqueados
         target_str = str(target)
-        for blocked in self.BLOCKED_PATHS:
-            if target_str.startswith(blocked):
+        for blocked in self.blocked_paths:
+            if blocked and target_str.startswith(blocked):
                 raise PatchSecurityError(
                     f"Access to blocked path: {blocked}"
                 )
@@ -749,7 +770,7 @@ class PatchEngine:
         """
         policy = PatchPolicy(
             max_rewrite_ratio=self.max_rewrite_ratio,
-            blocked_paths=list(self.BLOCKED_PATHS),
+            blocked_paths=list(self.blocked_paths),
             allowlist_roots=[str(self.generated_root)],
         )
 

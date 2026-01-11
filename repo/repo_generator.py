@@ -7,6 +7,8 @@ from enum import Enum
 from pathlib import Path
 from typing import Optional
 
+from config import get_config
+
 
 class ReleaseFailureCategory(Enum):
     """Categorias canônicas de falha de release.
@@ -42,17 +44,18 @@ class RepoGenerator:
 
     def __init__(
         self,
-        templates_root: str = "/home/bazari/templates",
-        output_root: str = "/home/bazari/generated",
+        templates_root: Optional[str] = None,
+        output_root: Optional[str] = None,
     ) -> None:
         """Inicializa o gerador.
 
         Args:
-            templates_root: Diretório raiz dos templates
-            output_root: Diretório raiz para projetos gerados
+            templates_root: Diretório raiz dos templates (from config if None)
+            output_root: Diretório raiz para projetos gerados (from config if None)
         """
-        self.templates_root = Path(templates_root)
-        self.output_root = Path(output_root)
+        config = get_config()
+        self.templates_root = Path(templates_root or config.templates_root)
+        self.output_root = Path(output_root or config.generated_root)
 
     def create_repo(self, project: str, exec_id: Optional[str] = None) -> Path:
         """Cria repositório para um projeto.
@@ -290,15 +293,15 @@ class RepoGenerator:
 
 def create_repo(
     project: str,
-    templates_root: str = "/home/bazari/templates",
-    output_root: str = "/home/bazari/generated",
+    templates_root: Optional[str] = None,
+    output_root: Optional[str] = None,
 ) -> Path:
     """Função de conveniência para criar repositório.
 
     Args:
         project: Nome do projeto
-        templates_root: Diretório raiz dos templates
-        output_root: Diretório raiz para projetos gerados
+        templates_root: Diretório raiz dos templates (from config if None)
+        output_root: Diretório raiz para projetos gerados (from config if None)
 
     Returns:
         Path do diretório criado

@@ -16,8 +16,11 @@ from compilers.patch_generator_v1 import (
     replace_slot,
     read_template,
     SLOT_MARKERS,
-    TEMPLATE_ROOT,
+    get_template_root,
 )
+
+# Backwards compatibility
+TEMPLATE_ROOT = get_template_root()
 
 
 # ==================== FIXTURES ====================

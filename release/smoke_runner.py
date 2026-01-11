@@ -4,7 +4,7 @@ Este modulo executa testes de smoke para:
 1. Backend: healthcheck e CRUD basico
 2. Frontend: build e renderizacao
 
-Artefatos sao salvos em: /home/bazari/generated/<project>/smoke/
+Artefatos sao salvos em: <generated_root>/<project>/smoke/
 
 REGRA: Smoke executa localmente e retorna PASS/FAIL.
 """
@@ -20,6 +20,8 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
 from contextlib import contextmanager
+
+from config import get_config
 
 try:
     import requests
@@ -120,7 +122,7 @@ class SmokeRunner:
         timeout: Timeout em segundos para cada teste
     """
 
-    DEFAULT_GENERATED_ROOT = "/home/bazari/generated"
+    DEFAULT_GENERATED_ROOT = "/home/bazari/generated"  # For test compatibility
     DEFAULT_BACKEND_PORT = 8080
     DEFAULT_FRONTEND_PORT = 5173  # Mapeado no docker-compose: 5173:80
     DEFAULT_TIMEOUT = 30
@@ -135,12 +137,12 @@ class SmokeRunner:
         """Inicializa o runner.
 
         Args:
-            generated_root: Diretorio raiz dos projetos gerados
+            generated_root: Diretorio raiz dos projetos gerados (from config if None)
             backend_port: Porta para o backend
             frontend_port: Porta para o frontend
             timeout: Timeout em segundos
         """
-        self.generated_root = Path(generated_root or self.DEFAULT_GENERATED_ROOT)
+        self.generated_root = Path(generated_root or get_config().generated_root)
         self.backend_port = backend_port
         self.frontend_port = frontend_port
         self.timeout = timeout

@@ -178,11 +178,13 @@ class TestEngineConfiguration:
 
     def test_engine_has_generated_root(self):
         """Engine deve ter GENERATED_ROOT configurado."""
-        assert Engine.GENERATED_ROOT == "/home/bazari/generated"
+        engine = Engine()
+        assert engine.GENERATED_ROOT == "/home/bazari/generated"
 
     def test_engine_has_templates_root(self):
         """Engine deve ter TEMPLATES_ROOT configurado."""
-        assert Engine.TEMPLATES_ROOT == "/home/bazari/templates"
+        engine = Engine()
+        assert engine.TEMPLATES_ROOT == "/home/bazari/templates"
 
 
 # ==================== RUN WITH BUILD TESTS (MOCKED) ====================

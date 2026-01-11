@@ -45,6 +45,7 @@ from episodes.episode_store import EpisodeStore
 from orchestrator.input_mode import InputMode, parse_input_mode, InputModeError
 from orchestrator.input_dispatcher import InputDispatcher, InputDispatchResult
 from version import __version__, version_string
+from config import get_config
 from release.release_report import ReleaseReportGenerator
 from release.release_checklist import ReleaseChecklist
 from release.diagnostic_report import DiagnosticReportGenerator
@@ -85,8 +86,20 @@ Exemplos:
 
     parser.add_argument(
         "--store-root",
-        default="/home/bazari/engine/demo_store",
-        help="Diretório para armazenar artefatos (default: ./demo_store)",
+        default=None,
+        help="Diretório para armazenar artefatos (from config if not specified)",
+    )
+
+    parser.add_argument(
+        "--generated-root",
+        default=None,
+        help="Diretório para projetos gerados (from config if not specified)",
+    )
+
+    parser.add_argument(
+        "--templates-root",
+        default=None,
+        help="Diretório dos templates (from config if not specified)",
     )
 
     parser.add_argument(
@@ -243,7 +256,9 @@ def run_idl_only(args: argparse.Namespace) -> int:
         print()
 
     # Dispatch
-    dispatcher = InputDispatcher(args.store_root)
+    config = get_config()
+    resolved_store_root = args.store_root or config.store_root
+    dispatcher = InputDispatcher(resolved_store_root)
     result = dispatcher.dispatch(
         project=args.project,
         input_mode=input_mode,
@@ -425,15 +440,25 @@ def main() -> int:
     if args.idl_only:
         return run_idl_only(args)
 
+    # Resolve paths from config if not provided via CLI
+    config = get_config()
+    store_root = args.store_root or config.store_root
+    generated_root = getattr(args, 'generated_root', None) or config.generated_root
+    templates_root = getattr(args, 'templates_root', None) or config.templates_root
+
     # Criar Engine
     if not args.quiet:
         print(f"Bazari Engine v{__version__} - Gerando projeto: {args.project}")
-        print(f"Store: {args.store_root}")
+        print(f"Store: {store_root}")
         print(f"Input Mode: {args.input_mode}")
         print(f"Input: {args.input[:50]}...")
         print()
 
-    engine = Engine(args.store_root)
+    engine = Engine(
+        store_root=store_root,
+        generated_root=generated_root,
+        templates_root=templates_root,
+    )
 
     # Executar pipeline baseado no modo
     if args.release:
@@ -446,6 +471,7 @@ def main() -> int:
             raw_input=args.input,
             title=args.title,
             enable_fix_loop=True,
+            input_mode=args.input_mode,
         )
     elif args.skip_build:
         # Modo skip-build: apenas artefatos
@@ -456,6 +482,7 @@ def main() -> int:
             raw_input=args.input,
             title=args.title,
             skip_build=True,
+            input_mode=args.input_mode,
         )
     else:
         # Modo build: gerar + compilar
@@ -466,6 +493,7 @@ def main() -> int:
             raw_input=args.input,
             title=args.title,
             skip_build=False,
+            input_mode=args.input_mode,
         )
 
     # Mostrar resultado
@@ -483,14 +511,14 @@ def main() -> int:
     if args.release:
         # Executar checklist
         checklist = ReleaseChecklist(
-            store_root=args.store_root,
+            store_root=store_root,
             generated_root=engine.GENERATED_ROOT,
         )
         checklist_result = checklist.run(args.project, result.to_dict())
 
         # Gerar report
         report_generator = ReleaseReportGenerator(
-            store_root=args.store_root,
+            store_root=store_root,
             generated_root=engine.GENERATED_ROOT,
         )
         report_data = report_generator.generate_and_save(
@@ -510,7 +538,7 @@ def main() -> int:
         # Gerar diagnostic report APENAS se falhou
         if not result.success:
             diagnostic_generator = DiagnosticReportGenerator(
-                store_root=args.store_root,
+                store_root=store_root,
                 generated_root=engine.GENERATED_ROOT,
             )
             diagnostic_data = diagnostic_generator.generate_and_save(
@@ -583,7 +611,7 @@ def main() -> int:
         if args.create_episode:
             episode_id = create_episode_from_result(
                 result=result,
-                store_root=args.store_root,
+                store_root=store_root,
                 raw_input=args.input,
                 input_mode=args.input_mode,
                 quiet=args.quiet,
@@ -591,7 +619,7 @@ def main() -> int:
             if episode_id and not args.quiet:
                 print()
                 print(f"To approve this episode, run:")
-                print(f"  python -m episodes.episodes_cli approve --episode-id {episode_id} --decision approve --reason \"...\" --approver-name \"...\" --role \"...\" --base-path {args.store_root}")
+                print(f"  python -m episodes.episodes_cli approve --episode-id {episode_id} --decision approve --reason \"...\" --approver-name \"...\" --role \"...\" --base-path {store_root}")
 
         return 0
 

@@ -57,6 +57,10 @@ from observability.legacy_gate import (
     validate_legacy_bundle,
     LegacyValidationResult,
 )
+from config import get_config
+from orchestrator.input_mode import InputMode, parse_input_mode, detect_input_mode_auto
+from orchestrator.input_dispatcher import InputDispatcher
+from idl.idl_to_ir import idl_to_ir, IDLToIRError
 
 import yaml
 
@@ -131,6 +135,7 @@ class RunResult:
     # General fields
     questions: List[str] = field(default_factory=list)
     errors: List[str] = field(default_factory=list)
+    error_codes: List[str] = field(default_factory=list)  # Structured error codes
     duration_ms: float = 0.0
     # Input mode fields
     input_mode_resolved: str = ""  # natural, draft, idl
@@ -204,6 +209,7 @@ class RunResult:
             "failed_repo_path": self.failed_repo_path,
             "questions": self.questions,
             "errors": self.errors,
+            "error_codes": self.error_codes,
             "duration_ms": self.duration_ms,
             # Input mode
             "input_mode_resolved": self.input_mode_resolved,
@@ -324,11 +330,42 @@ class Engine:
     # Engine version
     VERSION = ENGINE_VERSION
 
-    # Root para projetos gerados
-    GENERATED_ROOT = "/home/bazari/generated"
-    TEMPLATES_ROOT = "/home/bazari/templates"
+    @property
+    def GENERATED_ROOT(self) -> str:
+        """Root for generated projects (from instance or config)."""
+        if hasattr(self, "_generated_root") and self._generated_root:
+            return self._generated_root
+        return get_config().generated_root
 
-    def __init__(self, store_root: str = "./store_data") -> None:
+    @GENERATED_ROOT.setter
+    def GENERATED_ROOT(self, value: str) -> None:
+        """Set root for generated projects."""
+        self._generated_root = value
+
+    @property
+    def TEMPLATES_ROOT(self) -> str:
+        """Root for templates (from instance or config)."""
+        if hasattr(self, "_templates_root") and self._templates_root:
+            return self._templates_root
+        return get_config().templates_root
+
+    @TEMPLATES_ROOT.setter
+    def TEMPLATES_ROOT(self, value: str) -> None:
+        """Set root for templates."""
+        self._templates_root = value
+
+    def __init__(
+        self,
+        store_root: Optional[str] = None,
+        generated_root: Optional[str] = None,
+        templates_root: Optional[str] = None,
+    ) -> None:
+        # Resolve paths from config if not provided
+        config = get_config()
+        self._generated_root = generated_root or config.generated_root
+        self._templates_root = templates_root or config.templates_root
+        self._store_root = store_root or config.store_root
+
         self.state_machine = StateMachine()
         self.context = ExecutionContext()
 
@@ -341,7 +378,7 @@ class Engine:
         self.contracts_agent = ContractsAgent()
         self.planner_agent = PlannerAgent()
         self.policy_validator = PolicyValidator()
-        self.store = ArtifactsStore(store_root)
+        self.store = ArtifactsStore(self._store_root)
 
     def run(
         self,
@@ -349,6 +386,7 @@ class Engine:
         raw_input: str,
         title: Optional[str] = None,
         legacy_bundle: Optional[Dict[str, str]] = None,
+        input_mode: Optional[str] = None,
     ) -> RunResult:
         """Executa o pipeline completo até IR.
 
@@ -360,6 +398,7 @@ class Engine:
                 - inventory_path: path to legacy_inventory.v1.json
                 - human_process_path: path to human_process.v1.json
                 - legacy_runlog_path: path to legacy_runlog.v1.json (optional)
+            input_mode: Modo de entrada (auto, natural, draft, idl). Se None, usa "auto".
 
         Returns:
             RunResult com resultado da execução
@@ -410,69 +449,209 @@ class Engine:
                 execution_id, result, result.final_status,
                 contracts=contracts,
                 legacy_result=legacy_result,
+                start_time=start_time,
             )
             self._finalize_result(result, start_time)
             return result
 
         try:
-            # 1. Normalize
+            # 0. Resolve input mode
             self.state_machine.transition(State.INTAKE)
             telemetry.emit_start("intake")
-            normalized = self.normalizer.normalize(raw_input)
-            # Calcular hash do input normalizado
-            input_hash = self._compute_hash(normalized.get("normalized", ""))
 
-            # 2. Classify blueprint
-            classification = self.classifier.classify(normalized)
-            result.blueprint_type = classification.selected_blueprint
+            resolved_mode = InputMode.NATURAL  # default
+            if input_mode:
+                resolved_mode = parse_input_mode(input_mode)
+                if resolved_mode == InputMode.AUTO:
+                    # Detectar automaticamente
+                    input_path = raw_input if Path(raw_input).exists() else None
+                    resolved_mode, _ = detect_input_mode_auto(raw_input, input_path)
 
-            # 2b. Resolve blueprint from registry (FORCED_GENERIC if not found)
-            from blueprints.generic_blueprint import GenericBlueprint
-            blueprint_class = resolve_blueprint(result.blueprint_type)
-            result.blueprint_forced_generic = (blueprint_class == GenericBlueprint)
+            # Variável para indicar se veio de IDL (pula SRS)
+            from_idl = False
+            idl_document = None
 
-            # 3. REQ Analyst → SRS
-            self.state_machine.transition(State.PROCESSING)
-            srs = self.analyst.generate_srs(normalized, project_title)
-            result.requirements_count = len(srs.get("requirements", []))
+            # 1. Process based on input mode
+            if resolved_mode == InputMode.IDL:
+                # IDL mode: parse IDL → IR diretamente
+                from idl.idl_v1 import IDLParser, IDLParseError
 
-            # 4. Validate SRS
-            self.state_machine.transition(State.VALIDATING)
-            can_proceed, validated_srs, questions = self.srs_validator_gate.process(srs)
+                # Carregar conteúdo do input
+                # Verificar se é um arquivo (path curto e existente) ou conteúdo inline
+                input_payload = raw_input
+                input_source = "inline"
 
-            if not can_proceed:
-                # SRS inválido - bloqueia pipeline, não segue para IR
-                result.srs_validation_ok = False
-                result.questions = questions or []
-                result.errors = ["SRS validation failed"]
-                # Telemetry: SRS blocked
-                telemetry.set_blocked(BlockedReason.SRS_BLOCKED_QUESTIONS)
-                telemetry.update_flags(srs_ok=False)
-                telemetry.emit_end("intake", (datetime.now() - start_time).total_seconds() * 1000)
-                self._write_run_log(
-                    execution_id, result, "srs_validation_failed",
-                    input_hash=input_hash,
-                    contracts=contracts,
-                    legacy_result=legacy_result,
-                )
-                self._finalize_result(result, start_time)
-                return result
+                # Helper: detecta se parece um path de arquivo
+                def _looks_like_path(s: str) -> bool:
+                    """Retorna True se a string parece ser um caminho de arquivo."""
+                    if len(s) > 500:
+                        return False
+                    # Contém separadores de diretório ou termina com .idl
+                    if '/' in s or '\\' in s or s.endswith('.idl'):
+                        return True
+                    # Contém keywords IDL => é conteúdo inline
+                    if any(kw in s for kw in ['system ', 'entities ', 'actors ', 'entity ', 'actor ']):
+                        return False
+                    return False
 
-            result.srs_validation_ok = True
+                looks_like_path = _looks_like_path(raw_input)
 
-            # 5. Save SRS (vN)
-            srs_version = self.store.next_version(project, "SRS")
-            srs_path = self.store.save_artifact(project, "SRS", srs_version, validated_srs)
-            result.srs_version = srs_version
-            result.srs_path = str(srs_path)
-            # Calcular hash do SRS salvo
-            srs_hash = self._compute_file_hash(srs_path)
-            # Add to Contract Ledger
-            contracts.add(self._create_contract_record("srs", str(srs_path)))
+                if looks_like_path:
+                    path = Path(raw_input)
+                    if path.exists() and path.is_file():
+                        try:
+                            input_payload = path.read_text(encoding="utf-8")
+                            input_source = str(path)
+                        except (OSError, IOError) as e:
+                            # Arquivo existe mas não pode ser lido
+                            result.errors = [f"SCHEMA: IDL input file read error: {raw_input} ({e})"]
+                            result.error_codes = ["IDL_INPUT_FILE_READ_ERROR"]
+                            telemetry.set_blocked(BlockedReason.CONTRACT_GATE_FAILED)
+                            telemetry.emit_end("intake", (datetime.now() - start_time).total_seconds() * 1000)
+                            self._write_run_log(
+                                execution_id, result, "idl_input_file_error",
+                                contracts=contracts,
+                                legacy_result=legacy_result,
+                                start_time=start_time,
+                            )
+                            self._finalize_result(result, start_time)
+                            return result
+                    else:
+                        # Parece path mas arquivo não existe - erro explícito
+                        result.errors = [f"SCHEMA: IDL input file not found: {raw_input}"]
+                        result.error_codes = ["IDL_INPUT_FILE_NOT_FOUND"]
+                        telemetry.set_blocked(BlockedReason.CONTRACT_GATE_FAILED)
+                        telemetry.emit_end("intake", (datetime.now() - start_time).total_seconds() * 1000)
+                        self._write_run_log(
+                            execution_id, result, "idl_input_file_not_found",
+                            contracts=contracts,
+                            legacy_result=legacy_result,
+                            start_time=start_time,
+                        )
+                        self._finalize_result(result, start_time)
+                        return result
 
-            # 6. Domain Modeler → IR
-            ir = self.domain_modeler.generate_ir(validated_srs)
-            result.entities_count = len(ir.get("domain", {}).get("entities", []))
+                # Parse IDL
+                try:
+                    parser = IDLParser()
+                    idl_document = parser.parse(input_payload)
+                except IDLParseError as e:
+                    # Incluir snippet do início do conteúdo para diagnóstico
+                    first_chars = repr(input_payload[:30]) if input_payload else "''"
+                    error_msg = f"SCHEMA: IDL parse failed at line {e.line}, col {e.column}: {str(e)}"
+                    if input_source != "inline":
+                        error_msg += f" (source={input_source}, first_chars={first_chars})"
+                    else:
+                        error_msg += f" (first_chars={first_chars})"
+                    result.errors = [error_msg]
+                    result.error_codes = ["IDL_PARSE_FAILED"]
+                    telemetry.set_blocked(BlockedReason.CONTRACT_GATE_FAILED)
+                    telemetry.emit_end("intake", (datetime.now() - start_time).total_seconds() * 1000)
+                    self._write_run_log(
+                        execution_id, result, "idl_parse_failed",
+                        contracts=contracts,
+                        legacy_result=legacy_result,
+                        start_time=start_time,
+                    )
+                    self._finalize_result(result, start_time)
+                    return result
+
+                # Calcular hash do IDL
+                input_hash = self._compute_hash(idl_document.to_json())
+                from_idl = True
+
+                # Convert IDL → IR
+                try:
+                    ir = idl_to_ir(idl_document, project_title)
+                except IDLToIRError as e:
+                    result.errors = [f"SCHEMA: {e.message}"]
+                    result.error_codes = [e.error_code]
+                    telemetry.set_blocked(BlockedReason.CONTRACT_GATE_FAILED)
+                    telemetry.emit_end("intake", (datetime.now() - start_time).total_seconds() * 1000)
+                    self._write_run_log(
+                        execution_id, result, "idl_to_ir_failed",
+                        input_hash=input_hash,
+                        contracts=contracts,
+                        legacy_result=legacy_result,
+                        start_time=start_time,
+                    )
+                    self._finalize_result(result, start_time)
+                    return result
+
+                result.entities_count = len(ir.get("domain", {}).get("entities", []))
+
+                # Blueprint: usar generic para IDL (não temos classificador para IDL)
+                from blueprints.generic_blueprint import GenericBlueprint
+                blueprint_class = GenericBlueprint
+                result.blueprint_type = "generic"
+                result.blueprint_forced_generic = True
+
+                # SRS não é gerado no modo IDL, mas marcamos como ok para não bloquear
+                result.srs_validation_ok = True
+                result.requirements_count = len(idl_document.usecases)
+
+                # Inicializar srs_version como None (IDL pula SRS)
+                srs_version = None
+                srs_hash = None
+
+            else:
+                # NATURAL/DRAFT mode: fluxo existente
+                normalized = self.normalizer.normalize(raw_input)
+                # Calcular hash do input normalizado
+                input_hash = self._compute_hash(normalized.get("normalized", ""))
+
+                # 2. Classify blueprint
+                classification = self.classifier.classify(normalized)
+                result.blueprint_type = classification.selected_blueprint
+
+                # 2b. Resolve blueprint from registry (FORCED_GENERIC if not found)
+                from blueprints.generic_blueprint import GenericBlueprint
+                blueprint_class = resolve_blueprint(result.blueprint_type)
+                result.blueprint_forced_generic = (blueprint_class == GenericBlueprint)
+
+                # 3. REQ Analyst → SRS
+                self.state_machine.transition(State.PROCESSING)
+                srs = self.analyst.generate_srs(normalized, project_title)
+                result.requirements_count = len(srs.get("requirements", []))
+
+                # 4. Validate SRS
+                self.state_machine.transition(State.VALIDATING)
+                can_proceed, validated_srs, questions = self.srs_validator_gate.process(srs)
+
+                if not can_proceed:
+                    # SRS inválido - bloqueia pipeline, não segue para IR
+                    result.srs_validation_ok = False
+                    result.questions = questions or []
+                    result.errors = ["SRS validation failed"]
+                    # Telemetry: SRS blocked
+                    telemetry.set_blocked(BlockedReason.SRS_BLOCKED_QUESTIONS)
+                    telemetry.update_flags(srs_ok=False)
+                    telemetry.emit_end("intake", (datetime.now() - start_time).total_seconds() * 1000)
+                    self._write_run_log(
+                        execution_id, result, "srs_validation_failed",
+                        input_hash=input_hash,
+                        contracts=contracts,
+                        legacy_result=legacy_result,
+                        start_time=start_time,
+                    )
+                    self._finalize_result(result, start_time)
+                    return result
+
+                result.srs_validation_ok = True
+
+                # 5. Save SRS (vN)
+                srs_version = self.store.next_version(project, "SRS")
+                srs_path = self.store.save_artifact(project, "SRS", srs_version, validated_srs)
+                result.srs_version = srs_version
+                result.srs_path = str(srs_path)
+                # Calcular hash do SRS salvo
+                srs_hash = self._compute_file_hash(srs_path)
+                # Add to Contract Ledger
+                contracts.add(self._create_contract_record("srs", str(srs_path)))
+
+                # 6. Domain Modeler → IR
+                ir = self.domain_modeler.generate_ir(validated_srs)
+                result.entities_count = len(ir.get("domain", {}).get("entities", []))
 
             # 7. Validate IR
             ir_report = validate_ir(ir)
@@ -485,6 +664,7 @@ class Engine:
                     input_hash=input_hash, srs_hash=srs_hash,
                     contracts=contracts,
                     legacy_result=legacy_result,
+                    start_time=start_time,
                 )
                 self._finalize_result(result, start_time)
                 return result
@@ -502,6 +682,7 @@ class Engine:
                     input_hash=input_hash, srs_hash=srs_hash,
                     contracts=contracts,
                     legacy_result=legacy_result,
+                    start_time=start_time,
                 )
                 self._finalize_result(result, start_time)
                 return result
@@ -512,7 +693,10 @@ class Engine:
             ir_version = self.store.next_version(project, "IR")
             # Adicionar versão ao IR antes de salvar
             ir["meta"]["version"] = f"v{ir_version}"
-            ir["meta"]["srs_version"] = f"v{srs_version}"
+            if srs_version is not None:
+                ir["meta"]["srs_version"] = f"v{srs_version}"
+            else:
+                ir["meta"]["srs_version"] = None  # IDL mode skips SRS
             ir_path = self.store.save_artifact(project, "IR", ir_version, ir)
             result.ir_version = ir_version
             result.ir_path = str(ir_path)
@@ -536,6 +720,7 @@ class Engine:
                     input_hash=input_hash, srs_hash=srs_hash, ir_hash=ir_hash,
                     contracts=contracts,
                     legacy_result=legacy_result,
+                    start_time=start_time,
                 )
                 self._finalize_result(result, start_time)
                 return result
@@ -552,6 +737,7 @@ class Engine:
                     input_hash=input_hash, srs_hash=srs_hash, ir_hash=ir_hash,
                     contracts=contracts,
                     legacy_result=legacy_result,
+                    start_time=start_time,
                 )
                 self._finalize_result(result, start_time)
                 return result
@@ -568,6 +754,7 @@ class Engine:
                     input_hash=input_hash, srs_hash=srs_hash, ir_hash=ir_hash,
                     contracts=contracts,
                     legacy_result=legacy_result,
+                    start_time=start_time,
                 )
                 self._finalize_result(result, start_time)
                 return result
@@ -615,6 +802,7 @@ class Engine:
                     oas_hash=oas_hash, rbac_hash=rbac_hash,
                     contracts=contracts,
                     legacy_result=legacy_result,
+                    start_time=start_time,
                 )
                 self._finalize_result(result, start_time)
                 return result
@@ -632,6 +820,7 @@ class Engine:
                     oas_hash=oas_hash, rbac_hash=rbac_hash,
                     contracts=contracts,
                     legacy_result=legacy_result,
+                    start_time=start_time,
                 )
                 self._finalize_result(result, start_time)
                 return result
@@ -665,6 +854,7 @@ class Engine:
                     oas_hash=oas_hash, rbac_hash=rbac_hash, plan_hash=plan_hash,
                     contracts=contracts,
                     legacy_result=legacy_result,
+                    start_time=start_time,
                 )
                 self._finalize_result(result, start_time)
                 return result
@@ -694,6 +884,7 @@ class Engine:
                 oas_hash=oas_hash, rbac_hash=rbac_hash, plan_hash=plan_hash,
                 contracts=contracts,
                 legacy_result=legacy_result,
+                start_time=start_time,
             )
 
         except Exception as e:
@@ -705,6 +896,7 @@ class Engine:
                 oas_hash=oas_hash, rbac_hash=rbac_hash, plan_hash=plan_hash,
                 contracts=contracts,
                 legacy_result=legacy_result,
+                start_time=start_time,
             )
 
         self._finalize_result(result, start_time)
@@ -803,6 +995,7 @@ class Engine:
         contracts: Optional[ContractLedger] = None,
         patch_manifest_path: Optional[str] = None,
         legacy_result: Optional[LegacyValidationResult] = None,
+        start_time: Optional[datetime] = None,
     ) -> None:
         """Escreve log de execução com hashes e contracts ledger."""
         payload = {
@@ -875,8 +1068,13 @@ class Engine:
             blocked_reason = BlockedReason.SRS_BLOCKED_QUESTIONS
         payload["blocked_reason"] = blocked_reason
 
-        # duration_ms - ALWAYS present (from result, default 0)
-        payload["duration_ms"] = result.duration_ms if result.duration_ms else 0
+        # duration_ms - ALWAYS present
+        # Calculate from start_time if provided, otherwise use result value
+        if start_time is not None:
+            duration_ms = int((datetime.now() - start_time).total_seconds() * 1000)
+        else:
+            duration_ms = int(result.duration_ms) if result.duration_ms else 0
+        payload["duration_ms"] = duration_ms
 
         # counts - ALWAYS present (structured dict with all keys)
         payload["counts"] = {
@@ -917,6 +1115,7 @@ class Engine:
         skip_build: bool = False,
         enable_fix_loop: bool = True,
         legacy_bundle: Optional[Dict[str, str]] = None,
+        input_mode: Optional[str] = None,
     ) -> RunResult:
         """Executa o pipeline completo incluindo build e Fix Loop.
 
@@ -939,12 +1138,13 @@ class Engine:
             skip_build: Se True, pula a fase de build (para testes)
             enable_fix_loop: Se True, tenta corrigir erros de build automaticamente
             legacy_bundle: Optional dict with legacy artifact paths
+            input_mode: Modo de entrada (auto, natural, draft, idl). Se None, usa "auto".
 
         Returns:
             RunResult com resultado da execução
         """
         # 1. Executar pipeline de artefatos
-        result = self.run(project, raw_input, title, legacy_bundle=legacy_bundle)
+        result = self.run(project, raw_input, title, legacy_bundle=legacy_bundle, input_mode=input_mode)
 
         # Se falhou antes do PLAN, retornar imediatamente
         if not result.success:
@@ -1013,7 +1213,8 @@ class Engine:
                 result.errors.append("Patch application failed")
                 result.final_status = "patch_failed"
                 self._write_run_log(
-                    result.execution_id, result, "patch_failed"
+                    result.execution_id, result, "patch_failed",
+                    start_time=start_time,
                 )
                 self._finalize_result(result, start_time)
                 return result
@@ -1038,6 +1239,7 @@ class Engine:
                         self._write_run_log(
                             result.execution_id, result, "prebuild_blocked",
                             patch_manifest_path=manifest_path,
+                            start_time=start_time,
                         )
                         self._finalize_result(result, start_time)
                         return result
@@ -1054,6 +1256,7 @@ class Engine:
                     self._write_run_log(
                         result.execution_id, result, "manifest_gate_failed",
                         patch_manifest_path=manifest_path,
+                        start_time=start_time,
                     )
                     self._finalize_result(result, start_time)
                     return result
@@ -1075,7 +1278,8 @@ class Engine:
                 telemetry.update_counts(patch_count=result.patch_count)
                 telemetry.emit_end("build", (datetime.now() - start_time).total_seconds() * 1000)
                 self._write_run_log(
-                    result.execution_id, result, "build_completed"
+                    result.execution_id, result, "build_completed",
+                    start_time=start_time,
                 )
                 self._finalize_result(result, start_time)
                 return result
@@ -1102,7 +1306,8 @@ class Engine:
                 telemetry.update_flags(build_ok=False)
                 telemetry.emit_end("build", (datetime.now() - start_time).total_seconds() * 1000)
                 self._write_run_log(
-                    result.execution_id, result, "build_failed"
+                    result.execution_id, result, "build_failed",
+                    start_time=start_time,
                 )
                 self._finalize_result(result, start_time)
                 return result
@@ -1125,7 +1330,8 @@ class Engine:
                 telemetry.update_counts(patch_count=result.patch_count)
                 telemetry.emit_end("build", (datetime.now() - start_time).total_seconds() * 1000)
                 self._write_run_log(
-                    result.execution_id, result, "build_fixed"
+                    result.execution_id, result, "build_fixed",
+                    start_time=start_time,
                 )
             else:
                 # Fix Loop não conseguiu corrigir
@@ -1148,7 +1354,8 @@ class Engine:
                 telemetry.update_flags(build_ok=False)
                 telemetry.emit_end("build", (datetime.now() - start_time).total_seconds() * 1000)
                 self._write_run_log(
-                    result.execution_id, result, "fix_loop_failed"
+                    result.execution_id, result, "fix_loop_failed",
+                    start_time=start_time,
                 )
 
         except Exception as e:
@@ -1158,7 +1365,8 @@ class Engine:
             result.final_status = "error"
             result.errors.append(f"Build phase error: {str(e)}")
             self._write_run_log(
-                result.execution_id, result, "build_error"
+                result.execution_id, result, "build_error",
+                start_time=start_time,
             )
 
         self._finalize_result(result, start_time)
@@ -1223,6 +1431,7 @@ class Engine:
         raw_input: str,
         title: Optional[str] = None,
         enable_fix_loop: bool = True,
+        input_mode: Optional[str] = None,
     ) -> RunResult:
         """Executa o pipeline completo em modo release.
 
@@ -1243,6 +1452,7 @@ class Engine:
             raw_input: Texto bruto de entrada
             title: Título do projeto (opcional)
             enable_fix_loop: Se True, tenta corrigir erros de build automaticamente
+            input_mode: Modo de entrada (auto, natural, draft, idl). Se None, usa "auto".
 
         Returns:
             RunResult com resultado da execução
@@ -1257,6 +1467,7 @@ class Engine:
             title,
             skip_build=False,
             enable_fix_loop=enable_fix_loop,
+            input_mode=input_mode,
         )
 
         # Marcar como release mode
@@ -1297,7 +1508,8 @@ class Engine:
                 if failed_path:
                     result.failed_repo_path = str(failed_path)
                 self._write_run_log(
-                    result.execution_id, result, "docker_compose_failed"
+                    result.execution_id, result, "docker_compose_failed",
+                    start_time=start_time,
                 )
                 self._finalize_result(result, start_time)
                 return result
@@ -1330,7 +1542,8 @@ class Engine:
                 if failed_path:
                     result.failed_repo_path = str(failed_path)
                 self._write_run_log(
-                    result.execution_id, result, "docker_context_failed"
+                    result.execution_id, result, "docker_context_failed",
+                    start_time=start_time,
                 )
                 self._finalize_result(result, start_time)
                 return result
@@ -1365,7 +1578,8 @@ class Engine:
                 if failed_path:
                     result.failed_repo_path = str(failed_path)
                 self._write_run_log(
-                    result.execution_id, result, "docker_up_failed"
+                    result.execution_id, result, "docker_up_failed",
+                    start_time=start_time,
                 )
                 self._finalize_result(result, start_time)
                 return result
@@ -1414,7 +1628,8 @@ class Engine:
                 if failed_path:
                     result.failed_repo_path = str(failed_path)
                 self._write_run_log(
-                    result.execution_id, result, "readiness_failed"
+                    result.execution_id, result, "readiness_failed",
+                    start_time=start_time,
                 )
                 self._finalize_result(result, start_time)
                 return result
@@ -1444,7 +1659,8 @@ class Engine:
                 if failed_path:
                     result.failed_repo_path = str(failed_path)
                 self._write_run_log(
-                    result.execution_id, result, "smoke_failed"
+                    result.execution_id, result, "smoke_failed",
+                    start_time=start_time,
                 )
                 self._finalize_result(result, start_time)
                 return result
@@ -1456,7 +1672,8 @@ class Engine:
             self.state_machine.transition(State.COMPLETED)
 
             self._write_run_log(
-                result.execution_id, result, "release_completed"
+                result.execution_id, result, "release_completed",
+                start_time=start_time,
             )
 
         except Exception as e:
@@ -1477,7 +1694,8 @@ class Engine:
                 result.failed_repo_path = str(failed_path)
 
             self._write_run_log(
-                result.execution_id, result, "release_error"
+                result.execution_id, result, "release_error",
+                start_time=start_time,
             )
 
         self._finalize_result(result, start_time)

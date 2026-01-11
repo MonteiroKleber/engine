@@ -1,0 +1,117 @@
+{
+  "meta": {
+    "project_name": "Sistema Checklist_Idl_Inline",
+    "created_at": "2026-01-10T23:01:28.848252",
+    "version": "v1",
+    "source": "idl",
+    "srs_version": null
+  },
+  "domain": {
+    "entities": [
+      {
+        "name": "item",
+        "primary_key": "id",
+        "fields": [
+          {
+            "name": "id",
+            "type": "uuid",
+            "required": true,
+            "unique": true,
+            "indexed": false
+          },
+          {
+            "name": "name",
+            "type": "string",
+            "required": true,
+            "unique": false,
+            "indexed": false
+          }
+        ]
+      }
+    ],
+    "relations": [],
+    "workflows": [],
+    "rules": []
+  },
+  "api_intent": {
+    "resources": [
+      "item"
+    ],
+    "operations": [
+      {
+        "resource": "item",
+        "method": "POST",
+        "path": "/item"
+      },
+      {
+        "resource": "item",
+        "method": "GET",
+        "path": "/item"
+      },
+      {
+        "resource": "item",
+        "method": "GET",
+        "path": "/item/{id}"
+      },
+      {
+        "resource": "item",
+        "method": "PUT",
+        "path": "/item/{id}"
+      },
+      {
+        "resource": "item",
+        "method": "DELETE",
+        "path": "/item/{id}"
+      }
+    ]
+  },
+  "ui": {
+    "pages": [
+      {
+        "path": "/app/item/list",
+        "title": "Listar Item",
+        "components": [
+          "table",
+          "pagination",
+          "search"
+        ],
+        "actions": [
+          "list",
+          "view",
+          "delete"
+        ]
+      },
+      {
+        "path": "/app/item/new",
+        "title": "Novo Item",
+        "components": [
+          "form"
+        ],
+        "actions": [
+          "create"
+        ]
+      },
+      {
+        "path": "/app/item/:id",
+        "title": "Detalhes Item",
+        "components": [
+          "form"
+        ],
+        "actions": [
+          "view",
+          "update",
+          "delete"
+        ]
+      }
+    ]
+  },
+  "nfr": {},
+  "roles": [
+    {
+      "id": "user",
+      "name": "User",
+      "description": "",
+      "permissions": []
+    }
+  ]
+}

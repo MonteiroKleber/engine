@@ -21,6 +21,8 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Set, Tuple
 
+from config import get_config
+
 
 @dataclass
 class GeneratedFile:
@@ -96,16 +98,16 @@ class BackendCompiler:
     def __init__(
         self,
         base_package: str = "com.example.app",
-        project_root: str = "/home/bazari/generated",
+        project_root: Optional[str] = None,
     ) -> None:
         """Inicializa o BackendCompiler.
 
         Args:
             base_package: Pacote base Java
-            project_root: Diretório raiz do projeto
+            project_root: Diretório raiz do projeto (from config if None)
         """
         self.base_package = base_package
-        self.project_root = Path(project_root)
+        self.project_root = Path(project_root or get_config().generated_root)
         self._permission_map: Dict[str, str] = {}
 
     # ==================== UTILITIES ====================
@@ -998,7 +1000,7 @@ def compile_backend(
     oas: Dict[str, Any],
     rbac: Dict[str, Any],
     base_package: str = "com.example.app",
-    project_root: str = "/home/bazari/generated",
+    project_root: Optional[str] = None,
 ) -> BackendOutput:
     """Função de conveniência para compilar backend.
 
@@ -1007,7 +1009,7 @@ def compile_backend(
         oas: OpenAPI Specification
         rbac: Role-Based Access Control
         base_package: Pacote base Java
-        project_root: Diretório raiz do projeto
+        project_root: Diretório raiz do projeto (from config if None)
 
     Returns:
         BackendOutput com todos os arquivos gerados

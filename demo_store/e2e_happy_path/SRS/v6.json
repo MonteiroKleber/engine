@@ -1,0 +1,38 @@
+{
+  "id": "srs-66addf0c",
+  "title": "Sistema E2E_Happy_Path",
+  "version": "1.0.0",
+  "requirements": [],
+  "meta": {
+    "project_name": "Sistema E2E_Happy_Path"
+  },
+  "data_requirements": [],
+  "relations": [],
+  "business_rules": [],
+  "workflows": [],
+  "non_functional_requirements": {
+    "security": {
+      "auth_required": true,
+      "audit_log_required": false
+    }
+  },
+  "metadata": {
+    "created_at": "2026-01-11T10:52:21.185285",
+    "language": "pt-BR",
+    "actors": [
+      {
+        "id": "admin",
+        "name": "Administrador",
+        "description": "Usuário administrador do sistema"
+      }
+    ],
+    "summary": "Crie uma tabela de teste",
+    "open_questions": [
+      "Autenticação é necessária? Qual tipo (login/senha, OAuth, SSO)?",
+      "Quais perfis de usuário existem além de admin?",
+      "Quais são as principais entidades/recursos do sistema?"
+    ],
+    "warnings": [],
+    "generation_mode": "MINIGRAMMAR_V2"
+  }
+}

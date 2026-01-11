@@ -101,10 +101,23 @@ class TestSecurityBlockedPaths:
         # Tentar acessar paths que começam com /home/bazari/engine
         # Note: Este teste verifica a lógica, mas os paths reais são hardcoded
 
-    def test_blocked_paths_are_hardcoded(self):
-        """Verificar que os paths bloqueados estão definidos."""
-        assert "/home/bazari/engine" in PatchEngine.BLOCKED_PATHS
-        assert "/home/bazari/templates" in PatchEngine.BLOCKED_PATHS
+    def test_blocked_paths_are_canonical(self):
+        """Verificar que os paths bloqueados estão definidos e são canônicos."""
+        from patch_engine.patch_engine import _ENGINE_ROOT, _TEMPLATES_ROOT
+
+        # BLOCKED_PATHS deve conter pelo menos engine root
+        assert len(PatchEngine.BLOCKED_PATHS) >= 1
+
+        # Todos os paths devem ser absolutos
+        for path in PatchEngine.BLOCKED_PATHS:
+            assert Path(path).is_absolute(), f"Path should be absolute: {path}"
+
+        # Deve incluir engine root (usando valor derivado, não heurística)
+        assert str(_ENGINE_ROOT) in PatchEngine.BLOCKED_PATHS
+
+        # Deve incluir templates root SOMENTE se existir
+        if _TEMPLATES_ROOT.exists():
+            assert str(_TEMPLATES_ROOT) in PatchEngine.BLOCKED_PATHS
 
 
 class TestSecurityRewriteRatio:

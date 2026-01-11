@@ -1,0 +1,32 @@
+{
+  "roles": [
+    "authenticated",
+    "admin"
+  ],
+  "permissions": [
+    {
+      "operation_id": "listStore",
+      "required_role": "authenticated"
+    },
+    {
+      "operation_id": "createStore",
+      "required_role": "authenticated"
+    },
+    {
+      "operation_id": "getStore",
+      "required_role": "authenticated"
+    },
+    {
+      "operation_id": "updateStore",
+      "required_role": "authenticated"
+    },
+    {
+      "operation_id": "deleteStore",
+      "required_role": "authenticated"
+    }
+  ],
+  "meta": {
+    "created_at": "2026-01-10T23:01:49.388866",
+    "version": "1.0.0"
+  }
+}

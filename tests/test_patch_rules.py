@@ -50,8 +50,15 @@ class TestRuleEngineNeverSelfModifies:
             engine._validate_path("/home/bazari/engine/tests/fake_test.py")
 
     def test_blocked_paths_include_engine(self):
-        """BLOCKED_PATHS deve incluir /home/bazari/engine."""
-        assert "/home/bazari/engine" in PatchEngine.BLOCKED_PATHS
+        """BLOCKED_PATHS deve incluir engine root (portavelmente derivado)."""
+        from patch_engine.patch_engine import _ENGINE_ROOT
+
+        # Verifica usando o valor derivado diretamente (sem heurística por substring)
+        assert str(_ENGINE_ROOT) in PatchEngine.BLOCKED_PATHS
+
+        # O path deve existir e conter patch_engine/
+        assert _ENGINE_ROOT.exists(), f"Engine root should exist: {_ENGINE_ROOT}"
+        assert (_ENGINE_ROOT / "patch_engine").exists(), "Engine root should contain patch_engine/"
 
 
 class TestRuleTemplatesNeverAltered:
@@ -93,8 +100,15 @@ class TestRuleTemplatesNeverAltered:
             engine._validate_path("/home/bazari/templates/docker/docker-compose.yml")
 
     def test_blocked_paths_include_templates(self):
-        """BLOCKED_PATHS deve incluir /home/bazari/templates."""
-        assert "/home/bazari/templates" in PatchEngine.BLOCKED_PATHS
+        """BLOCKED_PATHS deve incluir templates root SOMENTE se existir."""
+        from patch_engine.patch_engine import _TEMPLATES_ROOT
+
+        # Templates só é incluído se o diretório existir
+        if _TEMPLATES_ROOT.exists():
+            assert str(_TEMPLATES_ROOT) in PatchEngine.BLOCKED_PATHS
+        else:
+            # Se não existe, não deve estar na lista
+            assert str(_TEMPLATES_ROOT) not in PatchEngine.BLOCKED_PATHS
 
 
 class TestRuleAllGeneratedGoesToGenerated:
