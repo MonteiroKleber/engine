@@ -1,0 +1,12 @@
+{
+  "version": "1.0.0",
+  "name": "sod",
+  "description": "Separation of Duties rules for finance-pilot",
+  "rules": [
+    {
+      "rule_name": "expense.create.requester_not_approver",
+      "case_step": "APPROVAL:expense.create",
+      "constraint": "REQUESTER_NEQ_DECIDER"
+    }
+  ]
+}

@@ -1,0 +1,9 @@
+{
+  "version": "1.0.0",
+  "name": "invariants",
+  "description": "Business invariants for finance-pilot",
+  "expense": {
+    "amount": { "min": 0.01, "max": 1000000000 },
+    "description": { "max_len": 280, "required": false }
+  }
+}

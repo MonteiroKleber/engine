@@ -1,0 +1,12 @@
+openapi: 3.0.3
+info:
+  title: Finance Pilot API
+  version: 1.0.0
+  description: API for finance-pilot bundle
+paths:
+  /accounts:
+    get:
+      summary: List accounts
+      responses:
+        '200':
+          description: List of accounts
