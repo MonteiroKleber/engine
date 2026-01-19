@@ -20,7 +20,7 @@ from engine.core.policy import ALLOWED_ENDPOINT_SIGS
 
 
 # Config schema version
-CONFIG_SCHEMA_VERSION = "1.3"
+CONFIG_SCHEMA_VERSION = "1.4"
 
 # Dept ID regex pattern
 DEPT_ID_PATTERN = re.compile(r"^[a-zA-Z0-9_-]+$")
@@ -99,6 +99,8 @@ class InstitutionConfig:
     # EGE v1.3 fields - Pin on Deploy
     auto_propose_pin_on_deploy: bool = True
     auto_accept_pin_on_deploy: bool = False
+    # EGE v1.4 fields - Governed Rollback (Etapa 2.4)
+    pinned_release_id: Optional[str] = None
 
     def to_dict(self) -> Dict[str, Any]:
         """Convert config to dictionary."""
@@ -116,6 +118,7 @@ class InstitutionConfig:
             "ege_enforce_drift": self.ege_enforce_drift,
             "auto_propose_pin_on_deploy": self.auto_propose_pin_on_deploy,
             "auto_accept_pin_on_deploy": self.auto_accept_pin_on_deploy,
+            "pinned_release_id": self.pinned_release_id,
         }
 
     @classmethod
@@ -167,6 +170,8 @@ class InstitutionConfig:
             # EGE v1.3 fields with backward-compatible defaults
             auto_propose_pin_on_deploy=data.get("auto_propose_pin_on_deploy", True),
             auto_accept_pin_on_deploy=data.get("auto_accept_pin_on_deploy", False),
+            # EGE v1.4 fields with backward-compatible defaults
+            pinned_release_id=data.get("pinned_release_id"),
         )
 
 
@@ -285,14 +290,16 @@ def _validate_config(config_dict: Dict[str, Any]) -> Tuple[bool, Optional[str], 
         "pinned_bundle_manifest_sha256", "pinned_contract_ledger_sha256", "ege_enforce_drift",
         # EGE v1.3 fields
         "auto_propose_pin_on_deploy", "auto_accept_pin_on_deploy",
+        # EGE v1.4 fields
+        "pinned_release_id",
     }
     for key in config_dict:
         if key not in allowed_top_level:
             return False, INSTITUTION_CONFIG_INVALID, f"Unknown top-level field: {key}"
 
-    # Validate schema_version (accept 1.0, 1.1, 1.2, or 1.3)
-    if "schema_version" in config_dict and config_dict["schema_version"] not in ("1.0", "1.1", "1.2", "1.3"):
-        return False, INSTITUTION_CONFIG_INVALID, "schema_version must be '1.0', '1.1', '1.2', or '1.3'"
+    # Validate schema_version (accept 1.0, 1.1, 1.2, 1.3, or 1.4)
+    if "schema_version" in config_dict and config_dict["schema_version"] not in ("1.0", "1.1", "1.2", "1.3", "1.4"):
+        return False, INSTITUTION_CONFIG_INVALID, "schema_version must be '1.0', '1.1', '1.2', '1.3', or '1.4'"
 
     # Validate flags
     if "flags" in config_dict:
@@ -433,6 +440,16 @@ def _validate_config(config_dict: Dict[str, Any]) -> Tuple[bool, Optional[str], 
     auto_accept = config_dict.get("auto_accept_pin_on_deploy", False)  # default False
     if auto_accept and not auto_propose:
         return False, INSTITUTION_CONFIG_INVALID, "auto_accept_pin_on_deploy requires auto_propose_pin_on_deploy to be True"
+
+    # Validate EGE v1.4 fields
+    if "pinned_release_id" in config_dict:
+        value = config_dict["pinned_release_id"]
+        if value is not None:
+            if not isinstance(value, str):
+                return False, INSTITUTION_CONFIG_INVALID, "pinned_release_id must be a string or null"
+            # Release ID format: YYYYMMDD-HHMMSS
+            if len(value) != 15 or value[8] != "-":
+                return False, INSTITUTION_CONFIG_INVALID, "pinned_release_id must be in format YYYYMMDD-HHMMSS"
 
     return True, None, None
 

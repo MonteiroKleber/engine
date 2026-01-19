@@ -30,9 +30,12 @@ from engine.core.ege_pins import auto_propose_and_accept_pin
 # Logger for structured JSON logging
 logger = logging.getLogger(__name__)
 
+from datetime import datetime, timezone
+
 from .hashes import compute_hash, compute_trace_hashes
 from .registry import get_registry, get_dev_runs_dir_for_institution
 from .policy_gaps import extract_policy_gaps, build_answers_template, compute_policy_counts
+from engine.core.data_root import resolve_namespaced_path
 
 
 # Pipeline statuses
@@ -140,6 +143,81 @@ class PipelineResult:
                     result["error"]["stage"] = self.stage
 
         return result
+
+
+def _write_deploy_trace(
+    bundle_name: str,
+    release_id: str,
+    bundle_hash: str,
+    hashes: Dict[str, str],
+    institution_id: Optional[str] = None,
+) -> Optional[str]:
+    """Write trace.json for deploy operations.
+
+    Creates deploy-traces/<release_id>/trace.json with full audit trail.
+
+    Args:
+        bundle_name: Name of the deployed bundle.
+        release_id: Release ID from deploy.
+        bundle_hash: Hash of the deployed bundle.
+        hashes: Dict with hash_sir, hash_draft, hash_idl_final.
+        institution_id: Optional institution UUID for namespaced storage.
+
+    Returns:
+        Path to trace.json if written, None on error.
+    """
+    try:
+        # Determine deploy-traces directory
+        if institution_id:
+            traces_dir = resolve_namespaced_path(institution_id, None, "deploy-traces")
+        else:
+            traces_dir = Path(os.environ.get("BUNDLES_ROOT", "bundles")) / "deploy-traces"
+
+        # Create release-specific directory
+        release_dir = traces_dir / release_id
+        release_dir.mkdir(parents=True, exist_ok=True)
+
+        # Build trace data
+        trace_data = {
+            "trace_version": "1.0",
+            "operation": "deploy",
+            "release_id": release_id,
+            "bundle_name": bundle_name,
+            "bundle_hash": bundle_hash,
+            "sir_sha256": hashes.get("hash_sir"),
+            "draft_sha256": hashes.get("hash_draft"),
+            "final_idl_sha256": hashes.get("hash_idl_final"),
+            "deployed_at": datetime.now(timezone.utc).isoformat(),
+            "institution_id": institution_id,
+        }
+
+        trace_path = release_dir / "trace.json"
+        trace_path.write_text(json.dumps(trace_data, indent=2), encoding="utf-8")
+
+        logger.info(
+            "DEPLOY_TRACE_WRITTEN",
+            extra={
+                "event": "DEPLOY_TRACE_WRITTEN",
+                "release_id": release_id,
+                "bundle_name": bundle_name,
+                "trace_path": str(trace_path),
+            },
+        )
+
+        return str(trace_path)
+
+    except Exception as e:
+        # Trace write errors are non-fatal
+        logger.warning(
+            "DEPLOY_TRACE_WRITE_FAILED",
+            extra={
+                "event": "DEPLOY_TRACE_WRITE_FAILED",
+                "release_id": release_id,
+                "bundle_name": bundle_name,
+                "error": str(e),
+            },
+        )
+        return None
 
 
 def run_pipeline(
@@ -445,6 +523,15 @@ def run_pipeline(
                         "error": str(e),
                     },
                 )
+
+        # Step 11: Write deploy trace for offline proof
+        _write_deploy_trace(
+            bundle_name=bundle_name,
+            release_id=release_result.release_id or "",
+            bundle_hash=release_result.bundle_hash or "",
+            hashes=hashes,
+            institution_id=institution_id,
+        )
 
         return PipelineResult(
             status=STATUS_DEPLOYED,

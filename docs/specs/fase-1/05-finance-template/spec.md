@@ -9,6 +9,7 @@ Escopo (mínimo)
 - Gates: policies, mandates, approvals, SoD, invariants, freeze/emergency, drift
 - State store versionado
 - Ledger com eventos mínimos (institutional e de caso)
+- Bundle default `bundles/finance-pilot` é a referência do MVP (até existir um “finance-golden” separado).
 
 Saídas (artefatos)
 - `docs/specs/fase-1/05-finance-template/finance-contract.md`
@@ -21,6 +22,7 @@ Regras
 - Mudança em Finance implica mudança correspondente em gates/ledger/proof.
 
 Definition of Done (Etapa 05)
-- Bundle Finance completo e canônico (inclui contratos mínimos definidos na Etapa 02/04).
+- Bundle Finance completo e canônico (inclui contratos mínimos definidos na Etapa 02/04):
+  - `policies.json`, `mandates.json`, `autonomy.json` presentes e `required=true` no manifest
+  - mandates/autonomy cobrem os endpoints do piloto (senão o fluxo quebra por design)
 - Testes E2E cobrindo create → approve/reject → commit/reject.
-

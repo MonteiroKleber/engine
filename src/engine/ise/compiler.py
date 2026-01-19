@@ -9,6 +9,7 @@ from typing import Dict, Any, List, Optional
 from .idl_parser import parse_idl, ParsedIDL
 from .manifest import generate_manifest, get_bundle_hash, sha256_str
 from .contract_ledger import generate_contract_ledger
+from .ircs_adapter import ircs_to_parsed_idl, load_ircs_from_file, get_source_idl_sha256, IRCSAdapterError
 from .emit import (
     emit_rbac,
     emit_workflows,
@@ -164,11 +165,13 @@ def _compile_single_dept(
             c["file"]: c["sha256"].replace("SHA256:", "")
             for c in manifest["contracts"]
         }
+        # Compute manifest_hash as SHA256(manifest_json) per spec 2.3
+        manifest_hash = sha256_str(manifest_json)
         ledger_json = generate_contract_ledger(
             bundle_name=bundle_name,
             version=parsed.version,
             contracts=contract_hashes,
-            manifest_hash=bundle_hash,
+            manifest_hash=manifest_hash,
             idl_source=idl,
         )
         ledger_str = json.dumps(ledger_json, indent=2, sort_keys=True)
@@ -303,11 +306,13 @@ def _compile_multi_dept(
             c["file"]: c["sha256"].replace("SHA256:", "")
             for c in manifest["contracts"]
         }
+        # Compute manifest_hash as SHA256(manifest_json) per spec 2.3
+        manifest_hash = sha256_str(manifest_json)
         ledger_json = generate_contract_ledger(
             bundle_name=bundle_name,
             version=parsed.version,
             contracts=contract_hashes,
-            manifest_hash=bundle_hash,
+            manifest_hash=manifest_hash,
             idl_source=idl,
         )
         ledger_str = json.dumps(ledger_json, indent=2, sort_keys=True)
@@ -413,12 +418,12 @@ def _emit_dept_contracts(parsed: ParsedIDL, dept: IDLDepartment) -> Dict[str, st
         }, indent=2, sort_keys=True)
     contracts["policies.json"] = policies_json
 
-    # Mandates contract - ALWAYS emit
-    mandates_json = emit_mandates_json(dept_parsed)
+    # Mandates contract - ALWAYS emit (use original parsed to access dept_mandates)
+    mandates_json = emit_mandates_json(parsed, dept_id=dept.dept_id)
     contracts["mandates.json"] = mandates_json
 
-    # Autonomy contract - ALWAYS emit
-    autonomy_json = emit_autonomy_json(dept_parsed)
+    # Autonomy contract - ALWAYS emit (use original parsed to access dept_autonomy)
+    autonomy_json = emit_autonomy_json(parsed, dept_id=dept.dept_id)
     contracts["autonomy.json"] = autonomy_json
 
     return contracts
@@ -656,11 +661,13 @@ def compile_bundle_to_memory(
         c["file"]: c["sha256"].replace("SHA256:", "")
         for c in manifest["contracts"]
     }
+    # Compute manifest_hash as SHA256(manifest_json) per spec 2.3
+    manifest_hash = sha256_str(manifest_json)
     ledger = generate_contract_ledger(
         bundle_name=bundle_name,
         version=parsed.version,
         contracts=contract_hashes,
-        manifest_hash=bundle_hash,
+        manifest_hash=manifest_hash,
         idl_source=idl,
     )
     ledger_json = json.dumps(ledger, indent=2, sort_keys=True)
@@ -677,3 +684,173 @@ def compile_bundle_to_memory(
         "sha256s": sha256s,
         "bundle_hash": bundle_hash,
     }
+
+
+# =============================================================================
+# IRCS v1 Compilation (Canonical Path)
+# =============================================================================
+
+
+def compile_from_ircs(
+    ir: Dict[str, Any],
+    bundle_name: str,
+    output_dir: str = "bundles",
+) -> CompileResult:
+    """Compile bundle from IRCS v1 canonical JSON.
+
+    This is the canonical compilation path for production:
+        DSL v1.2.2 → IRCS v1 → ParsedIDL → Emitters → Bundle
+
+    Args:
+        ir: IRCS v1 dict (from parse_dsl or loaded from ir.json)
+        bundle_name: Name for the bundle
+        output_dir: Directory to write bundle files
+
+    Returns:
+        CompileResult with bundle details or error info
+    """
+    # Convert IRCS v1 → ParsedIDL
+    try:
+        parsed = ircs_to_parsed_idl(ir)
+    except IRCSAdapterError as e:
+        return CompileResult(
+            success=False,
+            error_code=e.code,
+            error_message=e.message,
+        )
+    except Exception as e:
+        return CompileResult(
+            success=False,
+            error_code=errors.ISE_IDL_PARSE_FAILED,
+            error_message=f"Failed to convert IRCS v1: {e}",
+        )
+
+    # Get source_idl_sha256 from IR for ledger
+    source_idl_sha256 = get_source_idl_sha256(ir)
+
+    # Generate contracts using existing emitters
+    try:
+        contracts = _emit_all_contracts(parsed)
+    except ISEPolicyValidationError as e:
+        return CompileResult(
+            success=False,
+            error_code=e.code,
+            error_message=f"Policy validation failed: {e.message}",
+        )
+    except Exception as e:
+        return CompileResult(
+            success=False,
+            error_code=errors.ISE_EMIT_FAILED,
+            error_message=f"Failed to emit contracts: {e}",
+        )
+
+    # Generate manifest
+    try:
+        manifest = generate_manifest(
+            bundle_name=bundle_name,
+            version=parsed.version,
+            contracts=contracts,
+            system_name=parsed.system_name,
+        )
+        bundle_hash = get_bundle_hash(manifest)
+        manifest_json = json.dumps(manifest, indent=2, sort_keys=True)
+        contracts["bundle.manifest.json"] = manifest_json
+    except Exception as e:
+        return CompileResult(
+            success=False,
+            error_code=errors.ISE_MANIFEST_FAILED,
+            error_message=f"Failed to generate manifest: {e}",
+        )
+
+    # Generate contract ledger with source_idl_sha256 preserved
+    try:
+        contract_hashes = {
+            c["file"]: c["sha256"].replace("SHA256:", "")
+            for c in manifest["contracts"]
+        }
+
+        # Use IRCS v1 JSON as source for ledger hash (deterministic)
+        ir_json_str = json.dumps(ir, indent=2, sort_keys=True, ensure_ascii=False)
+
+        # Compute manifest_hash as SHA256(manifest_json) per spec 2.3
+        manifest_hash = sha256_str(manifest_json)
+
+        ledger_json = generate_contract_ledger(
+            bundle_name=bundle_name,
+            version=parsed.version,
+            contracts=contract_hashes,
+            manifest_hash=manifest_hash,
+            idl_source=ir_json_str,
+        )
+
+        # Add source_idl_sha256 to ledger for audit trail
+        if source_idl_sha256:
+            ledger_json["source_idl_sha256"] = source_idl_sha256
+
+        ledger_str = json.dumps(ledger_json, indent=2, sort_keys=True)
+        contracts["contract_ledger.json"] = ledger_str
+    except Exception as e:
+        return CompileResult(
+            success=False,
+            error_code=errors.ISE_COMPILE_FAILED,
+            error_message=f"Failed to generate contract ledger: {e}",
+        )
+
+    # Write bundle to disk
+    try:
+        bundle_path = _write_bundle(bundle_name, contracts, output_dir)
+    except FileExistsError:
+        return CompileResult(
+            success=False,
+            error_code=errors.ISE_BUNDLE_EXISTS,
+            error_message=f"Bundle '{bundle_name}' already exists in {output_dir}",
+        )
+    except Exception as e:
+        return CompileResult(
+            success=False,
+            error_code=errors.ISE_BUNDLE_WRITE_FAILED,
+            error_message=f"Failed to write bundle: {e}",
+        )
+
+    # Build SHA256 map
+    sha256s = {filename: sha256_str(content) for filename, content in contracts.items()}
+
+    return CompileResult(
+        success=True,
+        bundle_path=bundle_path,
+        bundle_name=bundle_name,
+        version=parsed.version,
+        mode="single",
+        contracts=sorted(contracts.keys()),
+        sha256s=sha256s,
+        bundle_hash=bundle_hash,
+    )
+
+
+def compile_from_ircs_file(
+    ir_path: str,
+    bundle_name: str,
+    output_dir: str = "bundles",
+) -> CompileResult:
+    """Compile bundle from IRCS v1 JSON file.
+
+    Convenience function that loads IRCS v1 from file and compiles.
+
+    Args:
+        ir_path: Path to ir.json file
+        bundle_name: Name for the bundle
+        output_dir: Directory to write bundle files
+
+    Returns:
+        CompileResult with bundle details or error info
+    """
+    try:
+        ir = load_ircs_from_file(ir_path)
+    except IRCSAdapterError as e:
+        return CompileResult(
+            success=False,
+            error_code=e.code,
+            error_message=e.message,
+        )
+
+    return compile_from_ircs(ir, bundle_name, output_dir)

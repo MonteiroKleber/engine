@@ -1,0 +1,126 @@
+{% extends "base.html" %}
+
+{% block title %}AXIOM Console - Bundles{% endblock %}
+
+{% block content %}
+<!-- Current Pin Status -->
+<div class="card">
+    <h3 class="card-title">Current Pin Status</h3>
+    <div class="grid grid-2">
+        <div>
+            <h4 style="color: var(--text-secondary); margin-bottom: 0.5rem;">Pinned (Config)</h4>
+            {% if pinned.bundle_manifest_sha256 %}
+            <div class="info-row">
+                <span class="info-label">Bundle Manifest</span>
+                <span class="info-value mono hash">{{ pinned.bundle_manifest_sha256 }}</span>
+            </div>
+            {% endif %}
+            {% if pinned.contract_ledger_sha256 %}
+            <div class="info-row">
+                <span class="info-label">Contract Ledger</span>
+                <span class="info-value mono hash">{{ pinned.contract_ledger_sha256 }}</span>
+            </div>
+            {% endif %}
+            {% if not pinned.bundle_manifest_sha256 and not pinned.contract_ledger_sha256 %}
+            <div class="empty-state">No pins configured</div>
+            {% endif %}
+        </div>
+        <div>
+            <h4 style="color: var(--text-secondary); margin-bottom: 0.5rem;">Observed (Current)</h4>
+            {% if observed.bundle_manifest_sha256 %}
+            <div class="info-row">
+                <span class="info-label">Bundle Manifest</span>
+                <span class="info-value mono hash">{{ observed.bundle_manifest_sha256 }}</span>
+            </div>
+            {% endif %}
+            {% if observed.contract_ledger_sha256 %}
+            <div class="info-row">
+                <span class="info-label">Contract Ledger</span>
+                <span class="info-value mono hash">{{ observed.contract_ledger_sha256 }}</span>
+            </div>
+            {% endif %}
+            {% if not observed.bundle_manifest_sha256 and not observed.contract_ledger_sha256 %}
+            <div class="empty-state">No bundle loaded</div>
+            {% endif %}
+        </div>
+    </div>
+
+    <div style="margin-top: 1rem;">
+        <span class="info-label">Drift Status:</span>
+        {% if drift_status == 'CLEAR' %}
+        <span class="badge badge-clear">CLEAR</span>
+        {% elif drift_status == 'ACTIVE' %}
+        <span class="badge badge-drift">DRIFT DETECTED</span>
+        {% else %}
+        <span class="badge badge-unpinned">{{ drift_status }}</span>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Recent Builds -->
+<div class="card">
+    <h3 class="card-title">Recent Builds</h3>
+    {% if runs %}
+    <table>
+        <thead>
+            <tr>
+                <th>Run ID</th>
+                <th>Bundle Name</th>
+                <th>Created</th>
+                <th>Status</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for run in runs %}
+            <tr>
+                <td class="mono">{{ run.run_id[:8] }}...</td>
+                <td>{{ run.bundle_name }}</td>
+                <td>{{ run.created_at }}</td>
+                <td>
+                    {% if run.deleted %}
+                    <span class="badge badge-error">Deleted</span>
+                    {% else %}
+                    <span class="badge badge-active">Available</span>
+                    {% endif %}
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    <div style="margin-top: 0.5rem; color: var(--text-secondary);">
+        Showing {{ runs|length }} of {{ total_runs }} runs
+    </div>
+    {% else %}
+    <div class="empty-state">No builds found</div>
+    {% endif %}
+</div>
+
+<!-- EGE Proposals -->
+<div class="card">
+    <h3 class="card-title">Recent Proposals</h3>
+    {% if proposals %}
+    <table>
+        <thead>
+            <tr>
+                <th>Proposal ID</th>
+                <th>Status</th>
+                <th>Created</th>
+                <th>Decision</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for p in proposals %}
+            <tr>
+                <td class="mono">{{ p.proposal_id[:8] }}...</td>
+                <td>{{ p.status }}</td>
+                <td>{{ p.created_at }}</td>
+                <td>{{ p.decision or '-' }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% else %}
+    <div class="empty-state">No proposals found</div>
+    {% endif %}
+</div>
+{% endblock %}

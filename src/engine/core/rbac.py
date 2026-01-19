@@ -55,32 +55,67 @@ class RBACPolicy:
         return permission in permissions
 
 
-# Global RBAC policy (set by loader)
+# Global RBAC policy (set by loader for single-mode)
 _rbac_policy: Optional[RBACPolicy] = None
 
+# Per-department RBAC policies (for multi-mode)
+# Key: dept_id (or None for single mode)
+_rbac_policies: Dict[Optional[str], RBACPolicy] = {}
 
-def set_rbac_policy(policy: Optional[RBACPolicy]) -> None:
-    """Set the global RBAC policy."""
+
+def set_rbac_policy(policy: Optional[RBACPolicy], dept_id: Optional[str] = None) -> None:
+    """Set RBAC policy for a department (or global for single mode).
+
+    Args:
+        policy: RBACPolicy instance, or None to clear.
+        dept_id: Department ID, or None for single/global mode.
+    """
     global _rbac_policy
-    _rbac_policy = policy
+    if dept_id is None:
+        # Single mode - set global policy
+        _rbac_policy = policy
+    else:
+        # Multi mode - set per-department policy
+        if policy is None:
+            _rbac_policies.pop(dept_id, None)
+        else:
+            _rbac_policies[dept_id] = policy
 
 
-def get_rbac_policy() -> Optional[RBACPolicy]:
-    """Get the global RBAC policy."""
+def get_rbac_policy(dept_id: Optional[str] = None) -> Optional[RBACPolicy]:
+    """Get RBAC policy for a department (or global for single mode).
+
+    Args:
+        dept_id: Department ID, or None for single/global mode.
+
+    Returns:
+        RBACPolicy if found, None otherwise.
+    """
+    if dept_id is not None and dept_id in _rbac_policies:
+        return _rbac_policies[dept_id]
+    # Fall back to global policy
     return _rbac_policy
 
 
-def gate_rbac(permission: str, actor_context: ActorContext) -> bool:
+def reset_all_rbac() -> None:
+    """Clear all RBAC policies (for testing)."""
+    global _rbac_policy, _rbac_policies
+    _rbac_policy = None
+    _rbac_policies = {}
+
+
+def gate_rbac(permission: str, actor_context: ActorContext, dept_id: Optional[str] = None) -> bool:
     """Check if actor has permission via RBAC.
 
     Args:
         permission: Permission to check.
         actor_context: Actor context with roles.
+        dept_id: Department ID for per-dept policy lookup (optional).
 
     Returns:
         True if allowed, False if denied.
     """
-    policy = get_rbac_policy()
+    policy = get_rbac_policy(dept_id)
     if policy is None:
         # No policy loaded - deny by default
         return False

@@ -27,6 +27,7 @@ from .errors import (
 ALLOWED_ENDPOINT_SIGS = frozenset({
     "POST /finance/expenses",
     "POST /approvals/{approval_id}/decide",
+    "POST /support/tickets",
 })
 
 # Allowed phases
@@ -571,6 +572,7 @@ def evaluate_mandates(
     endpoint_sig: str,
     actor: ActorContext,
     payload: Dict[str, Any],
+    institution_id: Optional[str] = None,
 ) -> MandateEvalResult:
     """Evaluate mandates for a request.
 
@@ -591,11 +593,17 @@ def evaluate_mandates(
         endpoint_sig: Canonical endpoint signature.
         actor: Actor context.
         payload: The request payload.
+        institution_id: Optional institution ID for governed mandates lookup.
 
     Returns:
         MandateEvalResult with allow status and any violations.
     """
-    mandate_def = get_mandates(dept_id)
+    # If institution_id is provided, use governed mandates (override + bundle)
+    if institution_id:
+        from engine.core.governed_mandates import get_effective_mandates
+        mandate_def = get_effective_mandates(institution_id, dept_id)
+    else:
+        mandate_def = get_mandates(dept_id)
 
     if mandate_def is None:
         # No mandates.json loaded - allow (no contract = allow)

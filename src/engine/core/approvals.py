@@ -56,19 +56,39 @@ class ApprovalsPolicy:
         return self._rules.get(rule_name)
 
 
-# Global approvals policy
-_approvals_policy: Optional[ApprovalsPolicy] = None
+# Per-department approvals policies (key: dept_id, None for single mode)
+_approvals_policies: Dict[Optional[str], ApprovalsPolicy] = {}
 
 
-def set_approvals_policy(policy: Optional[ApprovalsPolicy]) -> None:
-    """Set the global approvals policy."""
-    global _approvals_policy
-    _approvals_policy = policy
+def set_approvals_policy(policy: Optional[ApprovalsPolicy], dept_id: Optional[str] = None) -> None:
+    """Set approvals policy for a department (or single mode).
+
+    Args:
+        policy: ApprovalsPolicy instance, or None to clear.
+        dept_id: Department ID, or None for single mode.
+    """
+    if policy is None:
+        _approvals_policies.pop(dept_id, None)
+    else:
+        _approvals_policies[dept_id] = policy
 
 
-def get_approvals_policy() -> Optional[ApprovalsPolicy]:
-    """Get the global approvals policy."""
-    return _approvals_policy
+def get_approvals_policy(dept_id: Optional[str] = None) -> Optional[ApprovalsPolicy]:
+    """Get approvals policy for a department (or single mode).
+
+    Args:
+        dept_id: Department ID, or None for single mode.
+
+    Returns:
+        ApprovalsPolicy if set, None otherwise.
+    """
+    return _approvals_policies.get(dept_id)
+
+
+def reset_all_approvals() -> None:
+    """Reset all approvals policies (for testing)."""
+    global _approvals_policies
+    _approvals_policies = {}
 
 
 def compute_payload_sha256(payload_bytes: bytes) -> str:

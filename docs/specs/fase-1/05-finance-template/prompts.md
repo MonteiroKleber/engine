@@ -5,14 +5,17 @@ PROMPT 05.1
 Você está no repositório `/home/bazari/engine`.
 
 Tarefa:
-1) Leia `docs/specs/fase-1/05-finance-template/spec.md`.
-2) Localize o bundle/template Finance existente e os endpoints.
+1) Leia `docs/specs/fase-1/05-finance-template/spec.md` e siga como contrato.
+2) Localize o bundle/template Finance existente (atualmente `bundles/finance-pilot`) e os endpoints.
 3) Escreva:
    - `docs/specs/fase-1/05-finance-template/finance-contract.md`
    - `docs/specs/fase-1/05-finance-template/finance-bundle.md`
 
 Regras:
-- Se o bundle Finance não contiver contratos mínimos (policies/mandates/autonomy), marque como gap e proponha o mínimo para fechar.
+- Trate `bundles/finance-pilot` como a referência atual do MVP e documente:
+  - contratos presentes e seus schemas
+  - regras mínimas de mandates/autonomy necessárias para o fluxo funcionar sob a semântica canônica
+  - consistência entre `approvals.json` e roles em `rbac.json`
 - Não implemente mudança de código neste prompt (apenas documentação + gaps).
 [[CLAUDE_CODE_END]]
 
@@ -26,4 +29,3 @@ Se houver gaps no bundle Finance:
 Saída:
 - Patch mínimo + testes + docs atualizadas.
 [[CLAUDE_CODE_END]]
-

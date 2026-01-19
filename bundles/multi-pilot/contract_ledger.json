@@ -1,0 +1,80 @@
+{
+  "entries": [
+    {
+      "file": "contracts.json",
+      "sha256": "83b8520d0ca857b087b1641296764ccb958264019d6a2b51290278c2d5fe3070"
+    },
+    {
+      "file": "departments/finance/rbac.json",
+      "sha256": "64907fac9729f9fc371b2a523048a2cd690216a3e0b9e08967f72de884ac8e05"
+    },
+    {
+      "file": "departments/finance/approvals.json",
+      "sha256": "49699db08dcd1c427be630fe9090c73e6c923793bb4f2783171a338107333f51"
+    },
+    {
+      "file": "departments/finance/workflows.json",
+      "sha256": "c473056482e60e9b11a254a4445ebb1c7e18c1a69c94ae8339d408234e66ae71"
+    },
+    {
+      "file": "departments/finance/sod.json",
+      "sha256": "eaea64d77e9c5b0ba2d5318696c1a390da3a8d177249eb3e53e40d33659c7400"
+    },
+    {
+      "file": "departments/finance/invariants.json",
+      "sha256": "3e17572bd74f31c558b5690c2e696b84352ff078ffda81b5e72019f6a5104c7f"
+    },
+    {
+      "file": "departments/finance/openapi.yaml",
+      "sha256": "c96f851f30cf93204efe2bbce5c820737d0a1a65c0deb4b50de65e1610042fc5"
+    },
+    {
+      "file": "departments/finance/mandates.json",
+      "sha256": "1a3ce1b59ff21a9033d4e5dcfa22a9168cc114e801b856348d583197dccd493d"
+    },
+    {
+      "file": "departments/finance/autonomy.json",
+      "sha256": "0151ac1f38390bd100cb6dac40ac42cff341ae19ecff5bec7ba29157106b9336"
+    },
+    {
+      "file": "departments/finance/policies.json",
+      "sha256": "f2df6d753b154e6aa3abe70cdc277e914aeed775b63f91745075c200e1ebe09d"
+    },
+    {
+      "file": "departments/support/rbac.json",
+      "sha256": "7765ba4194e4f4358106711900caf04860a5a10f3bfd143b9951395e3e17ecc7"
+    },
+    {
+      "file": "departments/support/approvals.json",
+      "sha256": "11a9e27b6300aec0327ecbfdec54c68fc616758952cf0585fe1d7f613dcc98d7"
+    },
+    {
+      "file": "departments/support/workflows.json",
+      "sha256": "3d2bfc38e87892c273da711a489f2a0b02f8584e664de2a7bd8931cc1eb5752a"
+    },
+    {
+      "file": "departments/support/sod.json",
+      "sha256": "c92f6122e364f505a881c21b37df95e2c3c2baf8fd776e3b79bf537c2ebea0c3"
+    },
+    {
+      "file": "departments/support/invariants.json",
+      "sha256": "e53aa7f6ce04f217ea31a6544164fa51584b0926cf1e6690e4b7fb7823c56a54"
+    },
+    {
+      "file": "departments/support/openapi.yaml",
+      "sha256": "09a99e9f78c484996708909c5b9c2739f8ca79f1712c97254f3d6f275d63324e"
+    },
+    {
+      "file": "departments/support/mandates.json",
+      "sha256": "ad53e50c31da321f52271df3ee07ec57ac81fcbd0273afd6067b22c756970e43"
+    },
+    {
+      "file": "departments/support/autonomy.json",
+      "sha256": "5a5abfee3c7c0bd59b0ed58651101586c6963a3e59a75197911031d9a8104a72"
+    },
+    {
+      "file": "departments/support/policies.json",
+      "sha256": "dcac73b2aeec7a3f5150279fb87a03e8c1e03c3addbdb63295be4f8e11874ac5"
+    }
+  ]
+}

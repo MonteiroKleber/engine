@@ -1,0 +1,12 @@
+{
+  "trace_version": "1.0",
+  "operation": "deploy",
+  "release_id": "20260115-120000",
+  "bundle_name": "test-bundle",
+  "bundle_hash": "hash123",
+  "sir_sha256": "5dcf7e5a19f45670dd83341e488788409da180b18a0d0f3796ab974f68a211d6",
+  "draft_sha256": "d3e1e0586a932477b1a4aac3228e4fa239671eed50320bce1ecd6096f1c6aa30",
+  "final_idl_sha256": "c1bbde22d39673c83591f3f33e9bff0965189a116c03ceb88897698ed568ce1d",
+  "deployed_at": "2026-01-18T19:25:46.297710+00:00",
+  "institution_id": null
+}

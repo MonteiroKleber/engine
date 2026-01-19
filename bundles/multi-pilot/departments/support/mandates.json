@@ -1,0 +1,12 @@
+{
+  "mandate_schema_version": "1.0",
+  "mandates": [
+    {
+      "mandate_id": "ticket-create-pre",
+      "endpoint_sig": "POST /support/tickets",
+      "phase": "pre",
+      "allowed_roles": ["agent", "admin"],
+      "message": "Ticket creation mandate for support department"
+    }
+  ]
+}

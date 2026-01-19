@@ -46,18 +46,19 @@ async def get_actor_context(
     return context
 
 
-def require_permission(permission: str) -> Callable[[ActorContext], ActorContext]:
+def require_permission(permission: str, dept_id: Optional[str] = None) -> Callable[[ActorContext], ActorContext]:
     """Create a dependency that checks for a specific permission.
 
     Args:
         permission: Permission required for the endpoint.
+        dept_id: Optional department ID for per-dept RBAC lookup.
 
     Returns:
         Dependency function that validates the permission.
     """
 
     def check_permission(actor: ActorContext) -> ActorContext:
-        if not gate_rbac(permission, actor):
+        if not gate_rbac(permission, actor, dept_id=dept_id):
             raise HTTPException(
                 status_code=403,
                 detail={

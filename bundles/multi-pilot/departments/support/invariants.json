@@ -1,0 +1,9 @@
+{
+  "version": "1.0.0",
+  "name": "invariants",
+  "description": "Business invariants for support department",
+  "ticket": {
+    "subject": { "max_len": 200, "required": true },
+    "description": { "max_len": 5000, "required": false }
+  }
+}

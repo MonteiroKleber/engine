@@ -15,6 +15,29 @@ from .errors import (
     ISE_CONTRACT_ID_INVALID,
     ISE_CONTRACT_PROVIDER_UNKNOWN,
     ISE_CONTRACT_CONSUMER_UNKNOWN,
+    ISE_MANDATE_INVALID,
+    ISE_MANDATE_ENDPOINT_INVALID,
+    ISE_MANDATE_PHASE_INVALID,
+    ISE_MANDATE_RULE_TYPE_INVALID,
+    ISE_MANDATE_ID_DUPLICATE,
+    ISE_AUTONOMY_INVALID,
+    ISE_AUTONOMY_LEVEL_INVALID,
+    ISE_AUTONOMY_ENDPOINT_INVALID,
+    ISE_AUTONOMY_PHASE_INVALID,
+    ISE_AUTONOMY_RULE_ID_DUPLICATE,
+)
+
+# Import runtime constants for validation
+from engine.core.mandates import (
+    ALLOWED_ENDPOINT_SIGS as MANDATE_ALLOWED_ENDPOINT_SIGS,
+    ALLOWED_PHASES as MANDATE_ALLOWED_PHASES,
+    ALLOWED_RULE_TYPES as MANDATE_ALLOWED_RULE_TYPES,
+)
+from engine.core.autonomy import (
+    ALLOWED_ENDPOINT_SIGS as AUTONOMY_ALLOWED_ENDPOINT_SIGS,
+    ALLOWED_PHASES as AUTONOMY_ALLOWED_PHASES,
+    MIN_LEVEL as AUTONOMY_MIN_LEVEL,
+    MAX_LEVEL as AUTONOMY_MAX_LEVEL,
 )
 
 
@@ -128,10 +151,50 @@ class IDLPolicy:
 
 
 @dataclass
+class IDLMandateLimit:
+    """A limit rule within a mandate (IDL v1.1)."""
+    rule_type: str  # numeric_max, numeric_min, string_max_len, required_field, enum_allowlist
+    field_path: str  # dot notation e.g. "amount" or "payload.amount"
+    value: Any = None  # threshold value
+    message: Optional[str] = None  # custom error message
+
+
+@dataclass
+class IDLMandate:
+    """Mandate definition for IDL v1.1.
+
+    Maps to runtime Mandate structure.
+    """
+    mandate_id: str
+    endpoint_sig: str  # exact endpoint signature
+    phase: str  # "pre" or "post"
+    allowed_roles: List[str] = field(default_factory=list)
+    limits: List[IDLMandateLimit] = field(default_factory=list)
+    message: Optional[str] = None  # custom message
+
+
+@dataclass
+class IDLAutonomyRule:
+    """Autonomy rule definition for IDL v1.1."""
+    rule_id: str
+    endpoint_sig: str  # exact endpoint signature
+    phase: str  # "pre" or "post"
+    required_level: int  # 0..4
+
+
+@dataclass
+class IDLAutonomy:
+    """Autonomy definition for IDL v1.1."""
+    current_level: int  # 0..4
+    rules: List[IDLAutonomyRule] = field(default_factory=list)
+
+
+@dataclass
 class ParsedIDL:
     """Parsed IDL structure."""
     system_name: str
     version: str
+    idl_version: str = "1.0"  # IDL format version (1.0 = legacy, 1.1 = mandates/autonomy first-class)
     actors: List[IDLActor] = field(default_factory=list)
     entities: List[IDLEntity] = field(default_factory=list)
     usecases: List[IDLUseCase] = field(default_factory=list)
@@ -139,6 +202,11 @@ class ParsedIDL:
     contracts: List[IDLContract] = field(default_factory=list)
     policies: List[IDLPolicy] = field(default_factory=list)  # single mode policies
     dept_policies: Dict[str, List[IDLPolicy]] = field(default_factory=dict)  # multi mode policies
+    # IDL v1.1: mandates/autonomy first-class
+    mandates: List[IDLMandate] = field(default_factory=list)  # single mode mandates
+    autonomy: Optional[IDLAutonomy] = None  # single mode autonomy
+    dept_mandates: Dict[str, List[IDLMandate]] = field(default_factory=dict)  # multi mode mandates
+    dept_autonomy: Dict[str, IDLAutonomy] = field(default_factory=dict)  # multi mode autonomy
 
     @property
     def is_multi_dept(self) -> bool:
@@ -203,6 +271,7 @@ def parse_idl(idl_input: Any) -> ParsedIDL:
     # Extract system info
     system_name = idl_data.get("system") or idl_data.get("name") or idl_data.get("system_name") or "Unknown"
     version = idl_data.get("version") or "0.0.0"
+    idl_version = idl_data.get("idl_version") or "1.0"  # Default to legacy
 
     # Parse departments (multi-dept mode)
     departments = _parse_departments(idl_data)
@@ -225,9 +294,35 @@ def parse_idl(idl_input: Any) -> ParsedIDL:
     # Parse dept_policies (multi mode)
     dept_policies = _parse_dept_policies(idl_data.get("dept_policies", {}), departments)
 
+    # IDL v1.1: Parse mandates/autonomy
+    mandates: List[IDLMandate] = []
+    autonomy: Optional[IDLAutonomy] = None
+    dept_mandates: Dict[str, List[IDLMandate]] = {}
+    dept_autonomy: Dict[str, IDLAutonomy] = {}
+
+    if idl_version == "1.1":
+        # Parse single-mode mandates
+        mandates = _parse_mandates(idl_data.get("mandates", []))
+
+        # Parse single-mode autonomy
+        autonomy_data = idl_data.get("autonomy")
+        if autonomy_data:
+            autonomy = _parse_autonomy(autonomy_data)
+
+        # Parse multi-dept mandates
+        dept_mandates = _parse_dept_mandates(
+            idl_data.get("dept_mandates", {}), departments
+        )
+
+        # Parse multi-dept autonomy
+        dept_autonomy = _parse_dept_autonomy(
+            idl_data.get("dept_autonomy", {}), departments
+        )
+
     return ParsedIDL(
         system_name=system_name,
         version=version,
+        idl_version=idl_version,
         actors=actors,
         entities=entities,
         usecases=usecases,
@@ -235,6 +330,10 @@ def parse_idl(idl_input: Any) -> ParsedIDL:
         contracts=contracts,
         policies=policies,
         dept_policies=dept_policies,
+        mandates=mandates,
+        autonomy=autonomy,
+        dept_mandates=dept_mandates,
+        dept_autonomy=dept_autonomy,
     )
 
 
@@ -780,5 +879,433 @@ def _parse_dept_policies(
         policies = _parse_policies(policies_data)
         if policies:
             result[dept_id] = policies
+
+    return result
+
+
+# =============================================================================
+# IDL v1.1: Mandates Parsing
+# =============================================================================
+
+
+def _parse_mandate_limit(limit_data: Dict[str, Any], mandate_id: str) -> IDLMandateLimit:
+    """Parse a single mandate limit from IDL.
+
+    Args:
+        limit_data: Limit definition dict.
+        mandate_id: Parent mandate ID for error context.
+
+    Returns:
+        IDLMandateLimit object.
+
+    Raises:
+        IDLParseError: If limit validation fails.
+    """
+    rule_type = limit_data.get("rule_type", "")
+
+    if not rule_type:
+        raise IDLParseError(
+            code=ISE_MANDATE_INVALID,
+            message=f"Mandate '{mandate_id}': limit missing rule_type",
+            details={"mandate_id": mandate_id},
+        )
+
+    if rule_type not in MANDATE_ALLOWED_RULE_TYPES:
+        raise IDLParseError(
+            code=ISE_MANDATE_RULE_TYPE_INVALID,
+            message=f"Mandate '{mandate_id}': invalid rule_type '{rule_type}'. "
+            f"Allowed: {sorted(MANDATE_ALLOWED_RULE_TYPES)}",
+            details={"mandate_id": mandate_id, "rule_type": rule_type},
+        )
+
+    field_path = limit_data.get("field_path", "")
+    if not field_path:
+        raise IDLParseError(
+            code=ISE_MANDATE_INVALID,
+            message=f"Mandate '{mandate_id}': limit missing field_path",
+            details={"mandate_id": mandate_id},
+        )
+
+    return IDLMandateLimit(
+        rule_type=rule_type,
+        field_path=field_path,
+        value=limit_data.get("value"),
+        message=limit_data.get("message"),
+    )
+
+
+def _parse_single_mandate(mandate_data: Dict[str, Any], seen_ids: set) -> IDLMandate:
+    """Parse a single mandate from IDL.
+
+    Args:
+        mandate_data: Mandate definition dict.
+        seen_ids: Set of already-seen mandate_ids for duplicate detection.
+
+    Returns:
+        IDLMandate object.
+
+    Raises:
+        IDLParseError: If mandate validation fails.
+    """
+    mandate_id = mandate_data.get("mandate_id", "")
+
+    # Validate mandate_id
+    if not mandate_id or not mandate_id.strip():
+        raise IDLParseError(
+            code=ISE_MANDATE_INVALID,
+            message="Mandate missing mandate_id",
+            details={"mandate_data": mandate_data},
+        )
+
+    if mandate_id in seen_ids:
+        raise IDLParseError(
+            code=ISE_MANDATE_ID_DUPLICATE,
+            message=f"Duplicate mandate_id: '{mandate_id}'",
+            details={"mandate_id": mandate_id},
+        )
+    seen_ids.add(mandate_id)
+
+    # Validate endpoint_sig
+    endpoint_sig = mandate_data.get("endpoint_sig", "")
+    if not endpoint_sig:
+        raise IDLParseError(
+            code=ISE_MANDATE_INVALID,
+            message=f"Mandate '{mandate_id}': missing endpoint_sig",
+            details={"mandate_id": mandate_id},
+        )
+
+    if endpoint_sig not in MANDATE_ALLOWED_ENDPOINT_SIGS:
+        raise IDLParseError(
+            code=ISE_MANDATE_ENDPOINT_INVALID,
+            message=f"Mandate '{mandate_id}': invalid endpoint_sig '{endpoint_sig}'. "
+            f"Allowed: {sorted(MANDATE_ALLOWED_ENDPOINT_SIGS)}",
+            details={"mandate_id": mandate_id, "endpoint_sig": endpoint_sig},
+        )
+
+    # Validate phase
+    phase = mandate_data.get("phase", "")
+    if not phase:
+        raise IDLParseError(
+            code=ISE_MANDATE_INVALID,
+            message=f"Mandate '{mandate_id}': missing phase",
+            details={"mandate_id": mandate_id},
+        )
+
+    if phase not in MANDATE_ALLOWED_PHASES:
+        raise IDLParseError(
+            code=ISE_MANDATE_PHASE_INVALID,
+            message=f"Mandate '{mandate_id}': invalid phase '{phase}'. "
+            f"Allowed: {sorted(MANDATE_ALLOWED_PHASES)}",
+            details={"mandate_id": mandate_id, "phase": phase},
+        )
+
+    # Parse allowed_roles
+    allowed_roles = mandate_data.get("allowed_roles", [])
+    if not isinstance(allowed_roles, list):
+        raise IDLParseError(
+            code=ISE_MANDATE_INVALID,
+            message=f"Mandate '{mandate_id}': allowed_roles must be a list",
+            details={"mandate_id": mandate_id},
+        )
+
+    # Parse limits (optional)
+    limits: List[IDLMandateLimit] = []
+    limits_data = mandate_data.get("limits", [])
+    if not isinstance(limits_data, list):
+        raise IDLParseError(
+            code=ISE_MANDATE_INVALID,
+            message=f"Mandate '{mandate_id}': limits must be a list",
+            details={"mandate_id": mandate_id},
+        )
+
+    for limit_data in limits_data:
+        if isinstance(limit_data, dict):
+            limits.append(_parse_mandate_limit(limit_data, mandate_id))
+
+    return IDLMandate(
+        mandate_id=mandate_id,
+        endpoint_sig=endpoint_sig,
+        phase=phase,
+        allowed_roles=allowed_roles,
+        limits=limits,
+        message=mandate_data.get("message"),
+    )
+
+
+def _parse_mandates(mandates_data: List[Dict[str, Any]]) -> List[IDLMandate]:
+    """Parse mandates list from IDL (single mode).
+
+    Args:
+        mandates_data: List of mandate dicts from IDL.
+
+    Returns:
+        List of IDLMandate objects.
+
+    Raises:
+        IDLParseError: If any mandate validation fails.
+    """
+    if not isinstance(mandates_data, list):
+        return []
+
+    mandates: List[IDLMandate] = []
+    seen_ids: set = set()
+
+    for mandate_data in mandates_data:
+        if not isinstance(mandate_data, dict):
+            continue
+        mandates.append(_parse_single_mandate(mandate_data, seen_ids))
+
+    return sorted(mandates, key=lambda m: m.mandate_id)
+
+
+def _parse_dept_mandates(
+    dept_mandates_data: Dict[str, List[Dict[str, Any]]],
+    departments: List[IDLDepartment],
+) -> Dict[str, List[IDLMandate]]:
+    """Parse dept_mandates from IDL (multi mode).
+
+    Args:
+        dept_mandates_data: Dict mapping dept_id to list of mandate dicts.
+        departments: List of parsed departments for validation.
+
+    Returns:
+        Dict mapping dept_id to list of IDLMandate objects.
+
+    Raises:
+        IDLParseError: If validation fails.
+    """
+    valid_depts = {d.dept_id for d in departments}
+    result: Dict[str, List[IDLMandate]] = {}
+
+    for dept_id, mandates_data in dept_mandates_data.items():
+        # Validate dept_id format
+        _validate_dept_id(dept_id)
+
+        # Validate dept_id exists in departments (only if departments are defined)
+        if valid_depts and dept_id not in valid_depts:
+            raise IDLParseError(
+                code=ISE_DEPT_ID_INVALID,
+                message=f"dept_mandates contains unknown department: '{dept_id}'",
+                details={"dept_id": dept_id, "valid_depts": list(valid_depts)},
+            )
+
+        # Parse mandates for this department (with dept-scoped duplicate checking)
+        if not isinstance(mandates_data, list):
+            continue
+
+        mandates: List[IDLMandate] = []
+        seen_ids: set = set()
+
+        for mandate_data in mandates_data:
+            if isinstance(mandate_data, dict):
+                mandates.append(_parse_single_mandate(mandate_data, seen_ids))
+
+        if mandates:
+            result[dept_id] = sorted(mandates, key=lambda m: m.mandate_id)
+
+    return result
+
+
+# =============================================================================
+# IDL v1.1: Autonomy Parsing
+# =============================================================================
+
+
+def _parse_autonomy_rule(rule_data: Dict[str, Any], seen_ids: set) -> IDLAutonomyRule:
+    """Parse a single autonomy rule from IDL.
+
+    Args:
+        rule_data: Rule definition dict.
+        seen_ids: Set of already-seen rule_ids for duplicate detection.
+
+    Returns:
+        IDLAutonomyRule object.
+
+    Raises:
+        IDLParseError: If rule validation fails.
+    """
+    rule_id = rule_data.get("rule_id", "")
+
+    # Validate rule_id
+    if not rule_id or not rule_id.strip():
+        raise IDLParseError(
+            code=ISE_AUTONOMY_INVALID,
+            message="Autonomy rule missing rule_id",
+            details={"rule_data": rule_data},
+        )
+
+    if rule_id in seen_ids:
+        raise IDLParseError(
+            code=ISE_AUTONOMY_RULE_ID_DUPLICATE,
+            message=f"Duplicate autonomy rule_id: '{rule_id}'",
+            details={"rule_id": rule_id},
+        )
+    seen_ids.add(rule_id)
+
+    # Validate endpoint_sig
+    endpoint_sig = rule_data.get("endpoint_sig", "")
+    if not endpoint_sig:
+        raise IDLParseError(
+            code=ISE_AUTONOMY_INVALID,
+            message=f"Autonomy rule '{rule_id}': missing endpoint_sig",
+            details={"rule_id": rule_id},
+        )
+
+    if endpoint_sig not in AUTONOMY_ALLOWED_ENDPOINT_SIGS:
+        raise IDLParseError(
+            code=ISE_AUTONOMY_ENDPOINT_INVALID,
+            message=f"Autonomy rule '{rule_id}': invalid endpoint_sig '{endpoint_sig}'. "
+            f"Allowed: {sorted(AUTONOMY_ALLOWED_ENDPOINT_SIGS)}",
+            details={"rule_id": rule_id, "endpoint_sig": endpoint_sig},
+        )
+
+    # Validate phase
+    phase = rule_data.get("phase", "")
+    if not phase:
+        raise IDLParseError(
+            code=ISE_AUTONOMY_INVALID,
+            message=f"Autonomy rule '{rule_id}': missing phase",
+            details={"rule_id": rule_id},
+        )
+
+    if phase not in AUTONOMY_ALLOWED_PHASES:
+        raise IDLParseError(
+            code=ISE_AUTONOMY_PHASE_INVALID,
+            message=f"Autonomy rule '{rule_id}': invalid phase '{phase}'. "
+            f"Allowed: {sorted(AUTONOMY_ALLOWED_PHASES)}",
+            details={"rule_id": rule_id, "phase": phase},
+        )
+
+    # Validate required_level
+    required_level = rule_data.get("required_level")
+    if required_level is None:
+        raise IDLParseError(
+            code=ISE_AUTONOMY_INVALID,
+            message=f"Autonomy rule '{rule_id}': missing required_level",
+            details={"rule_id": rule_id},
+        )
+
+    if not isinstance(required_level, int):
+        raise IDLParseError(
+            code=ISE_AUTONOMY_LEVEL_INVALID,
+            message=f"Autonomy rule '{rule_id}': required_level must be an integer",
+            details={"rule_id": rule_id, "required_level": required_level},
+        )
+
+    if required_level < AUTONOMY_MIN_LEVEL or required_level > AUTONOMY_MAX_LEVEL:
+        raise IDLParseError(
+            code=ISE_AUTONOMY_LEVEL_INVALID,
+            message=f"Autonomy rule '{rule_id}': required_level {required_level} "
+            f"out of range [{AUTONOMY_MIN_LEVEL}..{AUTONOMY_MAX_LEVEL}]",
+            details={"rule_id": rule_id, "required_level": required_level},
+        )
+
+    return IDLAutonomyRule(
+        rule_id=rule_id,
+        endpoint_sig=endpoint_sig,
+        phase=phase,
+        required_level=required_level,
+    )
+
+
+def _parse_autonomy(autonomy_data: Dict[str, Any]) -> IDLAutonomy:
+    """Parse autonomy section from IDL (single mode).
+
+    Args:
+        autonomy_data: Autonomy definition dict.
+
+    Returns:
+        IDLAutonomy object.
+
+    Raises:
+        IDLParseError: If autonomy validation fails.
+    """
+    if not isinstance(autonomy_data, dict):
+        raise IDLParseError(
+            code=ISE_AUTONOMY_INVALID,
+            message="Autonomy section must be a dict",
+            details={"type": type(autonomy_data).__name__},
+        )
+
+    # Validate current_level
+    current_level = autonomy_data.get("current_level")
+    if current_level is None:
+        raise IDLParseError(
+            code=ISE_AUTONOMY_INVALID,
+            message="Autonomy missing current_level",
+            details={},
+        )
+
+    if not isinstance(current_level, int):
+        raise IDLParseError(
+            code=ISE_AUTONOMY_LEVEL_INVALID,
+            message="Autonomy current_level must be an integer",
+            details={"current_level": current_level},
+        )
+
+    if current_level < AUTONOMY_MIN_LEVEL or current_level > AUTONOMY_MAX_LEVEL:
+        raise IDLParseError(
+            code=ISE_AUTONOMY_LEVEL_INVALID,
+            message=f"Autonomy current_level {current_level} "
+            f"out of range [{AUTONOMY_MIN_LEVEL}..{AUTONOMY_MAX_LEVEL}]",
+            details={"current_level": current_level},
+        )
+
+    # Parse rules
+    rules: List[IDLAutonomyRule] = []
+    rules_data = autonomy_data.get("rules", [])
+
+    if not isinstance(rules_data, list):
+        raise IDLParseError(
+            code=ISE_AUTONOMY_INVALID,
+            message="Autonomy rules must be a list",
+            details={"type": type(rules_data).__name__},
+        )
+
+    seen_ids: set = set()
+    for rule_data in rules_data:
+        if isinstance(rule_data, dict):
+            rules.append(_parse_autonomy_rule(rule_data, seen_ids))
+
+    return IDLAutonomy(
+        current_level=current_level,
+        rules=sorted(rules, key=lambda r: r.rule_id),
+    )
+
+
+def _parse_dept_autonomy(
+    dept_autonomy_data: Dict[str, Dict[str, Any]],
+    departments: List[IDLDepartment],
+) -> Dict[str, IDLAutonomy]:
+    """Parse dept_autonomy from IDL (multi mode).
+
+    Args:
+        dept_autonomy_data: Dict mapping dept_id to autonomy dict.
+        departments: List of parsed departments for validation.
+
+    Returns:
+        Dict mapping dept_id to IDLAutonomy objects.
+
+    Raises:
+        IDLParseError: If validation fails.
+    """
+    valid_depts = {d.dept_id for d in departments}
+    result: Dict[str, IDLAutonomy] = {}
+
+    for dept_id, autonomy_data in dept_autonomy_data.items():
+        # Validate dept_id format
+        _validate_dept_id(dept_id)
+
+        # Validate dept_id exists in departments (only if departments are defined)
+        if valid_depts and dept_id not in valid_depts:
+            raise IDLParseError(
+                code=ISE_DEPT_ID_INVALID,
+                message=f"dept_autonomy contains unknown department: '{dept_id}'",
+                details={"dept_id": dept_id, "valid_depts": list(valid_depts)},
+            )
+
+        # Parse autonomy for this department
+        if isinstance(autonomy_data, dict):
+            result[dept_id] = _parse_autonomy(autonomy_data)
 
     return result

@@ -90,33 +90,57 @@ class InvariantsPolicy:
         return (True, None, [])
 
 
-# Global invariants policy
-_invariants_policy: Optional[InvariantsPolicy] = None
+# Per-department invariants policies (key: dept_id, None for single mode)
+_invariants_policies: Dict[Optional[str], InvariantsPolicy] = {}
 
 
-def set_invariants_policy(policy: Optional[InvariantsPolicy]) -> None:
-    """Set the global invariants policy."""
-    global _invariants_policy
-    _invariants_policy = policy
+def set_invariants_policy(policy: Optional[InvariantsPolicy], dept_id: Optional[str] = None) -> None:
+    """Set invariants policy for a department (or single mode).
+
+    Args:
+        policy: InvariantsPolicy instance, or None to clear.
+        dept_id: Department ID, or None for single mode.
+    """
+    if policy is None:
+        _invariants_policies.pop(dept_id, None)
+    else:
+        _invariants_policies[dept_id] = policy
 
 
-def get_invariants_policy() -> Optional[InvariantsPolicy]:
-    """Get the global invariants policy."""
-    return _invariants_policy
+def get_invariants_policy(dept_id: Optional[str] = None) -> Optional[InvariantsPolicy]:
+    """Get invariants policy for a department (or single mode).
+
+    Args:
+        dept_id: Department ID, or None for single mode.
+
+    Returns:
+        InvariantsPolicy if set, None otherwise.
+    """
+    return _invariants_policies.get(dept_id)
 
 
-def validate_expense_invariants(payload: Dict[str, Any]) -> Tuple[bool, Optional[str], List[str]]:
+def reset_all_invariants() -> None:
+    """Reset all invariants policies (for testing)."""
+    global _invariants_policies
+    _invariants_policies = {}
+
+
+def validate_expense_invariants(
+    payload: Dict[str, Any],
+    dept_id: Optional[str] = None,
+) -> Tuple[bool, Optional[str], List[str]]:
     """Validate expense payload against invariants.
-    
+
     Args:
         payload: The expense payload to validate.
-        
+        dept_id: Department ID, or None for single mode.
+
     Returns:
         Tuple of (ok, error_code, violations).
     """
-    policy = get_invariants_policy()
+    policy = get_invariants_policy(dept_id)
     if policy is None:
         # No policy - allow
         return (True, None, [])
-    
+
     return policy.validate_expense(payload)

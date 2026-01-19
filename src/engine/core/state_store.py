@@ -115,6 +115,10 @@ STATUS_PENDING_APPROVAL = "PENDING_APPROVAL"
 STATUS_COMMITTED = "COMMITTED"
 STATUS_REJECTED = "REJECTED"
 
+# Ticket statuses
+TICKET_STATUS_OPEN = "OPEN"
+TICKET_STATUS_CLOSED = "CLOSED"
+
 
 @dataclass
 class ExpenseState:
@@ -141,6 +145,35 @@ class ExpenseState:
             payload_sha256=data["payload_sha256"],
             payload_raw=data["payload_raw"],
             created_at=data["created_at"],
+            updated_at=data.get("updated_at"),
+        )
+
+
+@dataclass
+class TicketState:
+    """State of a support ticket in the store."""
+    ticket_id: str
+    subject: str
+    status: str
+    payload_raw: str  # base64 encoded
+    created_at: str
+    description: Optional[str] = None
+    updated_at: Optional[str] = None
+
+    def to_dict(self) -> Dict[str, Any]:
+        """Convert to dictionary."""
+        return asdict(self)
+
+    @classmethod
+    def from_dict(cls, data: Dict[str, Any]) -> "TicketState":
+        """Create from dictionary."""
+        return cls(
+            ticket_id=data["ticket_id"],
+            subject=data["subject"],
+            status=data["status"],
+            payload_raw=data["payload_raw"],
+            created_at=data["created_at"],
+            description=data.get("description"),
             updated_at=data.get("updated_at"),
         )
 
@@ -176,6 +209,7 @@ class StateStore:
         self._data: Dict[str, Any] = {
             "expenses": {},
             "approval_index": {},
+            "tickets": {},
         }
         self._load()
 
@@ -185,9 +219,12 @@ class StateStore:
             try:
                 with open(self._path, "r", encoding="utf-8") as f:
                     self._data = json.load(f)
+                # Ensure tickets key exists for backward compat
+                if "tickets" not in self._data:
+                    self._data["tickets"] = {}
             except Exception:
                 # Start fresh if file is corrupted
-                self._data = {"expenses": {}, "approval_index": {}}
+                self._data = {"expenses": {}, "approval_index": {}, "tickets": {}}
 
     def _save(self) -> None:
         """Save state to file."""
@@ -280,9 +317,72 @@ class StateStore:
         
         return self.get_expense(expense_id)
 
+    # Ticket methods (support department)
+
+    def create_ticket(
+        self,
+        ticket_id: str,
+        subject: str,
+        description: str = "",
+        payload_raw: bytes = b"",
+    ) -> TicketState:
+        """Create a new support ticket.
+
+        Args:
+            ticket_id: The ticket UUID.
+            subject: Ticket subject line.
+            description: Ticket description.
+            payload_raw: Raw payload bytes.
+
+        Returns:
+            The created ticket state.
+        """
+        now = datetime.now(timezone.utc).isoformat()
+
+        ticket = TicketState(
+            ticket_id=ticket_id,
+            subject=subject,
+            status=TICKET_STATUS_OPEN,
+            payload_raw=base64.b64encode(payload_raw).decode("utf-8"),
+            created_at=now,
+            description=description,
+        )
+
+        self._data["tickets"][ticket_id] = ticket.to_dict()
+        self._save()
+
+        return ticket
+
+    def get_ticket(self, ticket_id: str) -> Optional[TicketState]:
+        """Get ticket by ID."""
+        data = self._data["tickets"].get(ticket_id)
+        if data:
+            return TicketState.from_dict(data)
+        return None
+
+    def update_ticket_status(self, ticket_id: str, status: str) -> Optional[TicketState]:
+        """Update ticket status.
+
+        Args:
+            ticket_id: The ticket ID.
+            status: New status.
+
+        Returns:
+            Updated ticket state, or None if not found.
+        """
+        if ticket_id not in self._data["tickets"]:
+            return None
+
+        now = datetime.now(timezone.utc).isoformat()
+        self._data["tickets"][ticket_id]["status"] = status
+        self._data["tickets"][ticket_id]["updated_at"] = now
+        self._save()
+
+        return self.get_ticket(ticket_id)
+
     def reset(self) -> None:
         """Reset state store (for testing)."""
-        self._data = {"expenses": {}, "approval_index": {}}
+        self._data = {"expenses": {}, "approval_index": {}, "tickets": {}}
         if self._path.exists():
             self._path.unlink()
 

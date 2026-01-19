@@ -1,0 +1,73 @@
+{% extends "base.html" %}
+
+{% block title %}AXIOM Console - Home{% endblock %}
+
+{% block content %}
+<div class="card">
+    <h2 class="card-title">Select Context</h2>
+
+    <form method="get" action="/console/status">
+        <div class="form-group">
+            <label for="institution_id">Institution</label>
+            <select name="institution_id" id="institution_id" required>
+                <option value="">-- Select Institution --</option>
+                {% for inst in institutions %}
+                <option value="{{ inst.id }}">{{ inst.name or inst.slug or inst.id }}</option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <div class="form-group">
+            <label for="dept_id">Department (optional)</label>
+            <select name="dept_id" id="dept_id">
+                <option value="">-- All Departments --</option>
+                {% for dept in departments %}
+                <option value="{{ dept }}">{{ dept }}</option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <button type="submit">View Status</button>
+    </form>
+</div>
+
+<div class="grid grid-2">
+    <div class="card">
+        <h3 class="card-title">Quick Info</h3>
+        <div class="info-row">
+            <span class="info-label">Institutions</span>
+            <span class="info-value">{{ institutions|length }}</span>
+        </div>
+        <div class="info-row">
+            <span class="info-label">Departments</span>
+            <span class="info-value">{{ departments|length }}</span>
+        </div>
+        <div class="info-row">
+            <span class="info-label">Runtime Mode</span>
+            <span class="info-value">
+                {% if runtime_mode == 'ACTIVE' %}
+                <span class="badge badge-active">ACTIVE</span>
+                {% else %}
+                <span class="badge badge-safe-mode">{{ runtime_mode }}</span>
+                {% endif %}
+            </span>
+        </div>
+    </div>
+
+    <div class="card">
+        <h3 class="card-title">Console Info</h3>
+        <div class="info-row">
+            <span class="info-label">Version</span>
+            <span class="info-value">3.1 (read-only)</span>
+        </div>
+        <div class="info-row">
+            <span class="info-label">Mode</span>
+            <span class="info-value">Read-Only</span>
+        </div>
+        <div class="info-row">
+            <span class="info-label">Auth</span>
+            <span class="info-value">Admin Token</span>
+        </div>
+    </div>
+</div>
+{% endblock %}

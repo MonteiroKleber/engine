@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}AXIOM Console{% endblock %}</title>
+    <link rel="stylesheet" href="/console/static/style.css">
+    <script src="https://unpkg.com/htmx.org@1.9.10"></script>
+</head>
+<body hx-headers='{"X-Admin-Token": "{{ admin_token }}"}'>
+    <header>
+        <div class="container">
+            <div class="logo">AXIOM Console</div>
+            <nav>
+                <a href="/console/" class="{% if active_page == 'home' %}active{% endif %}">Home</a>
+                {% if institution_id %}
+                <a href="/console/status?institution_id={{ institution_id }}{% if dept_id %}&dept_id={{ dept_id }}{% endif %}"
+                   class="{% if active_page == 'status' %}active{% endif %}">Status</a>
+                <a href="/console/bundles?institution_id={{ institution_id }}{% if dept_id %}&dept_id={{ dept_id }}{% endif %}"
+                   class="{% if active_page == 'bundles' %}active{% endif %}">Bundles</a>
+                <a href="/console/contracts?institution_id={{ institution_id }}{% if dept_id %}&dept_id={{ dept_id }}{% endif %}"
+                   class="{% if active_page == 'contracts' %}active{% endif %}">Contracts</a>
+                <a href="/console/proof?institution_id={{ institution_id }}{% if dept_id %}&dept_id={{ dept_id }}{% endif %}"
+                   class="{% if active_page == 'proof' %}active{% endif %}">Proof</a>
+                <a href="/console/legacy?institution_id={{ institution_id }}{% if dept_id %}&dept_id={{ dept_id }}{% endif %}"
+                   class="{% if active_page == 'legacy' %}active{% endif %}">Legacy</a>
+                {% endif %}
+            </nav>
+        </div>
+    </header>
+
+    <main class="container">
+        {% if institution_id %}
+        <div style="margin-bottom: 1rem; color: var(--text-secondary);">
+            Context: <strong>{{ institution_name or institution_id }}</strong>
+            {% if dept_id %} / <strong>{{ dept_id }}</strong>{% endif %}
+        </div>
+        {% endif %}
+
+        {% block content %}{% endblock %}
+    </main>
+
+    <script>
+        // Store admin token in sessionStorage for persistence across page loads
+        const storedToken = sessionStorage.getItem('axiom_admin_token');
+        if (storedToken) {
+            document.body.setAttribute('hx-headers', JSON.stringify({'X-Admin-Token': storedToken}));
+        }
+
+        function setAdminToken(token) {
+            sessionStorage.setItem('axiom_admin_token', token);
+            document.body.setAttribute('hx-headers', JSON.stringify({'X-Admin-Token': token}));
+        }
+    </script>
+</body>
+</html>

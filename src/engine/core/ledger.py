@@ -56,10 +56,11 @@ class LedgerEvent:
     hash: str = ""
     timestamp: str = ""
     request_id: Optional[str] = None
+    dept_id: Optional[str] = None  # Department ID for multi-dept isolation (Etapa 2.5)
 
     def to_canonical_dict(self) -> Dict[str, Any]:
         """Convert to canonical dict for hashing (sorted keys, sorted roles)."""
-        return {
+        result = {
             "bundle_manifest_sha256": self.bundle_manifest_sha256,
             "case_id": self.case_id,
             "contract_ledger_sha256": self.contract_ledger_sha256,
@@ -77,6 +78,10 @@ class LedgerEvent:
                 "roles": sorted(self.actor_roles),
             },
         }
+        # Include dept_id in canonical form if present (for hash integrity)
+        if self.dept_id is not None:
+            result["dept_id"] = self.dept_id
+        return result
 
     def to_storage_dict(self) -> Dict[str, Any]:
         """Convert to dict for storage (includes hash)."""
@@ -104,6 +109,7 @@ class LedgerEvent:
             hash=d.get("hash", ""),
             timestamp=d.get("timestamp", ""),
             request_id=d.get("request_id"),  # None for old events without request_id
+            dept_id=d.get("dept_id"),  # None for old events without dept_id
         )
 
 
@@ -229,6 +235,7 @@ class AuditLedger:
         case_id: str,
         step: str,
         payload: Optional[Dict[str, Any]] = None,
+        dept_id: Optional[str] = None,
     ) -> Optional[LedgerEvent]:
         """Append event to ledger.
 
@@ -240,6 +247,7 @@ class AuditLedger:
             case_id: Case identifier.
             step: Step identifier.
             payload: Event-specific payload.
+            dept_id: Department ID for multi-dept isolation (Etapa 2.5).
 
         Returns:
             The appended event, or None if append failed.
@@ -265,6 +273,7 @@ class AuditLedger:
                 prev_hash=prev_hash,
                 timestamp=datetime.now(timezone.utc).isoformat(),
                 request_id=get_request_id(),  # from contextvar
+                dept_id=dept_id,
             )
 
             # Compute hash

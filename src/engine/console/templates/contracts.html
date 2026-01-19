@@ -1,0 +1,116 @@
+{% extends "base.html" %}
+
+{% block title %}AXIOM Console - Contracts{% endblock %}
+
+{% block content %}
+{% if error %}
+<div class="card" style="border-color: var(--error);">
+    <h3 class="card-title" style="color: var(--error);">Error</h3>
+    <p>{{ error }}</p>
+</div>
+{% else %}
+
+<!-- Bundle Info -->
+<div class="card">
+    <h3 class="card-title">Bundle Information</h3>
+    <div class="info-row">
+        <span class="info-label">Bundle Name</span>
+        <span class="info-value">{{ bundle_name or 'Unknown' }}</span>
+    </div>
+    <div class="info-row">
+        <span class="info-label">Version</span>
+        <span class="info-value">{{ bundle_version or 'Unknown' }}</span>
+    </div>
+    <div class="info-row">
+        <span class="info-label">Bundle Path</span>
+        <span class="info-value mono" style="font-size: 0.8rem;">{{ bundle_path }}</span>
+    </div>
+</div>
+
+<!-- Manifest -->
+<div class="card">
+    <h3 class="card-title">bundle.manifest.json</h3>
+    {% if manifest_hash %}
+    <div class="info-row">
+        <span class="info-label">SHA256</span>
+        <span class="info-value mono hash">{{ manifest_hash }}</span>
+    </div>
+    {% endif %}
+    {% if manifest %}
+    <details>
+        <summary style="cursor: pointer; color: var(--accent); margin-top: 0.5rem;">View Manifest JSON</summary>
+        <pre class="code-block">{{ manifest | tojson(indent=2) }}</pre>
+    </details>
+    {% else %}
+    <div class="empty-state">Manifest not found</div>
+    {% endif %}
+</div>
+
+<!-- Contract Ledger -->
+<div class="card">
+    <h3 class="card-title">contract_ledger.json</h3>
+    {% if ledger_hash %}
+    <div class="info-row">
+        <span class="info-label">SHA256</span>
+        <span class="info-value mono hash">{{ ledger_hash }}</span>
+    </div>
+    {% endif %}
+    {% if source_idl_sha256 %}
+    <div class="info-row">
+        <span class="info-label">source_idl_sha256</span>
+        <span class="info-value mono hash">{{ source_idl_sha256 }}</span>
+    </div>
+    {% endif %}
+    {% if ledger %}
+    <details>
+        <summary style="cursor: pointer; color: var(--accent); margin-top: 0.5rem;">View Ledger JSON</summary>
+        <pre class="code-block">{{ ledger | tojson(indent=2) }}</pre>
+    </details>
+    {% else %}
+    <div class="empty-state">Contract ledger not found</div>
+    {% endif %}
+</div>
+
+<!-- Contracts List -->
+<div class="card">
+    <h3 class="card-title">Contracts</h3>
+    {% if contracts %}
+    <table>
+        <thead>
+            <tr>
+                <th>File</th>
+                <th>SHA256</th>
+                <th>Required</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for c in contracts %}
+            <tr>
+                <td>{{ c.file }}</td>
+                <td class="mono hash">{{ c.sha256[:16] }}...</td>
+                <td>
+                    {% if c.required %}
+                    <span class="badge badge-active">Yes</span>
+                    {% else %}
+                    <span class="badge badge-unpinned">No</span>
+                    {% endif %}
+                </td>
+                <td>
+                    <a href="/console/contracts/{{ c.file }}?institution_id={{ institution_id }}{% if dept_id %}&dept_id={{ dept_id }}{% endif %}"
+                       class="btn-link">View</a>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    <div style="margin-top: 0.5rem; color: var(--text-secondary);">
+        {{ contracts | length }} contract(s) in manifest
+    </div>
+    {% else %}
+    <div class="empty-state">No contracts in manifest</div>
+    {% endif %}
+</div>
+
+{% endif %}
+{% endblock %}

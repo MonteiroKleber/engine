@@ -38,4 +38,4 @@ async def get_expense_dept(
 ) -> JSONResponse:
     """Get an expense by ID from a specific department."""
     dept_id = get_request_dept(request)
-    return await get_expense_handler(expense_id, actor, dept_id=dept_id)
+    return await get_expense_handler(request, expense_id, actor, dept_id=dept_id)

@@ -1,0 +1,96 @@
+{% extends "base.html" %}
+
+{% block title %}AXIOM Console - Proof Verification{% endblock %}
+
+{% block content %}
+{% if error %}
+<div class="card" style="border-color: var(--error);">
+    <h3 class="card-title" style="color: var(--error);">Verification Error</h3>
+    <p>{{ error }}</p>
+</div>
+{% elif result %}
+
+<!-- Result Summary -->
+<div class="card" style="border-color: {% if result.passed %}var(--success){% else %}var(--error){% endif %};">
+    <h3 class="card-title">
+        {% if result.passed %}
+        <span style="color: var(--success);">PASS</span> - Bundle Verified
+        {% else %}
+        <span style="color: var(--error);">FAIL</span> - Verification Failed
+        {% endif %}
+    </h3>
+
+    {% if result.passed %}
+    <div class="info-row">
+        <span class="info-label">Bundle Name</span>
+        <span class="info-value">{{ result.bundle_name or 'Unknown' }}</span>
+    </div>
+    <div class="info-row">
+        <span class="info-label">Bundle Version</span>
+        <span class="info-value">{{ result.bundle_version or 'Unknown' }}</span>
+    </div>
+    <div class="info-row">
+        <span class="info-label">Contracts Verified</span>
+        <span class="info-value">{{ result.contracts_verified }}</span>
+    </div>
+    {% else %}
+    <div class="info-row">
+        <span class="info-label">Error Code</span>
+        <span class="info-value mono" style="color: var(--error);">{{ result.error_code }}</span>
+    </div>
+    <div class="info-row">
+        <span class="info-label">Error Message</span>
+        <span class="info-value">{{ result.error_message }}</span>
+    </div>
+    {% if result.details %}
+    <details style="margin-top: 1rem;">
+        <summary style="cursor: pointer; color: var(--accent);">View Details</summary>
+        <pre class="code-block">{{ result.details | tojson(indent=2) }}</pre>
+    </details>
+    {% endif %}
+    {% endif %}
+</div>
+
+<!-- Hashes -->
+<div class="card">
+    <h3 class="card-title">Cryptographic Anchors</h3>
+    {% if result.manifest_hash %}
+    <div class="info-row">
+        <span class="info-label">Manifest SHA256</span>
+        <span class="info-value mono hash">{{ result.manifest_hash }}</span>
+    </div>
+    {% endif %}
+    {% if result.source_idl_sha256 %}
+    <div class="info-row">
+        <span class="info-label">source_idl_sha256</span>
+        <span class="info-value mono hash">{{ result.source_idl_sha256 }}</span>
+    </div>
+    {% endif %}
+    {% if bundle_path %}
+    <div class="info-row">
+        <span class="info-label">Bundle Path</span>
+        <span class="info-value mono" style="font-size: 0.8rem;">{{ bundle_path }}</span>
+    </div>
+    {% endif %}
+</div>
+
+<!-- JSON Toggle -->
+<div class="card">
+    <h3 class="card-title">Raw Result</h3>
+    {% if show_json %}
+    <pre class="code-block">{{ result_json }}</pre>
+    <a href="/console/proof?institution_id={{ institution_id }}{% if dept_id %}&dept_id={{ dept_id }}{% endif %}"
+       style="color: var(--accent);">Hide JSON</a>
+    {% else %}
+    <a href="/console/proof?institution_id={{ institution_id }}{% if dept_id %}&dept_id={{ dept_id }}{% endif %}&show_json=true"
+       style="color: var(--accent);">Show JSON Result</a>
+    {% endif %}
+</div>
+
+{% else %}
+<div class="card">
+    <h3 class="card-title">Proof Verification</h3>
+    <div class="empty-state">No bundle found to verify</div>
+</div>
+{% endif %}
+{% endblock %}

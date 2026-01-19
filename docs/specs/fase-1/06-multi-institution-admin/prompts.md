@@ -5,17 +5,19 @@ PROMPT 06.1
 Você está no repositório `/home/bazari/engine`.
 
 Tarefa:
-1) Leia `docs/specs/fase-1/06-multi-institution-admin/spec.md`.
+1) Leia `docs/specs/fase-1/06-multi-institution-admin/spec.md` e siga como contrato.
 2) Mapeie no código:
    - como o `X-Institution-Id` é aplicado
    - como paths em disco são segregados
    - como admin keys e institution registry funcionam
+   - como `institution_config` v1.3 é carregada e aplicada (freeze, emergency, rate limit, allow/deny)
 3) Escreva:
    - `docs/specs/fase-1/06-multi-institution-admin/isolation.md`
    - `docs/specs/fase-1/06-multi-institution-admin/admin-auth.md`
 
 Regras:
 - Se não houver testes de isolamento cross-tenant, marque como gap.
+- Cite evidências com caminhos reais de arquivos (e, se necessário, 1 linha específica).
 [[CLAUDE_CODE_END]]
 
 PROMPT 06.2
@@ -25,4 +27,3 @@ Se houver gaps de isolamento/admin:
 2) Adicione testes cross-tenant que provem isolamento (path traversal, inference, etc.).
 3) Garanta eventos no ledger para uso/negação de admin.
 [[CLAUDE_CODE_END]]
-

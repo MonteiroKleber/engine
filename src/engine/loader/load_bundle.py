@@ -22,11 +22,11 @@ from engine.core.errors import (
     MANDATE_INVALID,
     AUTONOMY_INVALID,
 )
-from engine.core.rbac import RBACPolicy, set_rbac_policy
+from engine.core.rbac import RBACPolicy, set_rbac_policy, reset_all_rbac
 from engine.core.ledger import init_ledger, get_ledger
-from engine.core.approvals import ApprovalsPolicy, set_approvals_policy
-from engine.core.sod import SodPolicy, set_sod_policy
-from engine.core.invariants import InvariantsPolicy, set_invariants_policy
+from engine.core.approvals import ApprovalsPolicy, set_approvals_policy, reset_all_approvals
+from engine.core.sod import SodPolicy, set_sod_policy, reset_all_sod
+from engine.core.invariants import InvariantsPolicy, set_invariants_policy, reset_all_invariants
 from engine.core.state_store import init_state_store
 from engine.core.policy import (
     set_policies,
@@ -618,6 +618,166 @@ def _load_autonomy_multi_mode(bundle_path: Path, bundle_ctx: BundleContext) -> b
     return True
 
 
+def _load_rbac_multi_mode(bundle_path: Path, bundle_ctx: BundleContext) -> bool:
+    """Load RBAC for multi-department mode (per department).
+
+    For multi-mode:
+    - Each dept MUST have departments/<dept_id>/rbac.json (required artifact)
+    - If a dept doesn't have rbac.json, it was already caught in validation
+
+    Args:
+        bundle_path: Path to the bundle directory.
+        bundle_ctx: The loaded bundle context with departments.
+
+    Returns:
+        True if successful, False if SAFE_MODE entered.
+    """
+    for dept_id, dept_contracts in bundle_ctx.departments.items():
+        rbac_path = dept_contracts.path / "rbac.json"
+        if rbac_path.exists():
+            try:
+                with open(rbac_path, "r", encoding="utf-8") as f:
+                    rbac_data = json.load(f)
+                rbac_policy = RBACPolicy(rbac_data)
+                set_rbac_policy(rbac_policy, dept_id)
+            except json.JSONDecodeError as e:
+                enter_safe_mode(
+                    BUNDLE_DEPT_ARTIFACT_INVALID,
+                    [f"Invalid JSON in rbac.json for department '{dept_id}': {e}"],
+                )
+                return False
+            except Exception as e:
+                enter_safe_mode(
+                    BUNDLE_DEPT_ARTIFACT_INVALID,
+                    [f"Error loading rbac.json for department '{dept_id}': {e}"],
+                )
+                return False
+        else:
+            # RBAC is a required artifact - should have been caught earlier
+            # But allow None for robustness
+            set_rbac_policy(None, dept_id)
+    return True
+
+
+def _load_approvals_multi_mode(bundle_path: Path, bundle_ctx: BundleContext) -> bool:
+    """Load approvals for multi-department mode (per department).
+
+    For multi-mode:
+    - Each dept MUST have departments/<dept_id>/approvals.json (required artifact)
+    - If a dept doesn't have approvals.json, it was already caught in validation
+
+    Args:
+        bundle_path: Path to the bundle directory.
+        bundle_ctx: The loaded bundle context with departments.
+
+    Returns:
+        True if successful, False if SAFE_MODE entered.
+    """
+    for dept_id, dept_contracts in bundle_ctx.departments.items():
+        approvals_path = dept_contracts.path / "approvals.json"
+        if approvals_path.exists():
+            try:
+                with open(approvals_path, "r", encoding="utf-8") as f:
+                    approvals_data = json.load(f)
+                approvals_policy = ApprovalsPolicy(approvals_data)
+                set_approvals_policy(approvals_policy, dept_id)
+            except json.JSONDecodeError as e:
+                enter_safe_mode(
+                    BUNDLE_DEPT_ARTIFACT_INVALID,
+                    [f"Invalid JSON in approvals.json for department '{dept_id}': {e}"],
+                )
+                return False
+            except Exception as e:
+                enter_safe_mode(
+                    BUNDLE_DEPT_ARTIFACT_INVALID,
+                    [f"Error loading approvals.json for department '{dept_id}': {e}"],
+                )
+                return False
+        else:
+            # Approvals is a required artifact - should have been caught earlier
+            # But allow None for robustness
+            set_approvals_policy(None, dept_id)
+    return True
+
+
+def _load_sod_multi_mode(bundle_path: Path, bundle_ctx: BundleContext) -> bool:
+    """Load SoD for multi-department mode (per department).
+
+    For multi-mode:
+    - Each dept MUST have departments/<dept_id>/sod.json (required artifact)
+
+    Args:
+        bundle_path: Path to the bundle directory.
+        bundle_ctx: The loaded bundle context with departments.
+
+    Returns:
+        True if successful, False if SAFE_MODE entered.
+    """
+    for dept_id, dept_contracts in bundle_ctx.departments.items():
+        sod_path = dept_contracts.path / "sod.json"
+        if sod_path.exists():
+            try:
+                with open(sod_path, "r", encoding="utf-8") as f:
+                    sod_data = json.load(f)
+                sod_policy = SodPolicy(sod_data)
+                set_sod_policy(sod_policy, dept_id)
+            except json.JSONDecodeError as e:
+                enter_safe_mode(
+                    BUNDLE_DEPT_ARTIFACT_INVALID,
+                    [f"Invalid JSON in sod.json for department '{dept_id}': {e}"],
+                )
+                return False
+            except Exception as e:
+                enter_safe_mode(
+                    BUNDLE_DEPT_ARTIFACT_INVALID,
+                    [f"Error loading sod.json for department '{dept_id}': {e}"],
+                )
+                return False
+        else:
+            # SoD is a required artifact - should have been caught earlier
+            set_sod_policy(None, dept_id)
+    return True
+
+
+def _load_invariants_multi_mode(bundle_path: Path, bundle_ctx: BundleContext) -> bool:
+    """Load invariants for multi-department mode (per department).
+
+    For multi-mode:
+    - Each dept MUST have departments/<dept_id>/invariants.json (required artifact)
+
+    Args:
+        bundle_path: Path to the bundle directory.
+        bundle_ctx: The loaded bundle context with departments.
+
+    Returns:
+        True if successful, False if SAFE_MODE entered.
+    """
+    for dept_id, dept_contracts in bundle_ctx.departments.items():
+        invariants_path = dept_contracts.path / "invariants.json"
+        if invariants_path.exists():
+            try:
+                with open(invariants_path, "r", encoding="utf-8") as f:
+                    invariants_data = json.load(f)
+                invariants_policy = InvariantsPolicy(invariants_data)
+                set_invariants_policy(invariants_policy, dept_id)
+            except json.JSONDecodeError as e:
+                enter_safe_mode(
+                    BUNDLE_DEPT_ARTIFACT_INVALID,
+                    [f"Invalid JSON in invariants.json for department '{dept_id}': {e}"],
+                )
+                return False
+            except Exception as e:
+                enter_safe_mode(
+                    BUNDLE_DEPT_ARTIFACT_INVALID,
+                    [f"Error loading invariants.json for department '{dept_id}': {e}"],
+                )
+                return False
+        else:
+            # Invariants is a required artifact - should have been caught earlier
+            set_invariants_policy(None, dept_id)
+    return True
+
+
 def load_bundle(bundle_path: Optional[Path] = None) -> Optional[Dict[str, Any]]:
     """Load and validate a bundle.
 
@@ -675,18 +835,34 @@ def load_bundle(bundle_path: Optional[Path] = None) -> Optional[Dict[str, Any]]:
 
     # 4. Load policies (single mode loads from root, multi mode loads per dept)
     clear_all_policies()  # Clear any previously loaded policies
+    reset_all_approvals()  # Clear any previously loaded approvals
+    reset_all_sod()  # Clear any previously loaded SoD
+    reset_all_invariants()  # Clear any previously loaded invariants
+
     if bundle_ctx.mode == "single":
         _load_policies_single_mode(bundle_path)
     else:
-        # For multi-mode, we currently set policies to None
-        # Future: could merge policies from departments or use a primary dept
+        # For multi-mode: don't set global root policies; use per-dept only
+        # Clear single-mode policies
         set_rbac_policy(None)
-        set_approvals_policy(None)
-        set_sod_policy(None)
-        set_invariants_policy(None)
+        set_approvals_policy(None, None)  # None dept_id = single mode
+        set_sod_policy(None, None)
+        set_invariants_policy(None, None)
 
         # Load policies per department (if policies.json exists)
         _load_policies_multi_mode(bundle_path, bundle_ctx)
+
+        # Load RBAC per department
+        if not _load_rbac_multi_mode(bundle_path, bundle_ctx):
+            return None  # SAFE_MODE entered
+
+        # Load approvals, SoD, invariants per department
+        if not _load_approvals_multi_mode(bundle_path, bundle_ctx):
+            return None  # SAFE_MODE entered
+        if not _load_sod_multi_mode(bundle_path, bundle_ctx):
+            return None  # SAFE_MODE entered
+        if not _load_invariants_multi_mode(bundle_path, bundle_ctx):
+            return None  # SAFE_MODE entered
 
     # 5. Load mandates (single mode loads from root, multi mode loads per dept)
     clear_all_mandates()  # Clear any previously loaded mandates

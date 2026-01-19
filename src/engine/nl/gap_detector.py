@@ -70,6 +70,16 @@ GAP_POLICY_PHASE_INVALID = "GAP_POLICY_PHASE_INVALID"
 GAP_POLICY_RULE_TYPE_INVALID = "GAP_POLICY_RULE_TYPE_INVALID"
 GAP_POLICY_VALUE_MISSING = "GAP_POLICY_VALUE_MISSING"
 
+# Gap codes for mandate/autonomy (IDL v1.1)
+GAP_MANDATE_MISSING = "GAP_MANDATE_MISSING"
+GAP_AUTONOMY_MISSING = "GAP_AUTONOMY_MISSING"
+
+# Finance pilot mutating endpoints that require mandates/autonomy
+FINANCE_MUTATING_ENDPOINTS = frozenset({
+    "POST /finance/expenses",
+    "POST /approvals/{approval_id}/decide",
+})
+
 
 def detect_gaps(sir: SIRv1, draft: Dict[str, Any]) -> List[Gap]:
     """Detect gaps in the draft IDL that need clarification.
@@ -97,6 +107,12 @@ def detect_gaps(sir: SIRv1, draft: Dict[str, Any]) -> List[Gap]:
 
     # Check for runtime policy gaps (validates extracted policies)
     gaps.extend(_detect_runtime_policy_gaps(sir, draft))
+
+    # IDL v1.1: Check for mandate/autonomy gaps
+    idl_version = draft.get("idl_version", "1.0")
+    if idl_version == "1.1":
+        gaps.extend(_detect_mandate_gaps(sir, draft))
+        gaps.extend(_detect_autonomy_gaps(sir, draft))
 
     # Sort gaps by gap_key for determinism
     return sorted(gaps, key=lambda g: g.gap_key)
@@ -549,6 +565,165 @@ def _detect_runtime_policy_gaps(sir: SIRv1, draft: Dict[str, Any]) -> List[Gap]:
     for dept_id, policies in sorted(sir.extraction.dept_runtime_policies.items()):
         for i, policy in enumerate(policies):
             gaps.extend(_validate_single_runtime_policy(policy, i, dept_id))
+
+    return gaps
+
+
+def _detect_mandate_gaps(sir: SIRv1, draft: Dict[str, Any]) -> List[Gap]:
+    """Detect gaps for missing mandates (IDL v1.1).
+
+    For Finance pilot, mutating endpoints require mandates to be defined.
+    If mandates are missing for a required endpoint, generate a gap.
+
+    Args:
+        sir: Structured Intermediate Representation.
+        draft: Draft IDL dictionary.
+
+    Returns:
+        List of gaps for missing mandates.
+    """
+    gaps = []
+
+    # Get mandates from draft (single mode)
+    mandates = draft.get("mandates", [])
+
+    # Build set of covered endpoint+phase pairs
+    covered_endpoints: set = set()
+    if isinstance(mandates, list):
+        for mandate in mandates:
+            if isinstance(mandate, dict):
+                endpoint = mandate.get("endpoint_sig", "")
+                phase = mandate.get("phase", "")
+                if endpoint and phase:
+                    covered_endpoints.add((endpoint, phase))
+
+    # Check for multi-dept mode
+    dept_mandates = draft.get("dept_mandates", {})
+    if isinstance(dept_mandates, dict):
+        for dept_id, dept_mandate_list in dept_mandates.items():
+            if isinstance(dept_mandate_list, list):
+                for mandate in dept_mandate_list:
+                    if isinstance(mandate, dict):
+                        endpoint = mandate.get("endpoint_sig", "")
+                        phase = mandate.get("phase", "")
+                        if endpoint and phase:
+                            covered_endpoints.add((endpoint, phase))
+
+    # Check for Finance pilot endpoints that need mandates
+    for endpoint in FINANCE_MUTATING_ENDPOINTS:
+        # Check if "pre" phase mandate exists
+        if (endpoint, "pre") not in covered_endpoints:
+            gap_key = f"gap-mandate-{endpoint.replace(' ', '-').replace('/', '-')}-pre"
+            policy_key = GAP_MANDATE_MISSING
+
+            questions = [
+                Question(
+                    question_id=generate_question_id(gap_key, policy_key, "allowed_roles"),
+                    gap_key=gap_key,
+                    policy_key=policy_key,
+                    step="allowed_roles",
+                    question_text=f"Which roles should be allowed for {endpoint}?",
+                    question_type="choice",
+                    options=["analyst", "admin", "manager", "supervisor"],
+                    default_value="analyst",
+                ),
+                Question(
+                    question_id=generate_question_id(gap_key, policy_key, "amount_limit"),
+                    gap_key=gap_key,
+                    policy_key=policy_key,
+                    step="amount_limit",
+                    question_text=f"What is the maximum amount limit for {endpoint}?",
+                    question_type="number",
+                    default_value=100000,
+                ),
+            ]
+
+            gaps.append(Gap(
+                gap_key=gap_key,
+                gap_type="mandate",
+                severity="required",
+                description=f"Mandate missing for {endpoint} (pre phase)",
+                policy_ref=policy_key,
+                questions=questions,
+            ))
+
+    return gaps
+
+
+def _detect_autonomy_gaps(sir: SIRv1, draft: Dict[str, Any]) -> List[Gap]:
+    """Detect gaps for missing autonomy rules (IDL v1.1).
+
+    For Finance pilot, mutating endpoints require autonomy rules to be defined.
+    If autonomy rules are missing for a required endpoint, generate a gap.
+
+    Args:
+        sir: Structured Intermediate Representation.
+        draft: Draft IDL dictionary.
+
+    Returns:
+        List of gaps for missing autonomy rules.
+    """
+    gaps = []
+
+    # Get autonomy from draft (single mode)
+    autonomy = draft.get("autonomy", {})
+
+    # Build set of covered endpoint+phase pairs
+    covered_endpoints: set = set()
+    if isinstance(autonomy, dict):
+        rules = autonomy.get("rules", [])
+        if isinstance(rules, list):
+            for rule in rules:
+                if isinstance(rule, dict):
+                    endpoint = rule.get("endpoint_sig", "")
+                    phase = rule.get("phase", "")
+                    if endpoint and phase:
+                        covered_endpoints.add((endpoint, phase))
+
+    # Check for multi-dept mode
+    dept_autonomy = draft.get("dept_autonomy", {})
+    if isinstance(dept_autonomy, dict):
+        for dept_id, dept_auto in dept_autonomy.items():
+            if isinstance(dept_auto, dict):
+                rules = dept_auto.get("rules", [])
+                if isinstance(rules, list):
+                    for rule in rules:
+                        if isinstance(rule, dict):
+                            endpoint = rule.get("endpoint_sig", "")
+                            phase = rule.get("phase", "")
+                            if endpoint and phase:
+                                covered_endpoints.add((endpoint, phase))
+
+    # Check for Finance pilot endpoints that need autonomy rules
+    for endpoint in FINANCE_MUTATING_ENDPOINTS:
+        # Check if "pre" phase autonomy rule exists
+        if (endpoint, "pre") not in covered_endpoints:
+            gap_key = f"gap-autonomy-{endpoint.replace(' ', '-').replace('/', '-')}-pre"
+            policy_key = GAP_AUTONOMY_MISSING
+
+            questions = [
+                Question(
+                    question_id=generate_question_id(gap_key, policy_key, "required_level"),
+                    gap_key=gap_key,
+                    policy_key=policy_key,
+                    step="required_level",
+                    question_text=f"What autonomy level is required for {endpoint}?",
+                    question_type="choice",
+                    options=["0 (L0 - Full human oversight)", "1 (L1 - Minimal autonomy)",
+                             "2 (L2 - Moderate autonomy)", "3 (L3 - High autonomy)",
+                             "4 (L4 - Full autonomy)"],
+                    default_value="0 (L0 - Full human oversight)",
+                ),
+            ]
+
+            gaps.append(Gap(
+                gap_key=gap_key,
+                gap_type="autonomy",
+                severity="required",
+                description=f"Autonomy rule missing for {endpoint} (pre phase)",
+                policy_ref=policy_key,
+                questions=questions,
+            ))
 
     return gaps
 

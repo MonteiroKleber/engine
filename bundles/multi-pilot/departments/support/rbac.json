@@ -1,0 +1,19 @@
+{
+  "version": "1.0.0",
+  "name": "rbac",
+  "description": "Role-Based Access Control for support department",
+  "roles": [
+    {
+      "name": "admin",
+      "permissions": ["ticket.create", "ticket.read", "ticket.delete", "ticket.approve"]
+    },
+    {
+      "name": "agent",
+      "permissions": ["ticket.create", "ticket.read"]
+    },
+    {
+      "name": "viewer",
+      "permissions": ["ticket.read"]
+    }
+  ]
+}

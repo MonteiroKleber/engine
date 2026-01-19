@@ -1,0 +1,15 @@
+{
+  "version": "1.0.0",
+  "name": "approvals",
+  "description": "Approval rules for finance-pilot",
+  "rules": [
+    {
+      "rule_name": "expense.create",
+      "trigger": {
+        "api": "POST /finance/expenses"
+      },
+      "approver_roles": ["manager"],
+      "quorum": 1
+    }
+  ]
+}

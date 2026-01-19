@@ -507,12 +507,15 @@ def accept_pin_update_proposal(
         except OSError as e:
             return None, EGE_REGISTRY_UNAVAILABLE, f"Failed to write decision: {e}"
 
-    # Update institution config with observed hashes
+    # Update institution config with observed hashes and release_id
     try:
         config = get_effective_config(institution_id)
         config_dict = config.to_dict()
         config_dict["pinned_bundle_manifest_sha256"] = proposal.observed_bundle_manifest_sha256
         config_dict["pinned_contract_ledger_sha256"] = proposal.observed_contract_ledger_sha256
+        # Also store pinned_release_id for governed rollback (Etapa 2.4)
+        if metadata and metadata.get("release_id"):
+            config_dict["pinned_release_id"] = metadata["release_id"]
 
         save_active_config(institution_id, config_dict, actor_id)
         invalidate_config_cache(institution_id)

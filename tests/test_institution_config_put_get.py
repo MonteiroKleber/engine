@@ -59,7 +59,7 @@ class TestGetConfig:
 
         assert response.status_code == 200
         data = response.json()
-        assert data["schema_version"] == "1.3"
+        assert data["schema_version"] == "1.4"
         assert data["updated_at"] is None
         assert data["updated_by"] is None
         assert data["flags"]["allow_legacy_routes"] is True
@@ -113,7 +113,7 @@ class TestGetConfig:
 
         assert response.status_code == 200
         data = response.json()
-        assert data["schema_version"] == "1.3"
+        assert data["schema_version"] == "1.4"
 
 
 class TestPutConfig:

@@ -8,7 +8,7 @@ from fastapi.responses import JSONResponse
 
 from engine.core.actor_context import ActorContext
 from engine.core.rbac import gate_rbac
-from engine.core.ledger import get_ledger
+from engine.core.ledger import get_ledger, get_ledger_for_institution
 from engine.core.approvals import (
     get_approvals_policy,
     generate_approval_id,
@@ -17,7 +17,8 @@ from engine.core.approvals import (
     get_approval_step_name,
 )
 from engine.core.state_store import get_state_store
-from engine.core.errors import STATE_STORE_UNAVAILABLE, POLICY_DENIED, MANDATE_DENIED, AUTONOMY_INSUFFICIENT
+from engine.core.errors import STATE_STORE_UNAVAILABLE, POLICY_DENIED, MANDATE_DENIED, AUTONOMY_INSUFFICIENT, EXPENSE_NOT_FOUND
+from engine.core.institution_context import get_request_institution_id
 from engine.core.dept_context import (
     validate_legacy_finance_route,
     get_ledger_step_name,
@@ -46,6 +47,7 @@ def emit_rbac_decision(
     case_id: str,
     step: str,
     dept_id: Optional[str] = None,
+    institution_id: Optional[str] = None,
 ) -> None:
     """Emit RBAC_DECISION event to ledger.
 
@@ -56,8 +58,14 @@ def emit_rbac_decision(
         case_id: Case identifier.
         step: Base step name.
         dept_id: Optional department ID for namespacing.
+        institution_id: Optional institution ID for ledger namespacing.
     """
-    ledger = get_ledger()
+    # Use institution-specific ledger if institution_id provided
+    if institution_id:
+        ledger = get_ledger_for_institution(institution_id)
+    else:
+        ledger = get_ledger()
+
     if ledger:
         # Apply dept prefix to step name if dept_id is set
         ledger_step = get_ledger_step_name(step, dept_id)
@@ -72,6 +80,7 @@ def emit_rbac_decision(
                 "permission": permission,
                 "decision": "allow" if allowed else "deny",
             },
+            dept_id=dept_id,
         )
 
 
@@ -95,17 +104,21 @@ async def create_expense_handler(
     Returns:
         JSONResponse with 202 (pending_approval) or 200 (created).
     """
+    # Get institution_id from request context (set by middleware)
+    institution_id = get_request_institution_id(request)
+
     permission = "expense.create"
     api_trigger = "POST /finance/expenses"
 
-    # Check RBAC permission first
-    allowed = gate_rbac(permission, actor)
+    # Check RBAC permission first (use dept_id for per-dept RBAC lookup)
+    allowed = gate_rbac(permission, actor, dept_id=dept_id)
     emit_rbac_decision(
-        actor, permission, allowed, "expense", "RBAC:expense.create", dept_id=dept_id
+        actor, permission, allowed, "expense", "RBAC:expense.create",
+        dept_id=dept_id, institution_id=institution_id
     )
 
-    # Enforce RBAC permission
-    check_perm = require_permission(permission)
+    # Enforce RBAC permission (use dept_id for per-dept RBAC lookup)
+    check_perm = require_permission(permission, dept_id=dept_id)
     check_perm(actor)
 
     # Pre-read body for policy evaluation (will be used later if needed)
@@ -155,6 +168,7 @@ async def create_expense_handler(
         endpoint_sig=endpoint_sig,
         actor=actor,
         payload=payload_dict,
+        institution_id=institution_id,
     )
 
     # Emit mandate decision to ledger (always, for allow or deny)
@@ -212,8 +226,8 @@ async def create_expense_handler(
             },
         )
 
-    # Check if approval is required for this API
-    policy = get_approvals_policy()
+    # Check if approval is required for this API (use dept_id for per-dept lookup)
+    policy = get_approvals_policy(dept_id)
     if policy:
         rule = policy.get_rule_for_api(api_trigger)
         if rule:
@@ -224,8 +238,8 @@ async def create_expense_handler(
             # Compute payload SHA256 (body_bytes already read above)
             payload_sha256 = compute_payload_sha256(body_bytes)
 
-            # Save to state store (dept-aware in multi mode)
-            state_store = get_state_store(dept_id)
+            # Save to state store (institution + dept aware)
+            state_store = get_state_store(dept_id, institution_id=institution_id)
             if not state_store:
                 raise HTTPException(
                     status_code=503,
@@ -292,6 +306,7 @@ async def create_expense(
 
 
 async def get_expense_handler(
+    request: Request,
     expense_id: str,
     actor: ActorContext,
     dept_id: Optional[str] = None,
@@ -299,30 +314,61 @@ async def get_expense_handler(
     """Core handler for getting an expense.
 
     Args:
+        request: FastAPI request object.
         expense_id: Expense ID to retrieve.
         actor: Actor context with identity info.
         dept_id: Optional department ID for namespacing.
 
     Returns:
-        JSONResponse with expense data.
+        JSONResponse with expense data, or 404 if not found.
     """
+    # Get institution_id from request context (set by middleware)
+    institution_id = get_request_institution_id(request)
+
     permission = "expense.read"
     case_id = f"expense:{expense_id}"
     step = "RBAC:expense.read"
 
-    # Check permission and emit decision
-    allowed = gate_rbac(permission, actor)
-    emit_rbac_decision(actor, permission, allowed, case_id, step, dept_id=dept_id)
+    # Check permission and emit decision (use dept_id for per-dept RBAC lookup)
+    allowed = gate_rbac(permission, actor, dept_id=dept_id)
+    emit_rbac_decision(
+        actor, permission, allowed, case_id, step,
+        dept_id=dept_id, institution_id=institution_id
+    )
 
-    # Enforce permission
-    check_perm = require_permission(permission)
+    # Enforce permission (use dept_id for per-dept RBAC lookup)
+    check_perm = require_permission(permission, dept_id=dept_id)
     check_perm(actor)
+
+    # Look up expense in institution-specific state store
+    state_store = get_state_store(dept_id, institution_id=institution_id)
+    if not state_store:
+        raise HTTPException(
+            status_code=503,
+            detail={
+                "code": STATE_STORE_UNAVAILABLE,
+                "message": "State store not available",
+            },
+        )
+
+    expense = state_store.get_expense(expense_id)
+    if not expense:
+        # Return 404 (not 403) for anti-inference - don't reveal existence
+        raise HTTPException(
+            status_code=404,
+            detail={
+                "code": EXPENSE_NOT_FOUND,
+                "message": "Expense not found",
+            },
+        )
 
     return JSONResponse(
         status_code=200,
         content={
-            "id": expense_id,
-            "status": "retrieved",
+            "id": expense.expense_id,
+            "status": expense.status,
+            "approval_id": expense.approval_id,
+            "created_at": expense.created_at,
             "actor_id": actor.actor_id,
         },
     )
@@ -330,6 +376,7 @@ async def get_expense_handler(
 
 @router.get("/expenses/{expense_id}")
 async def get_expense(
+    request: Request,
     expense_id: str,
     actor: ActorContext = Depends(get_actor_context),
 ) -> JSONResponse:
@@ -339,4 +386,4 @@ async def get_expense(
     """
     # Validate and get dept_id for legacy route
     dept_id = validate_legacy_finance_route()
-    return await get_expense_handler(expense_id, actor, dept_id=dept_id)
+    return await get_expense_handler(request, expense_id, actor, dept_id=dept_id)

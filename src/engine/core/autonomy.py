@@ -30,6 +30,7 @@ from .errors import (
 ALLOWED_ENDPOINT_SIGS = frozenset({
     "POST /finance/expenses",
     "POST /approvals/{approval_id}/decide",
+    "POST /support/tickets",
 })
 
 # Allowed phases

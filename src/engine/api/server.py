@@ -49,6 +49,8 @@ from engine.core.institution_context import (
 from engine.loader.load_bundle import get_bundle_context
 from engine.api.finance import router as finance_router
 from engine.api.dept_finance import router as dept_finance_router
+from engine.api.dept_support import router as dept_support_router
+from engine.api.support import router as support_router
 from engine.api.approvals import router as approvals_router
 from engine.api.nl import router as nl_router
 from engine.api.ise import router as ise_router
@@ -58,11 +60,14 @@ from engine.api.admin_institutions import router as admin_institutions_router
 from engine.api.admin_institution_config import router as admin_institution_config_router
 from engine.api.admin_keys import router as admin_keys_router
 from engine.api.admin_ege import router as admin_ege_router
+from engine.api.admin_mandates import router as admin_mandates_router
+from engine.console.routes import router as console_router
 from engine.core.institution_config import (
     get_cached_config,
     reset_config_cache,
 )
 from engine.core.ege import load_drift_state
+from engine.core.preflight import run_preflight_checks
 
 
 # Paths subject to rate limiting
@@ -83,6 +88,9 @@ DEFAULT_ACTOR_ID = "00000000-0000-0000-0000-000000000000"
 
 # Paths that bypass freeze/emergency stop checks
 FREEZE_BYPASS_PATHS = {"/health", "/docs", "/openapi.json"}
+
+# Console paths that bypass freeze (read-only, for visibility during freeze)
+CONSOLE_BYPASS_PREFIX = "/console/"
 
 
 def _is_rate_limited_path(path: str) -> bool:
@@ -107,6 +115,9 @@ def _should_bypass_freeze_check(path: str) -> bool:
     if path in FREEZE_BYPASS_PATHS:
         return True
     if path.startswith("/admin/"):
+        return True
+    # Console is read-only, should be accessible during freeze for visibility
+    if path.startswith(CONSOLE_BYPASS_PREFIX):
         return True
     return False
 
@@ -168,6 +179,26 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     load_bundle()
     logger.info("Bundle loaded, engine ready")
 
+    # Run preflight checks for multi-tenant path isolation
+    # This MUST run AFTER bundle load so institutions registry is available
+    preflight_result = run_preflight_checks()
+    if not preflight_result.ok:
+        logger.error(
+            "PREFLIGHT_CHECK_FAILED",
+            extra={
+                "event": "PREFLIGHT_CHECK_FAILED",
+                "code": preflight_result.code,
+                "message": preflight_result.message,
+                "details": preflight_result.details,
+            },
+        )
+        # Hard fail - do not start the server
+        raise RuntimeError(
+            f"Preflight check failed: [{preflight_result.code}] {preflight_result.message}"
+        )
+    else:
+        logger.info("Preflight checks passed")
+
     # Cleanup dev-runs on boot if enabled
     if should_cleanup_on_boot():
         dry_run = is_dry_run_on_boot()
@@ -221,6 +252,8 @@ app = FastAPI(title="Libervia Engine", version="8.1.1", lifespan=lifespan)
 # Include routers
 app.include_router(finance_router)
 app.include_router(dept_finance_router)
+app.include_router(support_router)
+app.include_router(dept_support_router)
 app.include_router(approvals_router)
 app.include_router(nl_router)
 app.include_router(ise_router)
@@ -230,6 +263,8 @@ app.include_router(admin_institutions_router)
 app.include_router(admin_institution_config_router)
 app.include_router(admin_keys_router)
 app.include_router(admin_ege_router)
+app.include_router(admin_mandates_router)
+app.include_router(console_router)
 
 # Setup CORS if ENGINE_CORS_ORIGINS is set
 cors_origins = parse_cors_origins()

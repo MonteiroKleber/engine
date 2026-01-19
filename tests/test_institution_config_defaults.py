@@ -108,14 +108,14 @@ class TestEffectiveConfigDefaults:
 class TestSchemaVersion:
     """Test schema version."""
 
-    def test_schema_version_is_1_3(self, tmp_path, monkeypatch):
-        """Config schema version is 1.3 (8.1.1 Pin on Deploy)."""
-        assert CONFIG_SCHEMA_VERSION == "1.3"
+    def test_schema_version_is_1_4(self, tmp_path, monkeypatch):
+        """Config schema version is 1.4 (Etapa 2.4 Governed Rollback)."""
+        assert CONFIG_SCHEMA_VERSION == "1.4"
 
     def test_config_has_schema_version(self, tmp_path, monkeypatch):
         """Config instance has schema_version field."""
         config = InstitutionConfig()
-        assert config.schema_version == "1.3"
+        assert config.schema_version == "1.4"
 
 
 class TestConfigToDict:
@@ -187,7 +187,7 @@ class TestConfigFromDict:
     def test_from_dict_roundtrip(self, tmp_path, monkeypatch):
         """from_dict(to_dict()) preserves values."""
         original = InstitutionConfig(
-            schema_version="1.3",
+            schema_version="1.4",
             updated_at="2024-01-01T00:00:00+00:00",
             updated_by="test-actor",
             flags=ConfigFlags(

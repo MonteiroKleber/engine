@@ -1,0 +1,146 @@
+{% extends "base.html" %}
+
+{% block title %}AXIOM Console - Status{% endblock %}
+
+{% block content %}
+<div class="grid grid-2">
+    <!-- Runtime Status -->
+    <div class="card">
+        <h3 class="card-title">Runtime Status</h3>
+        <div class="info-row">
+            <span class="info-label">Mode</span>
+            <span class="info-value">
+                {% if health.mode == 'ACTIVE' %}
+                <span class="badge badge-active">ACTIVE</span>
+                {% else %}
+                <span class="badge badge-safe-mode">{{ health.mode }}</span>
+                {% endif %}
+            </span>
+        </div>
+        {% if health.reason_code %}
+        <div class="info-row">
+            <span class="info-label">Reason</span>
+            <span class="info-value">{{ health.reason_code }}</span>
+        </div>
+        {% endif %}
+        {% if health.details %}
+        <div class="info-row">
+            <span class="info-label">Details</span>
+            <span class="info-value">{{ health.details|join(', ') }}</span>
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- Drift Status -->
+    <div class="card">
+        <h3 class="card-title">Drift Status</h3>
+        <div class="info-row">
+            <span class="info-label">Status</span>
+            <span class="info-value">
+                {% if drift_status == 'CLEAR' %}
+                <span class="badge badge-clear">CLEAR</span>
+                {% elif drift_status == 'ACTIVE' %}
+                <span class="badge badge-drift">DRIFT DETECTED</span>
+                {% else %}
+                <span class="badge badge-unpinned">{{ drift_status }}</span>
+                {% endif %}
+            </span>
+        </div>
+        {% if pinned.bundle_manifest_sha256 %}
+        <div class="info-row">
+            <span class="info-label">Pinned Bundle</span>
+            <span class="info-value mono hash">{{ pinned.bundle_manifest_sha256[:16] }}...</span>
+        </div>
+        {% endif %}
+        {% if observed.bundle_manifest_sha256 %}
+        <div class="info-row">
+            <span class="info-label">Observed Bundle</span>
+            <span class="info-value mono hash">{{ observed.bundle_manifest_sha256[:16] }}...</span>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Institution Config -->
+<div class="card">
+    <h3 class="card-title">Institution Configuration</h3>
+    <div class="grid grid-2">
+        <div>
+            <div class="info-row">
+                <span class="info-label">Emergency Freeze</span>
+                <span class="info-value">
+                    {% if config.emergency_freeze %}
+                    <span class="badge badge-error">FROZEN</span>
+                    {% else %}
+                    <span class="badge badge-clear">OFF</span>
+                    {% endif %}
+                </span>
+            </div>
+            <div class="info-row">
+                <span class="info-label">Safe Mode</span>
+                <span class="info-value">
+                    {% if config.safe_mode_enabled %}
+                    <span class="badge badge-safe-mode">ENABLED</span>
+                    {% else %}
+                    <span class="badge badge-clear">OFF</span>
+                    {% endif %}
+                </span>
+            </div>
+        </div>
+        <div>
+            {% if config.pinned_release_id %}
+            <div class="info-row">
+                <span class="info-label">Pinned Release</span>
+                <span class="info-value mono">{{ config.pinned_release_id }}</span>
+            </div>
+            {% endif %}
+            {% if config.pinned_bundle_manifest_sha256 %}
+            <div class="info-row">
+                <span class="info-label">Pinned Manifest</span>
+                <span class="info-value mono hash">{{ config.pinned_bundle_manifest_sha256[:24] }}...</span>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- Governed Mandates -->
+<div class="card">
+    <h3 class="card-title">Effective Mandates</h3>
+    {% if mandates.mandates %}
+    <table>
+        <thead>
+            <tr>
+                <th>Mandate ID</th>
+                <th>Endpoint</th>
+                <th>Phase</th>
+                <th>Roles</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for mandate in mandates.mandates %}
+            <tr>
+                <td class="mono">{{ mandate.mandate_id }}</td>
+                <td class="mono">{{ mandate.endpoint_sig }}</td>
+                <td>{{ mandate.phase }}</td>
+                <td>{{ mandate.allowed_roles|join(', ') }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    <div style="margin-top: 0.5rem; color: var(--text-secondary);">
+        Source: {{ mandates.source }}
+    </div>
+    {% else %}
+    <div class="empty-state">No mandates configured</div>
+    {% endif %}
+</div>
+
+<!-- Auto-refresh status every 10 seconds -->
+<div hx-get="/console/partials/status?institution_id={{ institution_id }}{% if dept_id %}&dept_id={{ dept_id }}{% endif %}"
+     hx-trigger="every 10s"
+     hx-swap="none"
+     class="htmx-indicator">
+    <span class="spinner"></span> Refreshing...
+</div>
+{% endblock %}

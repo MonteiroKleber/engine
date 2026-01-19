@@ -133,6 +133,94 @@ def generate_release_id() -> str:
     return now.strftime("%Y%m%d-%H%M%S")
 
 
+def _handle_deploy_failure(
+    institution_id: Optional[str],
+    release_id: str,
+    bundle_name: str,
+    bundle_hash: Optional[str],
+    error_code: str,
+    error_message: str,
+    exit_code: Optional[int] = None,
+    script_output: Optional[str] = None,
+) -> ReleaseResult:
+    """Handle deploy failure with governed rollback.
+
+    If institution_id is provided, executes governed rollback to pinned release.
+    If no pinned release exists, activates SAFE_MODE.
+
+    Args:
+        institution_id: Institution UUID (None for legacy deploys).
+        release_id: Release ID that failed.
+        bundle_name: Bundle name.
+        bundle_hash: Bundle hash.
+        error_code: Error code from failure.
+        error_message: Error message from failure.
+        exit_code: Exit code from script (optional).
+        script_output: Output from script (optional).
+
+    Returns:
+        ReleaseResult with rollback status.
+    """
+    # If no institution_id, fall back to legacy behavior
+    if institution_id is None:
+        return ReleaseResult(
+            status="rolled_back",
+            release_id=release_id,
+            bundle_name=bundle_name,
+            bundle_hash=bundle_hash,
+            error_code=error_code,
+            error_message=f"{error_message}, rolled back (legacy)",
+            exit_code=exit_code,
+            script_output=script_output,
+        )
+
+    # Execute governed rollback
+    from engine.core.ege_rollback import execute_governed_rollback
+
+    rollback_result = execute_governed_rollback(
+        institution_id=institution_id,
+        failed_release_id=release_id,
+        reason=error_message,
+    )
+
+    if rollback_result.success:
+        # Rollback succeeded
+        return ReleaseResult(
+            status="rolled_back",
+            release_id=release_id,
+            bundle_name=bundle_name,
+            bundle_hash=bundle_hash,
+            error_code=error_code,
+            error_message=f"{error_message}, rolled back to {rollback_result.rolled_back_to}",
+            exit_code=exit_code,
+            script_output=script_output,
+        )
+    else:
+        # Rollback failed - possibly SAFE_MODE activated
+        if rollback_result.safe_mode_activated:
+            return ReleaseResult(
+                status="failed",
+                release_id=release_id,
+                bundle_name=bundle_name,
+                bundle_hash=bundle_hash,
+                error_code=rollback_result.error_code or error_code,
+                error_message=f"{error_message}; rollback failed: {rollback_result.error_message}; SAFE_MODE activated",
+                exit_code=exit_code,
+                script_output=script_output,
+            )
+        else:
+            return ReleaseResult(
+                status="failed",
+                release_id=release_id,
+                bundle_name=bundle_name,
+                bundle_hash=bundle_hash,
+                error_code=rollback_result.error_code or error_code,
+                error_message=f"{error_message}; rollback failed: {rollback_result.error_message}",
+                exit_code=exit_code,
+                script_output=script_output,
+            )
+
+
 def compile_release(
     idl: str,
     bundle_name: str,
@@ -286,20 +374,20 @@ def compile_release(
             )
 
             if deploy_result.returncode != 0:
-                # Deploy failed - return rolled_back status
-                return ReleaseResult(
-                    status="rolled_back",
+                # Deploy failed - execute governed rollback
+                return _handle_deploy_failure(
+                    institution_id=institution_id,
                     release_id=release_id,
                     bundle_name=bundle_name,
                     bundle_hash=bundle_hash,
                     error_code=errors.ISE_DEPLOY_FAILED,
-                    error_message="Deploy failed, rolled back",
+                    error_message="Deploy failed",
                     exit_code=deploy_result.returncode,
                     script_output=deploy_result.stderr or deploy_result.stdout,
                 )
         except subprocess.TimeoutExpired:
-            return ReleaseResult(
-                status="rolled_back",
+            return _handle_deploy_failure(
+                institution_id=institution_id,
                 release_id=release_id,
                 bundle_name=bundle_name,
                 bundle_hash=bundle_hash,
@@ -307,8 +395,8 @@ def compile_release(
                 error_message="Deploy script timed out",
             )
         except Exception as e:
-            return ReleaseResult(
-                status="rolled_back",
+            return _handle_deploy_failure(
+                institution_id=institution_id,
                 release_id=release_id,
                 bundle_name=bundle_name,
                 bundle_hash=bundle_hash,

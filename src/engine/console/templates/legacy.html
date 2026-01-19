@@ -1,0 +1,79 @@
+{% extends "base.html" %}
+
+{% block title %}AXIOM Console - Legacy Assets{% endblock %}
+
+{% block content %}
+<div class="card">
+    <h3 class="card-title">Legacy Assets</h3>
+    <p style="color: var(--text-secondary); margin-bottom: 1rem;">
+        Read-only view of legacy system assets registered with AXIOM.
+    </p>
+
+    {% if assets %}
+    <table>
+        <thead>
+            <tr>
+                <th>Asset ID</th>
+                <th>Type</th>
+                <th>Name</th>
+                <th>Status</th>
+                <th>Last Sync</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for asset in assets %}
+            <tr>
+                <td class="mono">{{ asset.asset_id[:12] }}...</td>
+                <td>{{ asset.type }}</td>
+                <td>{{ asset.name }}</td>
+                <td>
+                    {% if asset.status == 'active' %}
+                    <span class="badge badge-active">Active</span>
+                    {% elif asset.status == 'syncing' %}
+                    <span class="badge badge-safe-mode">Syncing</span>
+                    {% else %}
+                    <span class="badge badge-unpinned">{{ asset.status }}</span>
+                    {% endif %}
+                </td>
+                <td>{{ asset.last_sync or 'Never' }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% else %}
+    <div class="empty-state">
+        <p>No legacy assets registered</p>
+        <p style="font-size: 0.875rem; margin-top: 0.5rem;">
+            Legacy assets are registered via the Legacy Bridge API.
+        </p>
+    </div>
+    {% endif %}
+</div>
+
+<!-- Legacy Bridge Status -->
+<div class="card">
+    <h3 class="card-title">Legacy Bridge Status</h3>
+    <div class="info-row">
+        <span class="info-label">Bridge Available</span>
+        <span class="info-value">
+            {% if bridge_available %}
+            <span class="badge badge-active">Yes</span>
+            {% else %}
+            <span class="badge badge-unpinned">No</span>
+            {% endif %}
+        </span>
+    </div>
+    {% if bridge_config %}
+    <div class="info-row">
+        <span class="info-label">Mode</span>
+        <span class="info-value">{{ bridge_config.mode or 'read-only' }}</span>
+    </div>
+    {% if bridge_config.last_sync %}
+    <div class="info-row">
+        <span class="info-label">Last Sync</span>
+        <span class="info-value">{{ bridge_config.last_sync }}</span>
+    </div>
+    {% endif %}
+    {% endif %}
+</div>
+{% endblock %}

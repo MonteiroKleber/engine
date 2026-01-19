@@ -1,6 +1,67 @@
 {
-  "version": "1.0.0",
-  "name": "contract_ledger",
-  "description": "Ledger contract for finance-pilot bundle",
-  "entries": []
+  "ledger_version": "1.0",
+  "ledger_id": "fp-manual-v1.0.0",
+  "bundle_name": "finance-pilot",
+  "bundle_version": "1.0.0",
+  "manifest_hash": "SHA256:8f6bfd93e82619bbf94a5c213a0f7cb811f78613347ba1f2f3ace5d56e1d1ae6",
+  "idl_hash": "SHA256:abe451b82e81612a3de8b4bb00c15b7311676326bf6f715ccb486a58193ffecb",
+  "created_at": "2025-01-18T00:00:00+00:00",
+  "contracts": [
+    {
+      "contract_name": "approvals.json",
+      "content_hash": "SHA256:49699db08dcd1c427be630fe9090c73e6c923793bb4f2783171a338107333f51",
+      "status": "active"
+    },
+    {
+      "contract_name": "autonomy.json",
+      "content_hash": "SHA256:0151ac1f38390bd100cb6dac40ac42cff341ae19ecff5bec7ba29157106b9336",
+      "status": "active"
+    },
+    {
+      "contract_name": "invariants.json",
+      "content_hash": "SHA256:3e17572bd74f31c558b5690c2e696b84352ff078ffda81b5e72019f6a5104c7f",
+      "status": "active"
+    },
+    {
+      "contract_name": "mandates.json",
+      "content_hash": "SHA256:1a3ce1b59ff21a9033d4e5dcfa22a9168cc114e801b856348d583197dccd493d",
+      "status": "active"
+    },
+    {
+      "contract_name": "openapi.yaml",
+      "content_hash": "SHA256:c96f851f30cf93204efe2bbce5c820737d0a1a65c0deb4b50de65e1610042fc5",
+      "status": "active"
+    },
+    {
+      "contract_name": "policies.json",
+      "content_hash": "SHA256:f2df6d753b154e6aa3abe70cdc277e914aeed775b63f91745075c200e1ebe09d",
+      "status": "active"
+    },
+    {
+      "contract_name": "rbac.json",
+      "content_hash": "SHA256:64907fac9729f9fc371b2a523048a2cd690216a3e0b9e08967f72de884ac8e05",
+      "status": "active"
+    },
+    {
+      "contract_name": "sod.json",
+      "content_hash": "SHA256:eaea64d77e9c5b0ba2d5318696c1a390da3a8d177249eb3e53e40d33659c7400",
+      "status": "active"
+    },
+    {
+      "contract_name": "workflows.json",
+      "content_hash": "SHA256:c473056482e60e9b11a254a4445ebb1c7e18c1a69c94ae8339d408234e66ae71",
+      "status": "active"
+    }
+  ],
+  "audit_trail": [
+    {
+      "event": "bundle_compiled",
+      "timestamp": "2025-01-18T00:00:00+00:00",
+      "details": {
+        "contract_count": 9,
+        "bundle_name": "finance-pilot",
+        "note": "Manual bundle for finance pilot - offline proof compliant"
+      }
+    }
+  ]
 }

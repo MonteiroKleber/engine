@@ -2,11 +2,12 @@
 
 from typing import Any, Dict, List, Optional
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Request
 from pydantic import BaseModel
 
 from engine.core.actor_context import ActorContext
-from engine.core.ledger import get_ledger
+from engine.core.ledger import get_ledger, get_ledger_for_institution
+from engine.core.institution_context import get_request_institution_id
 from engine.core.approvals import (
     find_approval_requested,
     find_approval_decided,
@@ -58,9 +59,21 @@ class DecideRequest(BaseModel):
 def emit_case_committed(
     expense_id: str,
     actor: ActorContext,
+    institution_id: Optional[str] = None,
 ) -> None:
-    """Emit CASE_COMMITTED event to ledger."""
-    ledger = get_ledger()
+    """Emit CASE_COMMITTED event to ledger.
+
+    Args:
+        expense_id: The expense ID.
+        actor: The actor context.
+        institution_id: Optional institution ID for ledger namespacing.
+    """
+    # Use institution-specific ledger if institution_id provided
+    if institution_id:
+        ledger = get_ledger_for_institution(institution_id)
+    else:
+        ledger = get_ledger()
+
     if ledger:
         ledger.append(
             event_type="CASE_COMMITTED",
@@ -78,9 +91,21 @@ def emit_case_committed(
 def emit_case_rejected(
     expense_id: str,
     actor: ActorContext,
+    institution_id: Optional[str] = None,
 ) -> None:
-    """Emit CASE_REJECTED event to ledger."""
-    ledger = get_ledger()
+    """Emit CASE_REJECTED event to ledger.
+
+    Args:
+        expense_id: The expense ID.
+        actor: The actor context.
+        institution_id: Optional institution ID for ledger namespacing.
+    """
+    # Use institution-specific ledger if institution_id provided
+    if institution_id:
+        ledger = get_ledger_for_institution(institution_id)
+    else:
+        ledger = get_ledger()
+
     if ledger:
         ledger.append(
             event_type="CASE_REJECTED",
@@ -97,6 +122,7 @@ def emit_case_rejected(
 
 @router.post("/{approval_id}/decide")
 async def decide_approval(
+    request: Request,
     approval_id: str,
     body: DecideRequest,
     actor: ActorContext = Depends(get_actor_context),
@@ -104,6 +130,7 @@ async def decide_approval(
     """Decide on an approval request.
 
     Args:
+        request: FastAPI request object.
         approval_id: The approval ID.
         body: Decision request with decision and optional reason.
         actor: The deciding actor context.
@@ -114,6 +141,9 @@ async def decide_approval(
     Raises:
         HTTPException: Various error codes for invalid states.
     """
+    # Get institution_id from request context (set by middleware)
+    institution_id = get_request_institution_id(request)
+
     # Validate decision value
     if body.decision not in ("approve", "reject"):
         raise HTTPException(
@@ -212,8 +242,8 @@ async def decide_approval(
                 },
             )
 
-    # Lookup expense via state store
-    state_store = get_state_store()
+    # Lookup expense via state store (institution-aware)
+    state_store = get_state_store(institution_id=institution_id)
     if not state_store:
         raise HTTPException(
             status_code=503,
@@ -250,7 +280,7 @@ async def decide_approval(
         )
 
         # Emit CASE_REJECTED
-        emit_case_rejected(expense_id, actor)
+        emit_case_rejected(expense_id, actor, institution_id=institution_id)
 
         return {
             "status": "decided",
@@ -310,6 +340,7 @@ async def decide_approval(
         endpoint_sig=post_endpoint_sig,
         actor=actor,
         payload=context_payload,
+        institution_id=institution_id,
     )
 
     # Emit mandate decision to ledger (always)
@@ -403,7 +434,7 @@ async def decide_approval(
     )
 
     # Emit CASE_COMMITTED
-    emit_case_committed(expense_id, actor)
+    emit_case_committed(expense_id, actor, institution_id=institution_id)
 
     return {
         "status": "decided",

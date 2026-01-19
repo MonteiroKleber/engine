@@ -60,19 +60,39 @@ class SodPolicy:
         return self._rules
 
 
-# Global SoD policy
-_sod_policy: Optional[SodPolicy] = None
+# Per-department SoD policies (key: dept_id, None for single mode)
+_sod_policies: Dict[Optional[str], SodPolicy] = {}
 
 
-def set_sod_policy(policy: Optional[SodPolicy]) -> None:
-    """Set the global SoD policy."""
-    global _sod_policy
-    _sod_policy = policy
+def set_sod_policy(policy: Optional[SodPolicy], dept_id: Optional[str] = None) -> None:
+    """Set SoD policy for a department (or single mode).
+
+    Args:
+        policy: SodPolicy instance, or None to clear.
+        dept_id: Department ID, or None for single mode.
+    """
+    if policy is None:
+        _sod_policies.pop(dept_id, None)
+    else:
+        _sod_policies[dept_id] = policy
 
 
-def get_sod_policy() -> Optional[SodPolicy]:
-    """Get the global SoD policy."""
-    return _sod_policy
+def get_sod_policy(dept_id: Optional[str] = None) -> Optional[SodPolicy]:
+    """Get SoD policy for a department (or single mode).
+
+    Args:
+        dept_id: Department ID, or None for single mode.
+
+    Returns:
+        SodPolicy if set, None otherwise.
+    """
+    return _sod_policies.get(dept_id)
+
+
+def reset_all_sod() -> None:
+    """Reset all SoD policies (for testing)."""
+    global _sod_policies
+    _sod_policies = {}
 
 
 def find_approval_requested_for_step(
@@ -108,6 +128,7 @@ def check_sod(
     case_id: str,
     step: str,
     actor: ActorContext,
+    dept_id: Optional[str] = None,
 ) -> Tuple[bool, Optional[str], Optional[str]]:
     """Check SoD constraints for a decision.
 
@@ -115,13 +136,14 @@ def check_sod(
         case_id: The case ID (approval_id).
         step: The step name.
         actor: The actor attempting to decide.
+        dept_id: Department ID, or None for single mode.
 
     Returns:
         Tuple of (ok, error_code, message).
         - ok=True means no SoD violation.
         - ok=False means violation, with error_code and message.
     """
-    policy = get_sod_policy()
+    policy = get_sod_policy(dept_id)
     if not policy:
         # No SoD policy - allow
         return (True, None, None)
