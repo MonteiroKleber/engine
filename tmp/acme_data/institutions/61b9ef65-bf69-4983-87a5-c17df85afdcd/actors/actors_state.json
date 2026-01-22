@@ -1,0 +1,101 @@
+{
+  "SHA256:7fde946f0d93623b502fbba3889bcf086420a6def1213fb83e7bbde9ca4a4799": {
+    "token_sha256": "SHA256:7fde946f0d93623b502fbba3889bcf086420a6def1213fb83e7bbde9ca4a4799",
+    "actor_id": "operator-001",
+    "roles": [
+      "operator"
+    ],
+    "status": "active",
+    "created_at": "2026-01-21T14:26:03.800576Z",
+    "created_by": "98d7ed9c-0d06-4d7e-9f5a-6c262bcc2cbb",
+    "is_agent": false
+  },
+  "SHA256:14e11054aba25f08860d37cb1450198b17583e6bc6bb5a7e7bef6eefd7937c4d": {
+    "token_sha256": "SHA256:14e11054aba25f08860d37cb1450198b17583e6bc6bb5a7e7bef6eefd7937c4d",
+    "actor_id": "operator-001",
+    "roles": [
+      "operator"
+    ],
+    "status": "active",
+    "created_at": "2026-01-21T14:26:10.258915Z",
+    "created_by": "98d7ed9c-0d06-4d7e-9f5a-6c262bcc2cbb",
+    "is_agent": false
+  },
+  "SHA256:3cae21219cb71a13f3783c82c7bf868a386f6ef318ae0d546edf75083ded5dd3": {
+    "token_sha256": "SHA256:3cae21219cb71a13f3783c82c7bf868a386f6ef318ae0d546edf75083ded5dd3",
+    "actor_id": "manager-001",
+    "roles": [
+      "manager"
+    ],
+    "status": "active",
+    "created_at": "2026-01-21T14:26:23.568209Z",
+    "created_by": "98d7ed9c-0d06-4d7e-9f5a-6c262bcc2cbb",
+    "is_agent": false
+  },
+  "SHA256:6d33d4dbb862174104608d70d38f4df72b6e2abeefce9765bfb25c43d65ce79d": {
+    "token_sha256": "SHA256:6d33d4dbb862174104608d70d38f4df72b6e2abeefce9765bfb25c43d65ce79d",
+    "actor_id": "controller-001",
+    "roles": [
+      "controller"
+    ],
+    "status": "active",
+    "created_at": "2026-01-21T14:26:23.619141Z",
+    "created_by": "98d7ed9c-0d06-4d7e-9f5a-6c262bcc2cbb",
+    "is_agent": false
+  },
+  "SHA256:52eacf9f4ced943a18d2aae864e6d8c8de98f9534bffde418dbcd60d9b916013": {
+    "token_sha256": "SHA256:52eacf9f4ced943a18d2aae864e6d8c8de98f9534bffde418dbcd60d9b916013",
+    "actor_id": "finance-bot",
+    "roles": [
+      "finance_bot"
+    ],
+    "status": "active",
+    "created_at": "2026-01-21T14:26:23.651204Z",
+    "created_by": "98d7ed9c-0d06-4d7e-9f5a-6c262bcc2cbb",
+    "is_agent": false
+  },
+  "SHA256:ed5a0a6be8904462e6dec6d9f6519a56dec18b3372b7cf1baa1e45a21fa4d29b": {
+    "token_sha256": "SHA256:ed5a0a6be8904462e6dec6d9f6519a56dec18b3372b7cf1baa1e45a21fa4d29b",
+    "actor_id": "39712f24-49c6-4c56-b6aa-806c543b850d",
+    "roles": [
+      "operator"
+    ],
+    "status": "active",
+    "created_at": "2026-01-21T14:34:34.430754Z",
+    "created_by": "98d7ed9c-0d06-4d7e-9f5a-6c262bcc2cbb",
+    "is_agent": false
+  },
+  "SHA256:c8713904f405875f834d5ed1f9cbff515f294b3d34fb0050a1791f61be47d9b5": {
+    "token_sha256": "SHA256:c8713904f405875f834d5ed1f9cbff515f294b3d34fb0050a1791f61be47d9b5",
+    "actor_id": "bd9d7a46-69cb-497e-a0e9-84adc72af067",
+    "roles": [
+      "manager"
+    ],
+    "status": "active",
+    "created_at": "2026-01-21T14:34:48.060688Z",
+    "created_by": "98d7ed9c-0d06-4d7e-9f5a-6c262bcc2cbb",
+    "is_agent": false
+  },
+  "SHA256:29005275ff3cb19d5fb319414033133527f3a4427216aa08275d463cbdc5854d": {
+    "token_sha256": "SHA256:29005275ff3cb19d5fb319414033133527f3a4427216aa08275d463cbdc5854d",
+    "actor_id": "770753ea-2906-436e-8b86-692a14bd126a",
+    "roles": [
+      "controller"
+    ],
+    "status": "active",
+    "created_at": "2026-01-21T14:34:48.086032Z",
+    "created_by": "98d7ed9c-0d06-4d7e-9f5a-6c262bcc2cbb",
+    "is_agent": false
+  },
+  "SHA256:88ea7cf081f1e765d30c348dff4f69c71457e6cf8d79a40bc59b56e3c1b38c0c": {
+    "token_sha256": "SHA256:88ea7cf081f1e765d30c348dff4f69c71457e6cf8d79a40bc59b56e3c1b38c0c",
+    "actor_id": "b465c501-6d54-47d3-a024-77d6fbf99c1f",
+    "roles": [
+      "finance_bot"
+    ],
+    "status": "active",
+    "created_at": "2026-01-21T14:34:48.101445Z",
+    "created_by": "98d7ed9c-0d06-4d7e-9f5a-6c262bcc2cbb",
+    "is_agent": false
+  }
+}

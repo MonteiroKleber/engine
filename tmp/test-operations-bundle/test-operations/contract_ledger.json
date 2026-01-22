@@ -1,0 +1,71 @@
+{
+  "audit_trail": [
+    {
+      "details": {
+        "bundle_name": "test-operations",
+        "contract_count": 10
+      },
+      "event": "bundle_compiled",
+      "timestamp": "2026-01-21T22:32:13.797422+00:00"
+    }
+  ],
+  "bundle_name": "test-operations",
+  "bundle_version": "1.0.0",
+  "contracts": [
+    {
+      "content_hash": "b17a4c5ea1851f9210faaa69391d48001453f1ae6523680e6e011dd17492b24e",
+      "contract_name": "approvals.json",
+      "status": "active"
+    },
+    {
+      "content_hash": "2872f901adca305e01ef2d01c6479dbb490380cb6a6cecff9ecffa1e35cc8919",
+      "contract_name": "autonomy.json",
+      "status": "active"
+    },
+    {
+      "content_hash": "837a08ff8056c994b2feecf793d6f588cf811c3dfd4586556476d93341f1c1f1",
+      "contract_name": "invariants.json",
+      "status": "active"
+    },
+    {
+      "content_hash": "7f1ab6c108b087e5e96062f709d4eca5d61bbb46b406a4c1054873ac3c5c41f1",
+      "contract_name": "mandates.json",
+      "status": "active"
+    },
+    {
+      "content_hash": "e53be1ebd72922a58a1f3596cea2a2704dd00e67073efa4f57b6b43c4a1d86ae",
+      "contract_name": "openapi.yaml",
+      "status": "active"
+    },
+    {
+      "content_hash": "d1b43066179811e261f2fc5ba176bae5ff558454a90e54662e87e09ed0b95cbb",
+      "contract_name": "operations.json",
+      "status": "active"
+    },
+    {
+      "content_hash": "d6c07203f38893484deae5e433ad25e5d880ef478460a957fbe810b6ea402654",
+      "contract_name": "policies.json",
+      "status": "active"
+    },
+    {
+      "content_hash": "1ba444d06f9017e419a718be22bf7545bf7bd3d7d5c674b16a3d34cd941c2942",
+      "contract_name": "rbac.json",
+      "status": "active"
+    },
+    {
+      "content_hash": "7861a3f90c8bfb0e0d1acd96de0ba7da05e4cf47293d5be107f3ea1458652a1d",
+      "contract_name": "sod.json",
+      "status": "active"
+    },
+    {
+      "content_hash": "0938323a1fa6ee61e1b016cbfa521375dd1187296128b0ae289fa8b13ceddbd3",
+      "contract_name": "workflows.json",
+      "status": "active"
+    }
+  ],
+  "created_at": "2026-01-21T22:32:13.797420+00:00",
+  "idl_hash": "9b3b8f341b6a5fcfab06856d3ab0fad280e22e4090c08dd8be21529b5b88891f",
+  "ledger_id": "205ee9a03ad37580",
+  "ledger_version": "1.0",
+  "manifest_hash": "e012ed8dce75cf1e9cc3d8108f9f117dfe9bf598fc11c732c22858a71a09c0cd"
+}

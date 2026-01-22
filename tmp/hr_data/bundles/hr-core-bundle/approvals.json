@@ -1,0 +1,22 @@
+{
+  "name": "approvals",
+  "rules": [
+    {
+      "rule_name": "expense.create",
+      "trigger": {
+        "api": "POST /finance/expenses"
+      },
+      "approver_roles": ["manager", "controller"],
+      "quorum": 1
+    },
+    {
+      "rule_name": "candidate.create",
+      "trigger": {
+        "api": "POST /finance/candidates"
+      },
+      "approver_roles": ["manager"],
+      "quorum": 1
+    }
+  ],
+  "version": "1.0"
+}

@@ -1,6 +1,16 @@
 #!/usr/bin/env bash
 # Libervia Engine - Preflight Check Script
 # Verifies environment and configuration before startup
+#
+# This script complements the Python preflight checks in src/engine/core/preflight.py
+# which run at server startup. This shell script is for manual pre-deployment checks.
+#
+# Checks synchronized with preflight.py:
+# - ENGINE_CONSOLE_SESSION_SECRET (required, min 32 chars)
+# - ENGINE_ISE_ADMIN_TOKEN (required for admin endpoints)
+# - Multi-tenant path isolation (absolute paths blocked)
+# - Bundle manifest verification
+# - Ledger integrity
 
 set -euo pipefail
 
@@ -36,8 +46,34 @@ echo "Libervia Engine - Preflight Check"
 echo "=============================================="
 echo ""
 
-# 1. Check environment variables
-echo "--- Environment Variables ---"
+# 1. Check REQUIRED environment variables (these cause hard fail in runtime)
+echo "--- Required Environment Variables ---"
+
+# ENGINE_CONSOLE_SESSION_SECRET - required by preflight.py
+if [[ -n "${ENGINE_CONSOLE_SESSION_SECRET:-}" ]]; then
+    SECRET_LEN=${#ENGINE_CONSOLE_SESSION_SECRET}
+    if [[ $SECRET_LEN -ge 32 ]]; then
+        log_ok "ENGINE_CONSOLE_SESSION_SECRET is set ($SECRET_LEN chars)"
+    else
+        log_error "ENGINE_CONSOLE_SESSION_SECRET is too short ($SECRET_LEN chars, min 32)"
+    fi
+else
+    log_error "ENGINE_CONSOLE_SESSION_SECRET is NOT set (required for console auth)"
+    log_info "  Generate with: python -c \"import secrets; print(secrets.token_hex(32))\""
+fi
+
+# ENGINE_ISE_ADMIN_TOKEN - required for admin endpoints
+if [[ -n "${ENGINE_ISE_ADMIN_TOKEN:-}" ]]; then
+    log_ok "ENGINE_ISE_ADMIN_TOKEN is set"
+else
+    log_error "ENGINE_ISE_ADMIN_TOKEN is NOT set (required for admin APIs)"
+    log_info "  Generate with: python -c \"import secrets; print(secrets.token_urlsafe(32))\""
+fi
+
+echo ""
+
+# 2. Check optional environment variables
+echo "--- Optional Environment Variables ---"
 
 if [[ -n "${ENGINE_BUNDLE_PATH:-}" ]]; then
     log_ok "ENGINE_BUNDLE_PATH is set: $ENGINE_BUNDLE_PATH"
@@ -46,28 +82,52 @@ else
     ENGINE_BUNDLE_PATH="bundles/finance-pilot"
 fi
 
+if [[ -n "${ENGINE_DATA_ROOT:-}" ]]; then
+    log_ok "ENGINE_DATA_ROOT is set: $ENGINE_DATA_ROOT"
+else
+    log_info "ENGINE_DATA_ROOT not set (will use default: var)"
+fi
+
 if [[ -n "${ENGINE_LEDGER_PATH:-}" ]]; then
     log_ok "ENGINE_LEDGER_PATH is set: $ENGINE_LEDGER_PATH"
 else
-    log_warn "ENGINE_LEDGER_PATH not set (will use default: var/audit_ledger.jsonl)"
+    log_info "ENGINE_LEDGER_PATH not set (will use namespaced path per institution)"
     ENGINE_LEDGER_PATH="var/audit_ledger.jsonl"
 fi
 
-if [[ -n "${ENGINE_STATE_PATH:-}" ]]; then
-    log_ok "ENGINE_STATE_PATH is set: $ENGINE_STATE_PATH"
+if [[ -n "${ENGINE_LOG_FORMAT:-}" ]]; then
+    log_ok "ENGINE_LOG_FORMAT is set: $ENGINE_LOG_FORMAT"
 else
-    log_warn "ENGINE_STATE_PATH not set (will use default: var/state_store.json)"
-fi
-
-if [[ -n "${ENGINE_LOG_LEVEL:-}" ]]; then
-    log_ok "ENGINE_LOG_LEVEL is set: $ENGINE_LOG_LEVEL"
-else
-    log_info "ENGINE_LOG_LEVEL not set (will use default: INFO)"
+    log_info "ENGINE_LOG_FORMAT not set (will use default: text)"
 fi
 
 echo ""
 
-# 2. Check paths exist
+# 3. Multi-tenant path isolation check (matches preflight.py logic)
+echo "--- Multi-Tenant Path Isolation ---"
+
+# Check if any absolute paths are set that would break multi-tenant isolation
+MULTI_TENANT_ISSUE=0
+
+if [[ -n "${ENGINE_LEDGER_PATH:-}" ]] && [[ "${ENGINE_LEDGER_PATH:0:1}" == "/" ]]; then
+    log_warn "ENGINE_LEDGER_PATH is absolute: $ENGINE_LEDGER_PATH"
+    log_info "  This may break multi-tenant isolation if institutions use require_institution_header_for_runtime=true"
+    MULTI_TENANT_ISSUE=1
+fi
+
+if [[ -n "${ENGINE_STATE_STORE_DIR:-}" ]] && [[ "${ENGINE_STATE_STORE_DIR:0:1}" == "/" ]]; then
+    log_warn "ENGINE_STATE_STORE_DIR is absolute: $ENGINE_STATE_STORE_DIR"
+    log_info "  This may break multi-tenant isolation if institutions use require_institution_header_for_runtime=true"
+    MULTI_TENANT_ISSUE=1
+fi
+
+if [[ $MULTI_TENANT_ISSUE -eq 0 ]]; then
+    log_ok "No multi-tenant path isolation issues detected"
+fi
+
+echo ""
+
+# 4. Check paths exist
 echo "--- Path Validation ---"
 
 if [[ -d "$ENGINE_BUNDLE_PATH" ]]; then
@@ -90,7 +150,7 @@ fi
 
 echo ""
 
-# 3. Verify bundle manifest
+# 5. Verify bundle manifest
 echo "--- Bundle Manifest ---"
 
 MANIFEST_PATH="$ENGINE_BUNDLE_PATH/bundle.manifest.json"
@@ -141,7 +201,7 @@ fi
 
 echo ""
 
-# 4. Verify ledger integrity (if exists)
+# 6. Verify ledger integrity (if exists)
 echo "--- Ledger Verification ---"
 
 if [[ -f "$ENGINE_LEDGER_PATH" ]]; then
@@ -179,7 +239,7 @@ fi
 
 echo ""
 
-# 5. Check systemd unit (optional)
+# 7. Check systemd unit (optional)
 echo "--- Systemd Service ---"
 
 if command -v systemctl &> /dev/null; then

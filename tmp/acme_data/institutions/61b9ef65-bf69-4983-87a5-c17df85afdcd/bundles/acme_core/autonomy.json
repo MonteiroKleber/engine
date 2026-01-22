@@ -1,0 +1,30 @@
+{
+  "autonomy_schema_version": "1.0",
+  "current_level": 4,
+  "rules": [
+    {
+      "rule_id": "autonomy-expense-create-pre",
+      "endpoint_sig": "POST /finance/expenses",
+      "phase": "pre",
+      "required_level": 3
+    },
+    {
+      "rule_id": "autonomy-expense-create-post",
+      "endpoint_sig": "POST /finance/expenses",
+      "phase": "post",
+      "required_level": 3
+    },
+    {
+      "rule_id": "autonomy-approval-decide-pre",
+      "endpoint_sig": "POST /approvals/{approval_id}/decide",
+      "phase": "pre",
+      "required_level": 3
+    },
+    {
+      "rule_id": "autonomy-approval-decide-post",
+      "endpoint_sig": "POST /approvals/{approval_id}/decide",
+      "phase": "post",
+      "required_level": 3
+    }
+  ]
+}

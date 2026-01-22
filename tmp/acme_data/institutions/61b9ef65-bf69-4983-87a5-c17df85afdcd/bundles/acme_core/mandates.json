@@ -1,0 +1,37 @@
+{
+  "mandate_schema_version": "1.0",
+  "mandates": [
+    {
+      "mandate_id": "mandate-expense-create-pre",
+      "endpoint_sig": "POST /finance/expenses",
+      "phase": "pre",
+      "allowed_roles": ["operator", "finance_bot"],
+      "limits": [],
+      "message": "Allow expense creation"
+    },
+    {
+      "mandate_id": "mandate-expense-create-post",
+      "endpoint_sig": "POST /finance/expenses",
+      "phase": "post",
+      "allowed_roles": ["operator", "finance_bot"],
+      "limits": [],
+      "message": "Allow expense creation (post)"
+    },
+    {
+      "mandate_id": "mandate-approval-decide-pre",
+      "endpoint_sig": "POST /approvals/{approval_id}/decide",
+      "phase": "pre",
+      "allowed_roles": ["manager", "controller"],
+      "limits": [],
+      "message": "Allow approval decision"
+    },
+    {
+      "mandate_id": "mandate-approval-decide-post",
+      "endpoint_sig": "POST /approvals/{approval_id}/decide",
+      "phase": "post",
+      "allowed_roles": ["manager", "controller"],
+      "limits": [],
+      "message": "Allow approval decision (post)"
+    }
+  ]
+}

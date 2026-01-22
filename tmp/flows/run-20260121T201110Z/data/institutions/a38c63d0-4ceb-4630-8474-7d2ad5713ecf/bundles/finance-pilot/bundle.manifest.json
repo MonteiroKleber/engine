@@ -1,0 +1,57 @@
+{
+  "name": "finance-pilot",
+  "version": "1.0.0",
+  "description": "Finance pilot bundle for Libervia Engine",
+  "contracts": [
+    {
+      "file": "approvals.json",
+      "sha256": "SHA256:49699db08dcd1c427be630fe9090c73e6c923793bb4f2783171a338107333f51",
+      "required": true
+    },
+    {
+      "file": "autonomy.json",
+      "sha256": "SHA256:0151ac1f38390bd100cb6dac40ac42cff341ae19ecff5bec7ba29157106b9336",
+      "required": true
+    },
+    {
+      "file": "invariants.json",
+      "sha256": "SHA256:3e17572bd74f31c558b5690c2e696b84352ff078ffda81b5e72019f6a5104c7f",
+      "required": true
+    },
+    {
+      "file": "mandates.json",
+      "sha256": "SHA256:1a3ce1b59ff21a9033d4e5dcfa22a9168cc114e801b856348d583197dccd493d",
+      "required": true
+    },
+    {
+      "file": "openapi.yaml",
+      "sha256": "SHA256:c96f851f30cf93204efe2bbce5c820737d0a1a65c0deb4b50de65e1610042fc5",
+      "required": false
+    },
+    {
+      "file": "policies.json",
+      "sha256": "SHA256:f2df6d753b154e6aa3abe70cdc277e914aeed775b63f91745075c200e1ebe09d",
+      "required": true
+    },
+    {
+      "file": "rbac.json",
+      "sha256": "SHA256:64907fac9729f9fc371b2a523048a2cd690216a3e0b9e08967f72de884ac8e05",
+      "required": true
+    },
+    {
+      "file": "sod.json",
+      "sha256": "SHA256:eaea64d77e9c5b0ba2d5318696c1a390da3a8d177249eb3e53e40d33659c7400",
+      "required": true
+    },
+    {
+      "file": "workflows.json",
+      "sha256": "SHA256:c473056482e60e9b11a254a4445ebb1c7e18c1a69c94ae8339d408234e66ae71",
+      "required": true
+    },
+    {
+      "file": "source.idl",
+      "sha256": "SHA256:9ef76983753ab85c6b6435ce8583279bd2738f55137e2474d682d976d9a3274c",
+      "required": false
+    }
+  ]
+}

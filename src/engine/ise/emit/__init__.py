@@ -15,6 +15,7 @@ from .policies_emit import (
 )
 from .mandates_emit import emit_mandates, emit_mandates_json
 from .autonomy_emit import emit_autonomy, emit_autonomy_json
+from .operations_emit import emit_operations, emit_operations_json
 
 __all__ = [
     "emit_rbac",
@@ -32,4 +33,6 @@ __all__ = [
     "emit_mandates_json",
     "emit_autonomy",
     "emit_autonomy_json",
+    "emit_operations",
+    "emit_operations_json",
 ]

@@ -1,0 +1,33 @@
+{
+  "mandate_schema_version": "1.0",
+  "mandates": [
+    {
+      "mandate_id": "HR-001-expense-create-pre",
+      "endpoint_sig": "POST /finance/expenses",
+      "phase": "pre",
+      "allowed_roles": ["operator", "hr_bot"],
+      "message": "HireRequest creation mandate (pre)"
+    },
+    {
+      "mandate_id": "HR-001-expense-create-post",
+      "endpoint_sig": "POST /finance/expenses",
+      "phase": "post",
+      "allowed_roles": ["operator", "hr_bot"],
+      "message": "HireRequest creation mandate (post)"
+    },
+    {
+      "mandate_id": "HR-002-approval-decide-pre",
+      "endpoint_sig": "POST /approvals/{approval_id}/decide",
+      "phase": "pre",
+      "allowed_roles": ["manager", "controller"],
+      "message": "HireRequest approval mandate (pre)"
+    },
+    {
+      "mandate_id": "HR-002-approval-decide-post",
+      "endpoint_sig": "POST /approvals/{approval_id}/decide",
+      "phase": "post",
+      "allowed_roles": ["manager", "controller"],
+      "message": "HireRequest approval mandate (post)"
+    }
+  ]
+}

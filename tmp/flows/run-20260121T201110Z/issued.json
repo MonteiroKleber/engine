@@ -1,0 +1,40 @@
+{
+  "institution_id": "a38c63d0-4ceb-4630-8474-7d2ad5713ecf",
+  "institution_slug": "demo-c09e043b",
+  "admin_token": "9Cfk1oMeO2ESCsDItKIhrCagBJlJrLV9kLEFSSIroXo",
+  "console_session_secret": "12dc4ebfc5070848943e7b72c63d260fffba629fc39c28f81d4fa53ef9c14ff7",
+  "actors": {
+    "operator": {
+      "actor_id": "739bffc8-d000-4c90-9886-1c71eab001e3",
+      "token": "_-EOGakgC5eNAzWtE8bK187wbntEYGrQtY65Z215AgE",
+      "roles": [
+        "analyst"
+      ],
+      "is_agent": false
+    },
+    "manager": {
+      "actor_id": "f246eaae-e6ba-4626-8f51-63d8048e2c33",
+      "token": "LQNCYR6aHwHQlgokM6AkOFoywe_So9VwbzthmHdDZEU",
+      "roles": [
+        "manager"
+      ],
+      "is_agent": false
+    },
+    "admin": {
+      "actor_id": "d4f5639d-3128-497a-9415-68f8934d3130",
+      "token": "TvfJkMkZGVEjTgT0Wy6WEcfYNd3kUA6P1w4HY4dSS6s",
+      "roles": [
+        "admin"
+      ],
+      "is_agent": false
+    },
+    "finance_bot": {
+      "actor_id": "99e97d57-257e-45d0-8ae2-7a1de868c39d",
+      "token": "Hl8AqNqdFuOfFdgb7Cw8CBhPhlMUQaOfeosF4yE3xiE",
+      "roles": [
+        "analyst"
+      ],
+      "is_agent": true
+    }
+  }
+}

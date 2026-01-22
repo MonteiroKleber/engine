@@ -1,0 +1,13 @@
+{
+  "name": "sod",
+  "rules": [
+    {
+      "constraint": "no_self_approval",
+      "rule_name": "no_self_approval_expense",
+      "scope": {
+        "entity": "expense"
+      }
+    }
+  ],
+  "version": "1.0"
+}

@@ -1,0 +1,187 @@
+{% extends "base.html" %}
+
+{% block title %}AXIOM Console - Draft & Gaps{% endblock %}
+
+{% block content %}
+<!-- Errors -->
+{% if errors %}
+<div class="card" style="margin-bottom: 1rem; border-left: 4px solid var(--error-color, #dc3545);">
+    <h4 style="color: var(--error-color, #dc3545); margin-bottom: 0.5rem;">Erros</h4>
+    <ul style="margin: 0; padding-left: 1.5rem;">
+        {% for error in errors %}
+        <li style="color: var(--error-color, #721c24);">{{ error }}</li>
+        {% endfor %}
+    </ul>
+</div>
+{% endif %}
+
+<!-- Back Link -->
+<div style="margin-bottom: 1rem;">
+    <a href="/console/intake?institution_id={{ institution_id }}{% if dept_id %}&dept_id={{ dept_id }}{% endif %}&mode={{ mode }}"
+       class="btn-link">&larr; Voltar ao Intake</a>
+</div>
+
+{% if draft %}
+<!-- Draft Preview -->
+<div class="card">
+    <h3 class="card-title">Rascunho Gerado</h3>
+
+    <details style="margin-bottom: 1rem;">
+        <summary style="cursor: pointer; color: var(--primary-color);">Ver JSON do Rascunho</summary>
+        <pre style="background: var(--bg-secondary); padding: 1rem; border-radius: 4px; overflow-x: auto; font-size: 0.75rem; margin-top: 0.5rem;">{{ draft_json }}</pre>
+    </details>
+
+    <!-- Stats -->
+    <div style="display: flex; gap: 2rem; margin-bottom: 1rem; flex-wrap: wrap;">
+        {% if draft.rbac and draft.rbac.roles %}
+        <div>
+            <span class="info-label">Roles:</span>
+            <span class="info-value">{{ draft.rbac.roles | length }}</span>
+        </div>
+        {% endif %}
+        {% if draft.approvals and draft.approvals.rules %}
+        <div>
+            <span class="info-label">Approval Rules:</span>
+            <span class="info-value">{{ draft.approvals.rules | length }}</span>
+        </div>
+        {% endif %}
+        {% if draft.sod and draft.sod.rules %}
+        <div>
+            <span class="info-label">SoD Rules:</span>
+            <span class="info-value">{{ draft.sod.rules | length }}</span>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Gaps Section -->
+{% if gaps and gaps | length > 0 %}
+<div class="card" style="margin-top: 1rem;">
+    <h3 class="card-title">Lacunas Identificadas ({{ gaps | length }})</h3>
+    <p style="color: var(--text-secondary); margin-bottom: 1rem;">
+        Responda as perguntas abaixo para completar a definicao.
+    </p>
+
+    <form action="/console/intake/answer" method="POST">
+        <input type="hidden" name="institution_id" value="{{ institution_id }}">
+        {% if dept_id %}
+        <input type="hidden" name="dept_id" value="{{ dept_id }}">
+        {% endif %}
+        <input type="hidden" name="sir_json" value="{{ sir_json | e }}">
+        <input type="hidden" name="draft_json" value="{{ draft_json | e }}">
+        <input type="hidden" name="gaps_json" value="{{ gaps_json | e }}">
+        {% if csrf_token %}<input type="hidden" name="_csrf_token" value="{{ csrf_token }}">{% endif %}
+
+        {% for gap in gaps %}
+        <div style="border: 1px solid var(--border-color); padding: 1rem; margin-bottom: 1rem; border-radius: 4px; background: var(--bg-secondary);">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
+                <strong>{{ gap.description }}</strong>
+                <span class="badge {% if gap.severity == 'required' %}badge-error{% elif gap.severity == 'recommended' %}badge-safe-mode{% else %}badge-unpinned{% endif %}">
+                    {{ gap.severity | upper }}
+                </span>
+            </div>
+            <div style="font-size: 0.75rem; color: var(--text-secondary); margin-bottom: 0.75rem;">
+                Type: {{ gap.gap_type }} | Key: {{ gap.gap_key }}
+            </div>
+
+            {% for question in gap.questions %}
+            <div style="margin-bottom: 0.75rem; padding-left: 1rem; border-left: 2px solid var(--border-color);">
+                <label style="display: block; margin-bottom: 0.25rem;">{{ question.question_text }}</label>
+
+                {% if question.question_type == 'boolean' %}
+                <select name="answer_{{ question.question_id }}" style="padding: 0.25rem; border-radius: 4px; border: 1px solid var(--border-color);">
+                    <option value="true" {% if question.default_value == true %}selected{% endif %}>Sim</option>
+                    <option value="false" {% if question.default_value == false %}selected{% endif %}>Nao</option>
+                </select>
+
+                {% elif question.question_type == 'number' %}
+                <input type="number"
+                       name="answer_{{ question.question_id }}"
+                       value="{{ question.default_value }}"
+                       step="any"
+                       style="padding: 0.25rem; border-radius: 4px; border: 1px solid var(--border-color); width: 150px;">
+
+                {% elif question.question_type == 'choice' %}
+                <select name="answer_{{ question.question_id }}" style="padding: 0.25rem; border-radius: 4px; border: 1px solid var(--border-color);">
+                    {% for option in question.options %}
+                    <option value="{{ option }}" {% if option == question.default_value %}selected{% endif %}>{{ option }}</option>
+                    {% endfor %}
+                </select>
+
+                {% else %}
+                <input type="text"
+                       name="answer_{{ question.question_id }}"
+                       value="{{ question.default_value or '' }}"
+                       style="padding: 0.25rem; border-radius: 4px; border: 1px solid var(--border-color); width: 300px;">
+                {% endif %}
+            </div>
+            {% endfor %}
+        </div>
+        {% endfor %}
+
+        <button type="submit" class="btn-link" style="background: var(--primary-color, #0066cc); color: white; padding: 0.5rem 1rem; text-decoration: none; border-radius: 4px; border: none; cursor: pointer;">
+            Aplicar Respostas
+        </button>
+    </form>
+</div>
+{% else %}
+<!-- No Gaps - Ready to Finalize -->
+<div class="card" style="margin-top: 1rem;">
+    <h3 class="card-title">Pronto para Finalizar</h3>
+    <p style="color: var(--text-secondary); margin-bottom: 1rem;">
+        Nao ha lacunas pendentes. Voce pode finalizar o rascunho.
+    </p>
+
+    <form action="/console/intake/finalize" method="POST">
+        <input type="hidden" name="institution_id" value="{{ institution_id }}">
+        {% if dept_id %}
+        <input type="hidden" name="dept_id" value="{{ dept_id }}">
+        {% endif %}
+        <input type="hidden" name="draft_json" value="{{ draft_json | e }}">
+        <input type="hidden" name="gaps_json" value="[]">
+        {% if csrf_token %}<input type="hidden" name="_csrf_token" value="{{ csrf_token }}">{% endif %}
+
+        <button type="submit" class="btn-link" style="background: var(--success-color, #28a745); color: white; padding: 0.5rem 1rem; text-decoration: none; border-radius: 4px; border: none; cursor: pointer;">
+            Finalizar Rascunho
+        </button>
+    </form>
+</div>
+{% endif %}
+
+<!-- Finalize with Gaps Option -->
+{% if gaps and gaps | length > 0 %}
+<div class="card" style="margin-top: 1rem;">
+    <h4 style="margin-bottom: 0.5rem;">Finalizar com Lacunas</h4>
+    <p style="color: var(--text-secondary); margin-bottom: 1rem; font-size: 0.875rem;">
+        Voce pode finalizar mesmo com lacunas pendentes. Lacunas obrigatorias serao registradas como avisos.
+    </p>
+
+    <form action="/console/intake/finalize" method="POST" style="display: inline;">
+        <input type="hidden" name="institution_id" value="{{ institution_id }}">
+        {% if csrf_token %}<input type="hidden" name="_csrf_token" value="{{ csrf_token }}">{% endif %}
+        {% if dept_id %}
+        <input type="hidden" name="dept_id" value="{{ dept_id }}">
+        {% endif %}
+        <input type="hidden" name="draft_json" value="{{ draft_json | e }}">
+        <input type="hidden" name="gaps_json" value="{{ gaps_json | e }}">
+        <input type="hidden" name="allow_gaps" value="true">
+
+        <button type="submit" class="btn-link" style="background: var(--warning-color, #ffc107); color: #212529; padding: 0.5rem 1rem; text-decoration: none; border-radius: 4px; border: none; cursor: pointer;">
+            Finalizar com Avisos
+        </button>
+    </form>
+</div>
+{% endif %}
+
+{% else %}
+<!-- No Draft Generated -->
+<div class="card">
+    <div class="empty-state">
+        <p>Nenhum rascunho gerado</p>
+        <p style="font-size: 0.875rem; margin-top: 0.5rem;">
+            Volte ao intake e tente novamente.
+        </p>
+    </div>
+</div>
+{% endif %}
+{% endblock %}

@@ -1,0 +1,26 @@
+Run dir: tmp/flows/run-20260121T201110Z
+
+1) Start engine in prod/strict
+- source tmp/flows/run-20260121T201110Z/run.env
+- export PYTHONPATH=/home/bazari/engine/src
+- export ENGINE_LEDGER_PATH="tmp/flows/run-20260121T201110Z/data/ledger/audit_ledger.jsonl"
+- export ENGINE_STATE_STORE_DIR="tmp/flows/run-20260121T201110Z/data/state_store"
+- python3 -m uvicorn engine.api.server:app --host 127.0.0.1 --port 8001
+
+2) Health must be ACTIVE (not SAFE_MODE)
+- curl -sS http://127.0.0.1:8001/health
+
+3) Finance flow
+- POST /finance/expenses with Authorization: Bearer  and X-Institution-Id
+- POST /approvals/{approval_id}/decide (operator should fail)
+- POST /approvals/{approval_id}/decide (manager should approve)
+
+4) Proof must pass for the active bundle
+- PYTHONPATH=/home/bazari/engine/src python3 -m engine.proof verify "tmp/flows/run-20260121T201110Z/data/institutions/<INSTITUTION_ID>/bundles/finance-pilot" --json
+
+5) Ledger checks
+- File exists: tmp/flows/run-20260121T201110Z/data/institutions/<INSTITUTION_ID>/audit_ledger.jsonl
+- Contains events: RBAC_DECISION, POLICY_PRE_DECISION, MANDATE_EVALUATED, AUTONOMY_EVALUATED, APPROVAL_REQUESTED, APPROVAL_DECIDED, CASE_COMMITTED
+
+Optional
+- Console login: http://127.0.0.1:8001/console/login (token = ENGINE_ISE_ADMIN_TOKEN)

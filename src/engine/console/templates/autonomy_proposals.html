@@ -1,0 +1,246 @@
+{% extends "base.html" %}
+
+{% block title %}Autonomy Proposals - Libervia Console{% endblock %}
+
+{% block content %}
+<div class="container">
+    <nav class="breadcrumb">
+        <a href="{{ url_for('console_home') }}">Console</a> &gt;
+        <a href="{{ url_for('console_autonomy') }}">Autonomy</a> &gt;
+        <span>Proposals</span>
+    </nav>
+
+    <h1>Autonomy Proposals</h1>
+    <p class="description">Review and decide on autonomy governance proposals.</p>
+
+    <!-- Navigation -->
+    <div class="nav-tabs">
+        <a href="{{ url_for('console_autonomy') }}" class="tab">Effective Autonomy</a>
+        <a href="{{ url_for('console_autonomy_proposals') }}" class="tab active">Proposals</a>
+    </div>
+
+    <!-- Filters -->
+    <div class="filters">
+        <a href="{{ url_for('console_autonomy_proposals') }}"
+           class="filter-btn {% if not status_filter %}active{% endif %}">All</a>
+        <a href="{{ url_for('console_autonomy_proposals', status='OPEN') }}"
+           class="filter-btn {% if status_filter == 'OPEN' %}active{% endif %}">Open</a>
+        <a href="{{ url_for('console_autonomy_proposals', status='DECIDED') }}"
+           class="filter-btn {% if status_filter == 'DECIDED' %}active{% endif %}">Decided</a>
+    </div>
+
+    <!-- Proposals List -->
+    {% if proposals %}
+    <table class="data-table">
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>Operation</th>
+                <th>Target</th>
+                <th>Status</th>
+                <th>Created</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for proposal in proposals %}
+            <tr>
+                <td>
+                    <a href="{{ url_for('console_autonomy_proposal_detail', proposal_id=proposal.proposal_id) }}">
+                        {{ proposal.proposal_id[:8] }}...
+                    </a>
+                </td>
+                <td>
+                    {% if proposal.autonomy_operation == 'update_level' %}
+                        <span class="badge badge-info">UPDATE LEVEL</span>
+                    {% elif proposal.autonomy_operation == 'create_rule' %}
+                        <span class="badge badge-success">CREATE RULE</span>
+                    {% elif proposal.autonomy_operation == 'update_rule' %}
+                        <span class="badge badge-warning">UPDATE RULE</span>
+                    {% elif proposal.autonomy_operation == 'revoke_rule' %}
+                        <span class="badge badge-danger">REVOKE RULE</span>
+                    {% endif %}
+                </td>
+                <td>
+                    {% if proposal.autonomy_operation == 'update_level' %}
+                        Level → L{{ proposal.autonomy_data.current_level }}
+                    {% else %}
+                        <code>{{ proposal.rule_id or 'N/A' }}</code>
+                    {% endif %}
+                </td>
+                <td>
+                    {% if proposal.status == 'OPEN' %}
+                        <span class="badge badge-warning">OPEN</span>
+                    {% elif proposal.decision == 'approve' %}
+                        <span class="badge badge-success">APPROVED</span>
+                    {% else %}
+                        <span class="badge badge-danger">REJECTED</span>
+                    {% endif %}
+                </td>
+                <td>{{ proposal.created_at[:10] }}</td>
+                <td>
+                    <a href="{{ url_for('console_autonomy_proposal_detail', proposal_id=proposal.proposal_id) }}"
+                       class="btn btn-small">View</a>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% else %}
+    <div class="empty-state">
+        <p>No autonomy proposals found.</p>
+        <a href="{{ url_for('console_autonomy_proposal_new') }}" class="btn btn-primary">Create First Proposal</a>
+    </div>
+    {% endif %}
+
+    <!-- Actions -->
+    <div class="actions">
+        <a href="{{ url_for('console_autonomy_proposal_new') }}" class="btn btn-primary">+ New Proposal</a>
+    </div>
+</div>
+
+<style>
+.description {
+    color: #666;
+    margin-bottom: 1.5rem;
+}
+
+.nav-tabs {
+    display: flex;
+    gap: 0;
+    margin-bottom: 1.5rem;
+    border-bottom: 2px solid #ddd;
+}
+
+.tab {
+    padding: 0.75rem 1.5rem;
+    text-decoration: none;
+    color: #666;
+    border-bottom: 2px solid transparent;
+    margin-bottom: -2px;
+}
+
+.tab:hover {
+    color: #333;
+}
+
+.tab.active {
+    color: #007bff;
+    border-bottom-color: #007bff;
+}
+
+.filters {
+    display: flex;
+    gap: 0.5rem;
+    margin-bottom: 1rem;
+}
+
+.filter-btn {
+    padding: 0.5rem 1rem;
+    background: #f8f9fa;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    text-decoration: none;
+    color: #333;
+}
+
+.filter-btn:hover {
+    background: #e9ecef;
+}
+
+.filter-btn.active {
+    background: #007bff;
+    color: #fff;
+    border-color: #007bff;
+}
+
+.data-table {
+    width: 100%;
+    border-collapse: collapse;
+    background: #fff;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+}
+
+.data-table th,
+.data-table td {
+    padding: 0.75rem;
+    text-align: left;
+    border-bottom: 1px solid #eee;
+}
+
+.data-table th {
+    background: #f8f9fa;
+    font-weight: 600;
+}
+
+.data-table tbody tr:hover {
+    background: #f8f9fa;
+}
+
+.badge {
+    display: inline-block;
+    padding: 0.25rem 0.5rem;
+    border-radius: 3px;
+    font-size: 0.8rem;
+    font-weight: 500;
+}
+
+.badge-success { background: #d4edda; color: #155724; }
+.badge-warning { background: #fff3cd; color: #856404; }
+.badge-danger { background: #f8d7da; color: #721c24; }
+.badge-info { background: #cce5ff; color: #004085; }
+
+.empty-state {
+    text-align: center;
+    padding: 3rem;
+    background: #f8f9fa;
+    border-radius: 4px;
+    color: #666;
+}
+
+.empty-state p {
+    margin-bottom: 1rem;
+}
+
+.actions {
+    margin-top: 1.5rem;
+}
+
+.btn {
+    display: inline-block;
+    padding: 0.5rem 1rem;
+    border-radius: 4px;
+    text-decoration: none;
+    font-size: 1rem;
+}
+
+.btn-small {
+    padding: 0.25rem 0.5rem;
+    font-size: 0.9rem;
+    background: #6c757d;
+    color: #fff;
+}
+
+.btn-small:hover {
+    background: #545b62;
+}
+
+.btn-primary {
+    background: #007bff;
+    color: #fff;
+}
+
+.btn-primary:hover {
+    background: #0056b3;
+}
+
+code {
+    background: #f1f1f1;
+    padding: 0.2rem 0.4rem;
+    border-radius: 3px;
+    font-family: monospace;
+    font-size: 0.9rem;
+}
+</style>
+{% endblock %}

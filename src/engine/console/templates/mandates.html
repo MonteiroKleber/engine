@@ -1,0 +1,74 @@
+{% extends "base.html" %}
+
+{% block title %}AXIOM Console - Mandates{% endblock %}
+
+{% block content %}
+<div class="card">
+    <h3 class="card-title">Effective Mandates</h3>
+    <div style="margin-bottom: 1rem; color: var(--text-secondary);">
+        Source: {{ source }}
+    </div>
+
+    {% if effective_mandates %}
+    <table>
+        <thead>
+            <tr>
+                <th>Mandate ID</th>
+                <th>Endpoint</th>
+                <th>Phase</th>
+                <th>Roles</th>
+                <th>Source</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for mandate in effective_mandates %}
+            <tr>
+                <td class="mono">{{ mandate.mandate_id }}</td>
+                <td class="mono">{{ mandate.endpoint_sig }}</td>
+                <td>{{ mandate.phase }}</td>
+                <td>{{ mandate.allowed_roles|join(', ') }}</td>
+                <td>
+                    {% if mandate.source == 'governed' %}
+                    <span class="badge badge-active">governed</span>
+                    {% else %}
+                    <span class="badge badge-unpinned">bundle</span>
+                    {% endif %}
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% else %}
+    <div class="empty-state">No mandates configured</div>
+    {% endif %}
+
+    <div style="margin-top: 1rem;">
+        <a href="/console/mandates/proposals?institution_id={{ institution_id }}{% if dept_id %}&dept_id={{ dept_id }}{% endif %}"
+           class="btn-link">View Proposals</a>
+        <a href="/console/mandates/proposals/new?institution_id={{ institution_id }}{% if dept_id %}&dept_id={{ dept_id }}{% endif %}"
+           class="btn-link" style="margin-left: 1rem;">+ New Proposal</a>
+    </div>
+</div>
+
+{% if governed_mandates %}
+<div class="card">
+    <h3 class="card-title">Governed Mandates (Overrides)</h3>
+    <div style="margin-bottom: 1rem; color: var(--text-secondary);">
+        {{ governed_count }} mandate(s) governed via proposals
+    </div>
+
+    <ul style="margin: 0; padding-left: 1.5rem;">
+        {% for governed in governed_mandates %}
+        <li style="margin-bottom: 0.5rem;">
+            <span class="mono">{{ governed.mandate_id }}</span>
+            {% if governed.mandate_data %}
+            — {{ governed.mandate_data.endpoint_sig or 'N/A' }}
+            {% else %}
+            — (revoked)
+            {% endif %}
+        </li>
+        {% endfor %}
+    </ul>
+</div>
+{% endif %}
+{% endblock %}

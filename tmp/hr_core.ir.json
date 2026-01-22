@@ -1,0 +1,829 @@
+{
+  "actors": [
+    {
+      "auth": "token",
+      "description": "Creates expenses and hire requests",
+      "id": "operator",
+      "kind": "human",
+      "name": "Operator",
+      "permissions": [
+        "expense.create",
+        "expense.read",
+        "expense.submit",
+        "hr.hire_request.create",
+        "hr.hire_request.read",
+        "hr.hire_request.submit",
+        "hr.candidate.create",
+        "hr.candidate.read",
+        "hr.candidate.update"
+      ]
+    },
+    {
+      "auth": "token",
+      "description": "Approves expenses and hire requests",
+      "id": "manager",
+      "kind": "human",
+      "name": "Manager",
+      "permissions": [
+        "expense.approve",
+        "expense.read",
+        "expense.transition",
+        "hr.hire_request.read",
+        "hr.hire_request.approve",
+        "hr.hire_request.transition",
+        "hr.candidate.read",
+        "hr.candidate.update",
+        "approval.decide"
+      ]
+    },
+    {
+      "auth": "token",
+      "description": "Controller with elevated permissions for auditing",
+      "id": "controller",
+      "kind": "human",
+      "name": "Controller",
+      "permissions": [
+        "expense.approve",
+        "expense.reject",
+        "expense.read",
+        "hr.hire_request.read",
+        "hr.hire_request.approve",
+        "hr.hire_request.reject",
+        "hr.candidate.read",
+        "approval.decide"
+      ]
+    },
+    {
+      "auth": "token",
+      "description": "",
+      "id": "runtime",
+      "kind": "system",
+      "name": "Runtime",
+      "permissions": [
+        "runtime.bundle.load",
+        "runtime.proof.snapshot",
+        "runtime.safe_mode.enter"
+      ]
+    },
+    {
+      "auth": "token",
+      "description": "AI agent for HR operations with limited permissions",
+      "id": "hr_bot",
+      "kind": "system",
+      "name": "HR Bot",
+      "permissions": [
+        "expense.create",
+        "expense.read",
+        "hr.hire_request.read",
+        "hr.hire_request.create",
+        "hr.candidate.read",
+        "hr.candidate.create"
+      ]
+    }
+  ],
+  "department": {
+    "dept_id": "hr",
+    "entrypoints": {
+      "api_prefix": "/hr",
+      "event_prefix": "hr.",
+      "permission_prefix": "hr."
+    },
+    "name": "HR Core",
+    "namespace": "hr",
+    "tenancy": "multi"
+  },
+  "entities": [
+    {
+      "fields": [
+        {
+          "name": "id",
+          "required": true,
+          "type": "uuid",
+          "unique": true
+        },
+        {
+          "indexed": true,
+          "name": "tenant_id",
+          "required": true,
+          "type": "uuid"
+        },
+        {
+          "name": "full_name",
+          "required": true,
+          "type": "string"
+        },
+        {
+          "name": "email",
+          "required": true,
+          "type": "string"
+        },
+        {
+          "name": "phone",
+          "required": false,
+          "type": "string"
+        },
+        {
+          "name": "position_applied",
+          "required": true,
+          "type": "string"
+        },
+        {
+          "name": "dept_name",
+          "required": true,
+          "type": "string"
+        },
+        {
+          "default": "direct",
+          "name": "source",
+          "required": false,
+          "type": "string"
+        },
+        {
+          "name": "resume_url",
+          "required": false,
+          "type": "text"
+        },
+        {
+          "name": "notes",
+          "required": false,
+          "type": "text"
+        },
+        {
+          "indexed": true,
+          "name": "created_by",
+          "required": true,
+          "type": "uuid"
+        },
+        {
+          "name": "created_at",
+          "required": true,
+          "type": "datetime"
+        },
+        {
+          "indexed": true,
+          "name": "state",
+          "required": true,
+          "type": "string"
+        },
+        {
+          "default": 1,
+          "name": "version",
+          "required": true,
+          "type": "int"
+        }
+      ],
+      "name": "Candidate",
+      "storage": {
+        "tenant_field": "tenant_id",
+        "version_field": "version"
+      }
+    },
+    {
+      "fields": [
+        {
+          "name": "id",
+          "required": true,
+          "type": "uuid",
+          "unique": true
+        },
+        {
+          "indexed": true,
+          "name": "tenant_id",
+          "required": true,
+          "type": "uuid"
+        },
+        {
+          "indexed": true,
+          "name": "candidate_id",
+          "required": true,
+          "type": "uuid"
+        },
+        {
+          "name": "position_title",
+          "required": true,
+          "type": "string"
+        },
+        {
+          "name": "dept_name",
+          "required": true,
+          "type": "string"
+        },
+        {
+          "min": 0,
+          "name": "salary_proposed",
+          "required": true,
+          "type": "decimal"
+        },
+        {
+          "default": "BRL",
+          "name": "currency",
+          "required": true,
+          "type": "string"
+        },
+        {
+          "name": "start_date",
+          "required": true,
+          "type": "date"
+        },
+        {
+          "default": "full_time",
+          "name": "employment_type",
+          "required": true,
+          "type": "string"
+        },
+        {
+          "name": "justification",
+          "required": true,
+          "type": "text"
+        },
+        {
+          "indexed": true,
+          "name": "created_by",
+          "required": true,
+          "type": "uuid"
+        },
+        {
+          "name": "created_at",
+          "required": true,
+          "type": "datetime"
+        },
+        {
+          "indexed": true,
+          "name": "state",
+          "required": true,
+          "type": "string"
+        },
+        {
+          "default": 1,
+          "name": "version",
+          "required": true,
+          "type": "int"
+        }
+      ],
+      "name": "HireRequest",
+      "storage": {
+        "tenant_field": "tenant_id",
+        "version_field": "version"
+      }
+    }
+  ],
+  "invariants": [
+    {
+      "applies_to": "HireRequest",
+      "assert": {
+        "kind": "compare",
+        "lhs": {
+          "ref": "HireRequest.salary_proposed",
+          "type": "unknown"
+        },
+        "op": ">",
+        "rhs": {
+          "lit": 0,
+          "type": "int"
+        }
+      },
+      "message": "Proposed salary must be positive.",
+      "name": "HireRequestPositiveSalary",
+      "severity": "critical",
+      "when": {
+        "kind": "always"
+      }
+    },
+    {
+      "applies_to": "HireRequest",
+      "assert": {
+        "kind": "compare",
+        "lhs": {
+          "ref": "HireRequest.justification",
+          "type": "unknown"
+        },
+        "op": "!=",
+        "rhs": {
+          "lit": "",
+          "type": "string"
+        }
+      },
+      "message": "Hire request must include justification.",
+      "name": "HireRequestMustHaveJustification",
+      "severity": "high",
+      "when": {
+        "kind": "always"
+      }
+    },
+    {
+      "applies_to": "HireRequest",
+      "assert": {
+        "kind": "compare",
+        "lhs": {
+          "ref": "HireRequest.dept_name",
+          "type": "unknown"
+        },
+        "op": "!=",
+        "rhs": {
+          "lit": "",
+          "type": "string"
+        }
+      },
+      "message": "Dept name must be specified.",
+      "name": "HireRequestMustHaveDepartment",
+      "severity": "high",
+      "when": {
+        "kind": "always"
+      }
+    },
+    {
+      "applies_to": "Candidate",
+      "assert": {
+        "kind": "compare",
+        "lhs": {
+          "ref": "Candidate.email",
+          "type": "unknown"
+        },
+        "op": "!=",
+        "rhs": {
+          "lit": "",
+          "type": "string"
+        }
+      },
+      "message": "Candidate email is required.",
+      "name": "CandidateMustHaveEmail",
+      "severity": "high",
+      "when": {
+        "kind": "always"
+      }
+    }
+  ],
+  "ir_version": "ircs.v1",
+  "operations": {
+    "api": [
+      {
+        "bind": {
+          "entity": "HireRequest",
+          "kind": "create"
+        },
+        "errors": [
+          400,
+          401,
+          403
+        ],
+        "id": "hire_request_create",
+        "idempotency": "required",
+        "method": "POST",
+        "path": "/hr/hire_requests",
+        "path_params": [],
+        "permission": "hr.hire_request.create",
+        "request_type": "HireRequest",
+        "response_type": "HireRequest",
+        "scope": "tenant"
+      },
+      {
+        "bind": {
+          "entity": "HireRequest",
+          "kind": "read"
+        },
+        "errors": [
+          401,
+          403,
+          404
+        ],
+        "id": "hire_request_get",
+        "idempotency": "none",
+        "method": "GET",
+        "path": "/hr/hire_requests/{id}",
+        "path_params": [
+          "id"
+        ],
+        "permission": "hr.hire_request.read",
+        "request_type": "void",
+        "response_type": "HireRequest",
+        "scope": "tenant"
+      },
+      {
+        "bind": {
+          "entity": "HireRequest",
+          "kind": "transition",
+          "transition": "Submit",
+          "workflow": "HireRequestFlow"
+        },
+        "errors": [
+          400,
+          401,
+          403,
+          409
+        ],
+        "id": "hire_request_submit",
+        "idempotency": "required",
+        "method": "POST",
+        "path": "/hr/hire_requests/{id}/submit",
+        "path_params": [
+          "id"
+        ],
+        "permission": "hr.hire_request.submit",
+        "request_type": "void",
+        "response_type": "HireRequest",
+        "scope": "tenant"
+      },
+      {
+        "bind": {
+          "decision": "approve",
+          "entity": "HireRequest",
+          "kind": "approval",
+          "transition": "Approve",
+          "workflow": "HireRequestFlow"
+        },
+        "errors": [
+          400,
+          401,
+          403,
+          409
+        ],
+        "id": "hire_request_approve",
+        "idempotency": "required",
+        "method": "POST",
+        "path": "/hr/hire_requests/{id}/approve",
+        "path_params": [
+          "id"
+        ],
+        "permission": "hr.hire_request.approve",
+        "request_type": "void",
+        "response_type": "HireRequest",
+        "scope": "tenant"
+      },
+      {
+        "bind": {
+          "decision": "reject",
+          "entity": "HireRequest",
+          "kind": "approval",
+          "transition": "Reject",
+          "workflow": "HireRequestFlow"
+        },
+        "errors": [
+          400,
+          401,
+          403,
+          409
+        ],
+        "id": "hire_request_reject",
+        "idempotency": "required",
+        "method": "POST",
+        "path": "/hr/hire_requests/{id}/reject",
+        "path_params": [
+          "id"
+        ],
+        "permission": "hr.hire_request.reject",
+        "request_type": "void",
+        "response_type": "HireRequest",
+        "scope": "tenant"
+      },
+      {
+        "bind": {
+          "entity": "Candidate",
+          "kind": "create"
+        },
+        "errors": [
+          400,
+          401,
+          403
+        ],
+        "id": "candidate_create",
+        "idempotency": "required",
+        "method": "POST",
+        "path": "/hr/candidates",
+        "path_params": [],
+        "permission": "hr.candidate.create",
+        "request_type": "Candidate",
+        "response_type": "Candidate",
+        "scope": "tenant"
+      },
+      {
+        "bind": {
+          "entity": "Candidate",
+          "kind": "read"
+        },
+        "errors": [
+          401,
+          403,
+          404
+        ],
+        "id": "candidate_get",
+        "idempotency": "none",
+        "method": "GET",
+        "path": "/hr/candidates/{id}",
+        "path_params": [
+          "id"
+        ],
+        "permission": "hr.candidate.read",
+        "request_type": "void",
+        "response_type": "Candidate",
+        "scope": "tenant"
+      }
+    ]
+  },
+  "policy_context": {
+    "schema": [
+      {
+        "name": "jurisdiction",
+        "required": true,
+        "type": "string"
+      },
+      {
+        "default": "low",
+        "name": "risk_level",
+        "required": false,
+        "type": "string"
+      },
+      {
+        "default": 15000,
+        "name": "salary_threshold",
+        "required": false,
+        "type": "decimal"
+      }
+    ]
+  },
+  "runtime": {
+    "gate_order": [
+      "safe_mode",
+      "rbac",
+      "policy_pre",
+      "sod",
+      "workflow",
+      "invariants",
+      "commit",
+      "policy_post",
+      "ledger_finalize"
+    ],
+    "proof": {
+      "snapshot_enabled": true
+    },
+    "safe_mode": {
+      "enabled": true,
+      "on_contract_tamper": "enter",
+      "on_invariant_violation": "enter"
+    }
+  },
+  "separation_of_duties": [
+    {
+      "forbid": {
+        "action": "Approve",
+        "when": {
+          "kind": "compare",
+          "lhs": {
+            "ref": "actor.id",
+            "type": "unknown"
+          },
+          "op": "==",
+          "rhs": {
+            "ref": "HireRequest.created_by",
+            "type": "unknown"
+          }
+        }
+      },
+      "message": "Creator cannot approve their own hire request.",
+      "name": "NoSelfApprovalHireRequest",
+      "on_entity": "HireRequest",
+      "severity": "critical"
+    }
+  ],
+  "source_idl_sha256": "4b6e00f1fe2ce218b82423e96f327955f68cb877cb344aecdb87524ace70305d",
+  "source_idl_version": "idl.v1.2.2",
+  "system": {
+    "contact": "hr@acmepeople.example",
+    "description": "Human Resources governance for ACME People Operations",
+    "domain": "hr",
+    "id": "HRCore",
+    "name": "HR Core",
+    "owner": "ACME People Operations"
+  },
+  "workflows": [
+    {
+      "name": "HireRequestFlow",
+      "on_entity": "HireRequest",
+      "state_field": "state",
+      "states": [
+        {
+          "initial": true,
+          "name": "Draft",
+          "terminal": false
+        },
+        {
+          "initial": false,
+          "name": "PendingApproval",
+          "terminal": false
+        },
+        {
+          "initial": false,
+          "name": "Approved",
+          "terminal": true
+        },
+        {
+          "initial": false,
+          "name": "Rejected",
+          "terminal": true
+        }
+      ],
+      "transitions": [
+        {
+          "approvals": null,
+          "effects": [
+            {
+              "kind": "set_state",
+              "value": "PendingApproval"
+            },
+            {
+              "by": 1,
+              "field": "version",
+              "kind": "bump_version"
+            }
+          ],
+          "from": "Draft",
+          "guard": {
+            "kind": "compare",
+            "lhs": {
+              "ref": "HireRequest.salary_proposed",
+              "type": "unknown"
+            },
+            "op": ">",
+            "rhs": {
+              "lit": 0,
+              "type": "int"
+            }
+          },
+          "name": "Submit",
+          "to": "PendingApproval"
+        },
+        {
+          "approvals": {
+            "distinct_actors": true,
+            "expires_in": "72h",
+            "quorum": 1,
+            "roles": [
+              "manager",
+              "controller"
+            ]
+          },
+          "effects": [
+            {
+              "kind": "set_state",
+              "value": "Approved"
+            },
+            {
+              "by": 1,
+              "field": "version",
+              "kind": "bump_version"
+            }
+          ],
+          "from": "PendingApproval",
+          "guard": {
+            "kind": "always"
+          },
+          "name": "Approve",
+          "to": "Approved"
+        },
+        {
+          "approvals": {
+            "distinct_actors": true,
+            "expires_in": "72h",
+            "quorum": 1,
+            "roles": [
+              "manager",
+              "controller"
+            ]
+          },
+          "effects": [
+            {
+              "kind": "set_state",
+              "value": "Rejected"
+            },
+            {
+              "by": 1,
+              "field": "version",
+              "kind": "bump_version"
+            }
+          ],
+          "from": "PendingApproval",
+          "guard": {
+            "kind": "always"
+          },
+          "name": "Reject",
+          "to": "Rejected"
+        }
+      ]
+    },
+    {
+      "name": "CandidateFlow",
+      "on_entity": "Candidate",
+      "state_field": "state",
+      "states": [
+        {
+          "initial": true,
+          "name": "Active",
+          "terminal": false
+        },
+        {
+          "initial": false,
+          "name": "Hired",
+          "terminal": true
+        },
+        {
+          "initial": false,
+          "name": "Rejected",
+          "terminal": true
+        },
+        {
+          "initial": false,
+          "name": "Withdrawn",
+          "terminal": true
+        }
+      ],
+      "transitions": [
+        {
+          "approvals": null,
+          "effects": [
+            {
+              "kind": "set_state",
+              "value": "Hired"
+            },
+            {
+              "by": 1,
+              "field": "version",
+              "kind": "bump_version"
+            }
+          ],
+          "from": "Active",
+          "guard": {
+            "kind": "compare",
+            "lhs": {
+              "ref": "Candidate.state",
+              "type": "unknown"
+            },
+            "op": "==",
+            "rhs": {
+              "lit": "Active",
+              "type": "string"
+            }
+          },
+          "name": "MarkHired",
+          "to": "Hired"
+        },
+        {
+          "approvals": null,
+          "effects": [
+            {
+              "kind": "set_state",
+              "value": "Rejected"
+            },
+            {
+              "by": 1,
+              "field": "version",
+              "kind": "bump_version"
+            }
+          ],
+          "from": "Active",
+          "guard": {
+            "kind": "compare",
+            "lhs": {
+              "ref": "Candidate.state",
+              "type": "unknown"
+            },
+            "op": "==",
+            "rhs": {
+              "lit": "Active",
+              "type": "string"
+            }
+          },
+          "name": "MarkRejected",
+          "to": "Rejected"
+        },
+        {
+          "approvals": null,
+          "effects": [
+            {
+              "kind": "set_state",
+              "value": "Withdrawn"
+            },
+            {
+              "by": 1,
+              "field": "version",
+              "kind": "bump_version"
+            }
+          ],
+          "from": "Active",
+          "guard": {
+            "kind": "compare",
+            "lhs": {
+              "ref": "Candidate.state",
+              "type": "unknown"
+            },
+            "op": "==",
+            "rhs": {
+              "lit": "Active",
+              "type": "string"
+            }
+          },
+          "name": "MarkWithdrawn",
+          "to": "Withdrawn"
+        }
+      ]
+    }
+  ]
+}

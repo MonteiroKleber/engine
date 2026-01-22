@@ -1,0 +1,14 @@
+{
+  "expense": {
+    "amount": {
+      "max": 1000000000,
+      "min": 0.01
+    },
+    "description": {
+      "max_len": 280,
+      "required": false
+    }
+  },
+  "name": "invariants",
+  "version": "1.0"
+}

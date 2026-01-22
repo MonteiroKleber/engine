@@ -17,6 +17,7 @@ from engine.core.errors import (
     INSTITUTION_ID_INVALID,
     INSTITUTIONS_REGISTRY_UNAVAILABLE,
     INSTITUTION_META_UNAVAILABLE,
+    INSTITUTION_SECURE_CONFIG_REQUIRED,
 )
 from engine.core.ledger import get_ledger
 from engine.core.actor_context import DEFAULT_TENANT_ID
@@ -276,6 +277,10 @@ class InstitutionsRegistry:
     ) -> tuple[Optional[Institution], Optional[str], Optional[str]]:
         """Create a new institution.
 
+        GAP 5: In ENGINE_INSTALL_MODE=prod, automatically creates
+        config/ACTIVE.json with secure defaults. Fails if config cannot
+        be created (GAP 5.3 - non-silent prod).
+
         Args:
             slug: Unique slug for the institution.
             display_name: Optional display name.
@@ -326,10 +331,77 @@ class InstitutionsRegistry:
             if not self._save_institution_meta(institution):
                 return None, INSTITUTION_META_UNAVAILABLE, "Failed to save institution metadata"
 
+            # GAP 5/5.3: Create secure config in production mode (mandatory)
+            ok, error_code, error_message = self._create_secure_config_if_prod(institution_id)
+            if not ok:
+                # In prod mode, secure config is required - fail creation
+                return None, error_code, error_message
+
             # Emit ledger event
             self._emit_created_event(institution)
 
             return institution, None, None
+
+    def _create_secure_config_if_prod(
+        self, institution_id: str
+    ) -> tuple[bool, Optional[str], Optional[str]]:
+        """Create secure config for institution if in production mode.
+
+        GAP 5: In ENGINE_INSTALL_MODE=prod, new institutions must start
+        with secure defaults (require_institution_header_for_runtime=True,
+        allow_legacy_routes=False, enable_contracts_stub=False).
+
+        GAP 5.3: In prod mode, failure to create secure config is a hard
+        error that fails institution creation (non-silent).
+        In dev mode, failure is logged but does not fail creation.
+
+        Args:
+            institution_id: Institution UUID.
+
+        Returns:
+            (True, None, None) on success or dev mode.
+            (False, error_code, error_message) on prod mode failure.
+        """
+        from engine.core.install_mode import is_prod_mode
+
+        prod_mode = is_prod_mode()
+
+        if not prod_mode:
+            return True, None, None  # Dev mode - skip secure config creation
+
+        try:
+            from engine.core.institution_config import create_secure_config_for_institution
+
+            config, error_code, error_message = create_secure_config_for_institution(
+                institution_id=institution_id,
+                updated_by="system:secure_defaults",
+            )
+
+            if error_code:
+                # GAP 5.3: In prod mode, this is a hard failure
+                return (
+                    False,
+                    INSTITUTION_SECURE_CONFIG_REQUIRED,
+                    f"Production mode requires secure config creation. "
+                    f"Failed: [{error_code}] {error_message}",
+                )
+
+            return True, None, None
+
+        except Exception as e:
+            # GAP 5.3: In prod mode, exceptions are hard failures
+            import logging
+            logging.getLogger(__name__).error(
+                "Exception creating secure config for institution %s: %s",
+                institution_id,
+                str(e),
+            )
+            return (
+                False,
+                INSTITUTION_SECURE_CONFIG_REQUIRED,
+                f"Production mode requires secure config creation. "
+                f"Exception: {str(e)}",
+            )
 
     def get_by_slug(self, slug: str) -> tuple[Optional[Institution], Optional[str], Optional[str]]:
         """Get institution by slug.

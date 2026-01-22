@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AXIOM Console - Login</title>
+    <link rel="stylesheet" href="/console/static/style.css">
+</head>
+<body>
+    <header>
+        <div class="container">
+            <div class="logo">AXIOM Console</div>
+        </div>
+    </header>
+
+    <main class="container">
+        <div class="card" style="max-width: 400px; margin: 2rem auto;">
+            <h2>Console Login</h2>
+
+            {% if error %}
+            <div style="color: var(--error-color, #dc3545); background: #f8d7da; padding: 0.75rem; border-radius: 4px; margin-bottom: 1rem;">
+                {{ error }}
+            </div>
+            {% endif %}
+
+            {% if expired %}
+            <div style="color: var(--warning-color, #856404); background: #fff3cd; padding: 0.75rem; border-radius: 4px; margin-bottom: 1rem;">
+                Session expired. Please login again.
+            </div>
+            {% endif %}
+
+            <form method="POST" action="/console/login">
+                <input type="hidden" name="next" value="{{ next }}">
+
+                <div style="margin-bottom: 1rem;">
+                    <label for="token" style="display: block; margin-bottom: 0.25rem; font-weight: 500;">Admin Token:</label>
+                    <input
+                        type="password"
+                        id="token"
+                        name="token"
+                        required
+                        placeholder="Paste your admin token"
+                        style="width: 100%; padding: 0.5rem; border: 1px solid var(--border-color, #dee2e6); border-radius: 4px; box-sizing: border-box;"
+                        autocomplete="current-password"
+                    >
+                </div>
+
+                <button type="submit" style="width: 100%; padding: 0.75rem; background: var(--primary-color, #0066cc); color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 1rem;">
+                    Login
+                </button>
+            </form>
+
+            <p style="margin-top: 1rem; font-size: 0.875rem; color: var(--text-secondary, #6c757d);">
+                Token is validated against ENGINE_ISE_ADMIN_TOKEN environment variable.
+            </p>
+        </div>
+    </main>
+</body>
+</html>

@@ -1,0 +1,140 @@
+{% extends "base.html" %}
+
+{% block title %}AXIOM Console - Denied Attempts{% endblock %}
+
+{% block content %}
+<div class="card">
+    <h3 class="card-title">Denied Attempts</h3>
+    <p style="color: var(--text-secondary); margin-bottom: 1rem;">
+        Operations that were blocked by governance gates. Filter by gate type or actor.
+    </p>
+
+    <!-- Filters -->
+    <form method="get" style="margin-bottom: 1rem; display: flex; gap: 0.5rem; flex-wrap: wrap; align-items: center;">
+        <input type="hidden" name="institution_id" value="{{ institution_id }}">
+        {% if dept_id %}
+        <input type="hidden" name="dept_id" value="{{ dept_id }}">
+        {% endif %}
+
+        <label style="color: var(--text-secondary);">Gate:</label>
+        <select name="gate" style="padding: 0.25rem 0.5rem;">
+            <option value="">All gates</option>
+            {% for g in available_gates %}
+            <option value="{{ g }}" {% if filters.gate == g %}selected{% endif %}>{{ g }}</option>
+            {% endfor %}
+        </select>
+
+        <label style="color: var(--text-secondary); margin-left: 0.5rem;">Actor:</label>
+        <input type="text" name="actor_id" placeholder="actor_id"
+               value="{{ filters.actor_id or '' }}"
+               style="padding: 0.25rem 0.5rem; width: 200px;">
+
+        <button type="submit" class="btn btn-primary" style="padding: 0.25rem 0.75rem;">Filter</button>
+
+        {% if filters.gate or filters.actor_id %}
+        <a href="/console/denied?institution_id={{ institution_id }}{% if dept_id %}&dept_id={{ dept_id }}{% endif %}"
+           class="btn btn-secondary" style="padding: 0.25rem 0.75rem;">Clear</a>
+        {% endif %}
+    </form>
+
+    <!-- Gate Legend -->
+    <div style="margin-bottom: 1rem; padding: 0.75rem; background: var(--bg-secondary); border-radius: 4px;">
+        <strong style="color: var(--text-secondary); font-size: 0.875rem;">Gate Types:</strong>
+        <div style="display: flex; gap: 1rem; flex-wrap: wrap; margin-top: 0.5rem; font-size: 0.85rem;">
+            <span><strong>rbac</strong>: Role-based access control</span>
+            <span><strong>policy</strong>: Policy pre/post conditions</span>
+            <span><strong>mandate</strong>: Mandate requirements</span>
+            <span><strong>autonomy</strong>: Autonomy level checks</span>
+            <span><strong>sod</strong>: Separation of duties</span>
+        </div>
+    </div>
+
+    {% if denied_events %}
+    <table>
+        <thead>
+            <tr>
+                <th>Timestamp</th>
+                <th>Actor</th>
+                <th>Gate</th>
+                <th>Reason</th>
+                <th>Step</th>
+                <th>Dept</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for event in denied_events %}
+            <tr>
+                <td>{{ event.timestamp[:19] }}</td>
+                <td>
+                    <a href="/console/agents/{{ event.actor_id }}?institution_id={{ institution_id }}{% if dept_id %}&dept_id={{ dept_id }}{% endif %}"
+                       class="mono" style="font-size: 0.85rem;">{{ event.actor_id }}</a>
+                </td>
+                <td>
+                    <span class="badge badge-error" style="font-size: 0.75rem;">{{ event.event_type }}</span>
+                </td>
+                <td>{{ event.reason }}</td>
+                <td>{{ event.step }}</td>
+                <td>{{ event.dept_id or '-' }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    <div style="margin-top: 0.5rem; color: var(--text-secondary);">
+        Showing {{ denied_events | length }} denied attempt(s)
+        {% if filters.gate %} filtered by gate: <strong>{{ filters.gate }}</strong>{% endif %}
+        {% if filters.actor_id %} filtered by actor: <strong>{{ filters.actor_id }}</strong>{% endif %}
+    </div>
+    {% else %}
+    <div class="empty-state">
+        <p>No denied attempts found</p>
+        {% if filters.gate or filters.actor_id %}
+        <p style="font-size: 0.875rem; margin-top: 0.5rem;">
+            Try adjusting your filters or <a href="/console/denied?institution_id={{ institution_id }}{% if dept_id %}&dept_id={{ dept_id }}{% endif %}">clear all filters</a>.
+        </p>
+        {% else %}
+        <p style="font-size: 0.875rem; margin-top: 0.5rem;">
+            All operations have been allowed through governance gates.
+        </p>
+        {% endif %}
+    </div>
+    {% endif %}
+</div>
+
+<!-- Summary by Gate -->
+<div class="card" style="margin-top: 1rem;">
+    <h3 class="card-title">Detection Criteria</h3>
+    <p style="color: var(--text-secondary); margin-bottom: 1rem;">
+        Denied attempts are detected using deterministic rules based on event payload fields:
+    </p>
+    <table style="font-size: 0.875rem;">
+        <thead>
+            <tr>
+                <th>Event Type</th>
+                <th>Detection Condition</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td><code>RBAC_DECISION</code></td>
+                <td><code>payload.allowed == false</code></td>
+            </tr>
+            <tr>
+                <td><code>POLICY_PRE_DECISION</code>, <code>POLICY_POST_DECISION</code></td>
+                <td><code>payload.allowed == false</code></td>
+            </tr>
+            <tr>
+                <td><code>MANDATE_EVALUATED</code></td>
+                <td><code>payload.allowed == false</code></td>
+            </tr>
+            <tr>
+                <td><code>AUTONOMY_EVALUATED</code></td>
+                <td><code>payload.allowed == false</code></td>
+            </tr>
+            <tr>
+                <td><code>SOD_VIOLATION</code></td>
+                <td>Always (any SOD_VIOLATION event is a denial)</td>
+            </tr>
+        </tbody>
+    </table>
+</div>
+{% endblock %}

@@ -1,0 +1,250 @@
+components:
+  schemas:
+    Expense:
+      properties:
+        amount:
+          type: string
+        category:
+          type: string
+        created_at:
+          type: string
+        created_by:
+          type: string
+        currency:
+          type: string
+        description:
+          type: string
+        id:
+          type: string
+        state:
+          type: string
+        tenant_id:
+          type: string
+        version:
+          type: string
+      required:
+      - id
+      - tenant_id
+      - amount
+      - currency
+      - description
+      - category
+      - created_by
+      - created_at
+      - state
+      - version
+      type: object
+    GoodsReceived:
+      properties:
+        condition:
+          type: string
+        id:
+          type: string
+        notes:
+          type: string
+        purchase_request_id:
+          type: string
+        received_at:
+          type: string
+        received_by:
+          type: string
+        state:
+          type: string
+        tenant_id:
+          type: string
+        version:
+          type: string
+      required:
+      - id
+      - tenant_id
+      - purchase_request_id
+      - received_by
+      - received_at
+      - condition
+      - state
+      - version
+      type: object
+    PurchaseRequest:
+      properties:
+        amount:
+          type: string
+        created_at:
+          type: string
+        created_by:
+          type: string
+        currency:
+          type: string
+        id:
+          type: string
+        items:
+          type: string
+        state:
+          type: string
+        tenant_id:
+          type: string
+        urgency:
+          type: string
+        vendor:
+          type: string
+        version:
+          type: string
+      required:
+      - id
+      - tenant_id
+      - amount
+      - currency
+      - vendor
+      - items
+      - urgency
+      - created_by
+      - created_at
+      - state
+      - version
+      type: object
+  securitySchemes:
+    ActorHeader:
+      in: header
+      name: X-Actor-Id
+      type: apiKey
+info:
+  title: Acme Core API
+  version: idl.v1.2.2
+openapi: 3.0.3
+paths:
+  /approvals/{id}/decide:
+    post:
+      operationId: decide_approval
+      parameters:
+      - in: path
+        name: id
+        required: true
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              properties:
+                decision:
+                  enum:
+                  - approve
+                  - reject
+                  type: string
+              required:
+              - decision
+              type: object
+        required: true
+      responses:
+        '200':
+          description: Decision recorded
+        '403':
+          description: Forbidden
+        '404':
+          description: Not found
+        '409':
+          description: SoD violation
+      summary: Decide on approval
+      tags:
+      - approvals
+  /finance/expenses:
+    post:
+      operationId: create_expense
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Expense'
+        required: true
+      responses:
+        '202':
+          content:
+            application/json:
+              schema:
+                properties:
+                  approval_id:
+                    type: string
+                  expense_id:
+                    type: string
+                  status:
+                    type: string
+                type: object
+          description: Created (pending approval)
+        '422':
+          description: Validation error
+      summary: Create Expense
+      tags:
+      - finance
+  /finance/goodsreceiveds:
+    post:
+      operationId: create_goodsreceived
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/GoodsReceived'
+        required: true
+      responses:
+        '202':
+          content:
+            application/json:
+              schema:
+                properties:
+                  approval_id:
+                    type: string
+                  goodsreceived_id:
+                    type: string
+                  status:
+                    type: string
+                type: object
+          description: Created (pending approval)
+        '422':
+          description: Validation error
+      summary: Create GoodsReceived
+      tags:
+      - finance
+  /finance/purchaserequests:
+    post:
+      operationId: create_purchaserequest
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PurchaseRequest'
+        required: true
+      responses:
+        '202':
+          content:
+            application/json:
+              schema:
+                properties:
+                  approval_id:
+                    type: string
+                  purchaserequest_id:
+                    type: string
+                  status:
+                    type: string
+                type: object
+          description: Created (pending approval)
+        '422':
+          description: Validation error
+      summary: Create PurchaseRequest
+      tags:
+      - finance
+  /health:
+    get:
+      operationId: health_check
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                properties:
+                  mode:
+                    type: string
+                  status:
+                    type: string
+                type: object
+          description: Healthy
+      summary: Health check
+      tags:
+      - system

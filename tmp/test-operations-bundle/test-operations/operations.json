@@ -1,0 +1,37 @@
+{
+  "operations": [
+    {
+      "endpoint_sig": "POST /approvals/{approval_id}/decide",
+      "errors": [
+        400,
+        401,
+        403
+      ],
+      "idempotency": "none",
+      "method": "POST",
+      "operation_id": "approval_decide",
+      "path": "/approvals/{approval_id}/decide",
+      "permission": "approval.decide",
+      "scope": "tenant"
+    },
+    {
+      "bind": {
+        "entity": "Expense",
+        "kind": "create"
+      },
+      "endpoint_sig": "POST /finance/expenses",
+      "errors": [
+        400,
+        401,
+        403
+      ],
+      "idempotency": "none",
+      "method": "POST",
+      "operation_id": "expense_create",
+      "path": "/finance/expenses",
+      "permission": "expense.create",
+      "scope": "tenant"
+    }
+  ],
+  "operations_schema_version": "1.0"
+}

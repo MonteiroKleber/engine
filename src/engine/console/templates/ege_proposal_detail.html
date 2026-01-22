@@ -1,0 +1,111 @@
+{% extends "base.html" %}
+
+{% block title %}AXIOM Console - EGE Proposal Detail{% endblock %}
+
+{% block content %}
+<div class="card">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+        <h3 class="card-title" style="margin-bottom: 0;">Proposal: {{ proposal.proposal_id[:12] }}...</h3>
+        {% if proposal.status == 'OPEN' %}
+        <span class="badge badge-unpinned">OPEN</span>
+        {% elif proposal.decision == 'accept' %}
+        <span class="badge badge-active">ACCEPTED</span>
+        {% elif proposal.decision == 'block' %}
+        <span class="badge badge-error">BLOCKED</span>
+        {% else %}
+        <span class="badge">{{ proposal.status }}</span>
+        {% endif %}
+    </div>
+
+    <div class="info-row">
+        <span class="info-label">Proposal ID:</span>
+        <span class="info-value mono">{{ proposal.proposal_id }}</span>
+    </div>
+    <div class="info-row">
+        <span class="info-label">Created:</span>
+        <span class="info-value">{{ proposal.created_at }}</span>
+    </div>
+    {% if is_pin_proposal %}
+    <div class="info-row">
+        <span class="info-label">Type:</span>
+        <span class="info-value"><span class="badge badge-unpinned">PIN_UPDATE</span></span>
+    </div>
+    {% if pin_metadata %}
+    <div class="info-row">
+        <span class="info-label">Release ID:</span>
+        <span class="info-value mono">{{ pin_metadata.release_id }}</span>
+    </div>
+    <div class="info-row">
+        <span class="info-label">Bundle:</span>
+        <span class="info-value mono">{{ pin_metadata.bundle_name }}</span>
+    </div>
+    {% endif %}
+    {% endif %}
+</div>
+
+<!-- Hash Diff -->
+<div class="card" style="margin-top: 1rem;">
+    <h4 style="margin-bottom: 1rem;">Hash Comparison</h4>
+
+    <div class="grid grid-2" style="gap: 1rem;">
+        <div>
+            <h5 style="color: var(--text-secondary); margin-bottom: 0.5rem;">Expected (Pinned)</h5>
+            <div class="code-block" style="font-size: 0.75rem;">
+                <div><strong>Manifest:</strong></div>
+                <div class="mono">{{ proposal.expected_bundle_manifest_sha256 or '(none)' }}</div>
+                <div style="margin-top: 0.5rem;"><strong>Ledger:</strong></div>
+                <div class="mono">{{ proposal.expected_contract_ledger_sha256 or '(none)' }}</div>
+            </div>
+        </div>
+        <div>
+            <h5 style="color: var(--text-secondary); margin-bottom: 0.5rem;">Observed (Current)</h5>
+            <div class="code-block" style="font-size: 0.75rem;">
+                <div><strong>Manifest:</strong></div>
+                <div class="mono">{{ proposal.observed_bundle_manifest_sha256 or '(none)' }}</div>
+                <div style="margin-top: 0.5rem;"><strong>Ledger:</strong></div>
+                <div class="mono">{{ proposal.observed_contract_ledger_sha256 or '(none)' }}</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Decision Info (if decided) -->
+{% if proposal.status == 'DECIDED' %}
+<div class="card" style="margin-top: 1rem;">
+    <h4 style="margin-bottom: 1rem;">Decision</h4>
+
+    <div class="info-row">
+        <span class="info-label">Decision:</span>
+        <span class="info-value">
+            {% if proposal.decision == 'accept' %}
+            <span class="badge badge-active">ACCEPTED</span>
+            {% elif proposal.decision == 'block' %}
+            <span class="badge badge-error">BLOCKED</span>
+            {% else %}
+            {{ proposal.decision }}
+            {% endif %}
+        </span>
+    </div>
+    {% if proposal.reason %}
+    <div class="info-row">
+        <span class="info-label">Reason:</span>
+        <span class="info-value">{{ proposal.reason }}</span>
+    </div>
+    {% endif %}
+    <div class="info-row">
+        <span class="info-label">Decided at:</span>
+        <span class="info-value">{{ proposal.decided_at }}</span>
+    </div>
+    {% if proposal.decider_actor_id %}
+    <div class="info-row">
+        <span class="info-label">Decided by:</span>
+        <span class="info-value">{{ proposal.decider_actor_id }}</span>
+    </div>
+    {% endif %}
+</div>
+{% endif %}
+
+<div style="margin-top: 1rem;">
+    <a href="/console/ege/proposals?institution_id={{ institution_id }}" class="btn-link">&larr; Back to Proposals</a>
+</div>
+{% endblock %}

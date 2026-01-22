@@ -1,0 +1,108 @@
+{% extends "base.html" %}
+
+{% block title %}AXIOM Console - New Mandate Proposal{% endblock %}
+
+{% block content %}
+<div class="card">
+    <h3 class="card-title">Create Mandate Proposal</h3>
+
+    {% if error %}
+    <div style="background: var(--error-bg, #f8d7da); border-left: 4px solid var(--error-color, #dc3545); padding: 0.75rem 1rem; margin-bottom: 1rem; color: var(--error-color, #721c24);">
+        {{ error }}
+    </div>
+    {% endif %}
+
+    <form method="POST" action="/console/mandates/proposals">
+        <input type="hidden" name="institution_id" value="{{ institution_id }}">
+        {% if dept_id %}
+        <input type="hidden" name="dept_id" value="{{ dept_id }}">
+        {% endif %}
+        {% if csrf_token %}<input type="hidden" name="_csrf_token" value="{{ csrf_token }}">{% endif %}
+
+        <div class="form-group" style="margin-bottom: 1rem;">
+            <label style="display: block; margin-bottom: 0.5rem; font-weight: 500;">Operation</label>
+            <div style="display: flex; flex-direction: column; gap: 0.5rem;">
+                <label style="display: flex; align-items: center; gap: 0.5rem;">
+                    <input type="radio" name="operation" value="create" checked>
+                    Create new mandate
+                </label>
+                <label style="display: flex; align-items: center; gap: 0.5rem;">
+                    <input type="radio" name="operation" value="update">
+                    Update existing mandate
+                </label>
+                <label style="display: flex; align-items: center; gap: 0.5rem;">
+                    <input type="radio" name="operation" value="revoke">
+                    Revoke mandate
+                </label>
+            </div>
+        </div>
+
+        <div class="form-group" style="margin-bottom: 1rem;">
+            <label for="mandate_id" style="display: block; margin-bottom: 0.5rem; font-weight: 500;">Mandate ID</label>
+            <input type="text" id="mandate_id" name="mandate_id" required
+                   style="width: 100%; padding: 0.5rem; font-family: monospace;"
+                   placeholder="e.g., M001">
+        </div>
+
+        <div class="form-group" style="margin-bottom: 1rem;" id="mandate-data-group">
+            <label for="mandate_data" style="display: block; margin-bottom: 0.5rem; font-weight: 500;">
+                Mandate Data (JSON)
+                <span style="font-weight: normal; color: var(--text-secondary);">— required for create/update</span>
+            </label>
+            <textarea id="mandate_data" name="mandate_data" rows="12"
+                      style="width: 100%; padding: 0.5rem; font-family: monospace; resize: vertical;"
+                      placeholder='{
+  "mandate_id": "M001",
+  "endpoint_sig": "POST /api/invoices",
+  "phase": "PRE",
+  "allowed_roles": ["admin", "manager"],
+  "limits": []
+}'></textarea>
+        </div>
+
+        <div class="form-group" style="margin-bottom: 1rem;">
+            <label for="reason" style="display: block; margin-bottom: 0.5rem; font-weight: 500;">Reason for Proposal</label>
+            <textarea id="reason" name="reason" rows="3" required
+                      style="width: 100%; padding: 0.5rem; resize: vertical;"
+                      placeholder="Explain why this mandate change is needed..."></textarea>
+        </div>
+
+        <div style="display: flex; gap: 1rem;">
+            <a href="/console/mandates/proposals?institution_id={{ institution_id }}{% if dept_id %}&dept_id={{ dept_id }}{% endif %}"
+               class="btn-link">Cancel</a>
+            <button type="submit" style="padding: 0.5rem 1rem; cursor: pointer;">Submit Proposal</button>
+        </div>
+    </form>
+</div>
+
+<script>
+// Show/hide mandate data based on operation
+document.querySelectorAll('input[name="operation"]').forEach(radio => {
+    radio.addEventListener('change', function() {
+        const dataGroup = document.getElementById('mandate-data-group');
+        const textarea = document.getElementById('mandate_data');
+        if (this.value === 'revoke') {
+            dataGroup.style.opacity = '0.5';
+            textarea.removeAttribute('required');
+        } else {
+            dataGroup.style.opacity = '1';
+        }
+    });
+});
+
+// Basic JSON validation on submit
+document.querySelector('form').addEventListener('submit', function(e) {
+    const operation = document.querySelector('input[name="operation"]:checked').value;
+    const mandateData = document.getElementById('mandate_data').value.trim();
+
+    if (operation !== 'revoke' && mandateData) {
+        try {
+            JSON.parse(mandateData);
+        } catch (err) {
+            e.preventDefault();
+            alert('Invalid JSON in mandate data: ' + err.message);
+        }
+    }
+});
+</script>
+{% endblock %}

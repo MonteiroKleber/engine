@@ -1,0 +1,126 @@
+{
+  "name": "workflows",
+  "version": "1.0",
+  "workflows": [
+    {
+      "name": "expense_approve",
+      "steps": [
+        {
+          "action": "approval: post /finance/expenses/{id}/approve",
+          "actor_ref": "actor-manager",
+          "entity_ref": "entity-expense",
+          "step_key": "step-000"
+        }
+      ],
+      "workflow_key": "workflow-expense_approve"
+    },
+    {
+      "name": "expense_create",
+      "steps": [
+        {
+          "action": "create: post /finance/expenses",
+          "actor_ref": "actor-operator",
+          "entity_ref": "entity-expense",
+          "step_key": "step-000"
+        }
+      ],
+      "workflow_key": "workflow-expense_create"
+    },
+    {
+      "name": "expense_get",
+      "steps": [
+        {
+          "action": "read: get /finance/expenses/{id}",
+          "actor_ref": "actor-operator",
+          "entity_ref": "entity-expense",
+          "step_key": "step-000"
+        }
+      ],
+      "workflow_key": "workflow-expense_get"
+    },
+    {
+      "name": "expense_reject",
+      "steps": [
+        {
+          "action": "approval: post /finance/expenses/{id}/reject",
+          "actor_ref": "actor-user",
+          "entity_ref": "entity-expense",
+          "step_key": "step-000"
+        }
+      ],
+      "workflow_key": "workflow-expense_reject"
+    },
+    {
+      "name": "expense_submit",
+      "steps": [
+        {
+          "action": "transition: post /finance/expenses/{id}/submit",
+          "actor_ref": "actor-operator",
+          "entity_ref": "entity-expense",
+          "step_key": "step-000"
+        }
+      ],
+      "workflow_key": "workflow-expense_submit"
+    },
+    {
+      "name": "goods_received_confirm",
+      "steps": [
+        {
+          "action": "transition: post /ops/goods_received/{id}/confirm",
+          "actor_ref": "actor-user",
+          "entity_ref": "entity-expense",
+          "step_key": "step-000"
+        }
+      ],
+      "workflow_key": "workflow-goods_received_confirm"
+    },
+    {
+      "name": "goods_received_create",
+      "steps": [
+        {
+          "action": "create: post /ops/goods_received",
+          "actor_ref": "actor-operator",
+          "entity_ref": "entity-expense",
+          "step_key": "step-000"
+        }
+      ],
+      "workflow_key": "workflow-goods_received_create"
+    },
+    {
+      "name": "purchase_request_approve",
+      "steps": [
+        {
+          "action": "approval: post /procurement/purchase_requests/{id}/approve",
+          "actor_ref": "actor-manager",
+          "entity_ref": "entity-expense",
+          "step_key": "step-000"
+        }
+      ],
+      "workflow_key": "workflow-purchase_request_approve"
+    },
+    {
+      "name": "purchase_request_create",
+      "steps": [
+        {
+          "action": "create: post /procurement/purchase_requests",
+          "actor_ref": "actor-operator",
+          "entity_ref": "entity-expense",
+          "step_key": "step-000"
+        }
+      ],
+      "workflow_key": "workflow-purchase_request_create"
+    },
+    {
+      "name": "purchase_request_get",
+      "steps": [
+        {
+          "action": "read: get /procurement/purchase_requests/{id}",
+          "actor_ref": "actor-operator",
+          "entity_ref": "entity-expense",
+          "step_key": "step-000"
+        }
+      ],
+      "workflow_key": "workflow-purchase_request_get"
+    }
+  ]
+}

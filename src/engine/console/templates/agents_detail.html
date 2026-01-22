@@ -1,0 +1,172 @@
+{% extends "base.html" %}
+
+{% block title %}AXIOM Console - Agent: {{ agent.name }}{% endblock %}
+
+{% block content %}
+<div class="card">
+    <h3 class="card-title">{{ agent.name }}</h3>
+    <div class="info-row">
+        <span class="info-label">Actor ID:</span>
+        <span class="info-value mono">{{ agent.actor_id }}</span>
+    </div>
+    {% if agent.description %}
+    <div class="info-row">
+        <span class="info-label">Description:</span>
+        <span class="info-value">{{ agent.description }}</span>
+    </div>
+    {% endif %}
+    <div class="info-row">
+        <span class="info-label">Status:</span>
+        <span class="info-value">
+            {% if agent.registered %}
+            <span class="badge badge-active">Registered</span>
+            {% else %}
+            <span class="badge badge-unpinned">From Ledger</span>
+            {% endif %}
+        </span>
+    </div>
+    {% if agent.roles %}
+    <div class="info-row">
+        <span class="info-label">Roles:</span>
+        <span class="info-value">{{ agent.roles | join(", ") }}</span>
+    </div>
+    {% endif %}
+    {% if agent.dept_ids %}
+    <div class="info-row">
+        <span class="info-label">Departments:</span>
+        <span class="info-value">{{ agent.dept_ids | join(", ") }}</span>
+    </div>
+    {% endif %}
+    {% if agent.created_at %}
+    <div class="info-row">
+        <span class="info-label">Registered At:</span>
+        <span class="info-value">{{ agent.created_at[:19] }}</span>
+    </div>
+    <div class="info-row">
+        <span class="info-label">Registered By:</span>
+        <span class="info-value mono">{{ agent.created_by }}</span>
+    </div>
+    {% endif %}
+</div>
+
+<!-- Stats -->
+<div class="card" style="margin-top: 1rem;">
+    <h3 class="card-title">Statistics</h3>
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 1rem;">
+        <div class="stat-box">
+            <div class="stat-value">{{ stats.total_events }}</div>
+            <div class="stat-label">Total Events</div>
+        </div>
+        <div class="stat-box">
+            <div class="stat-value" style="{% if stats.denied_count > 0 %}color: var(--error);{% endif %}">
+                {{ stats.denied_count }}
+            </div>
+            <div class="stat-label">Denied Attempts</div>
+        </div>
+        <div class="stat-box">
+            <div class="stat-value" style="font-size: 0.9rem;">
+                {{ stats.last_active[:19] if stats.last_active else 'Never' }}
+            </div>
+            <div class="stat-label">Last Active</div>
+        </div>
+    </div>
+</div>
+
+<!-- Recent Events -->
+<div class="card" style="margin-top: 1rem;">
+    <h3 class="card-title">Recent Events</h3>
+    {% if recent_events %}
+    <table>
+        <thead>
+            <tr>
+                <th>Timestamp</th>
+                <th>Type</th>
+                <th>Step</th>
+                <th>Dept</th>
+                <th>Case ID</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for event in recent_events %}
+            <tr>
+                <td>{{ event.timestamp[:19] }}</td>
+                <td>
+                    <span class="badge badge-unpinned" style="font-size: 0.75rem;">{{ event.event_type }}</span>
+                </td>
+                <td>{{ event.step }}</td>
+                <td>{{ event.dept_id or '-' }}</td>
+                <td class="mono" style="font-size: 0.75rem;">{{ event.case_id[:12] }}...</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% else %}
+    <div class="empty-state">
+        <p>No recent events</p>
+    </div>
+    {% endif %}
+</div>
+
+<!-- Denied Attempts -->
+<div class="card" style="margin-top: 1rem;">
+    <h3 class="card-title">Denied Attempts</h3>
+    {% if denied_events %}
+    <table>
+        <thead>
+            <tr>
+                <th>Timestamp</th>
+                <th>Gate</th>
+                <th>Reason</th>
+                <th>Step</th>
+                <th>Dept</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for event in denied_events %}
+            <tr>
+                <td>{{ event.timestamp[:19] }}</td>
+                <td>
+                    <span class="badge badge-error" style="font-size: 0.75rem;">{{ event.event_type }}</span>
+                </td>
+                <td>{{ event.reason }}</td>
+                <td>{{ event.step }}</td>
+                <td>{{ event.dept_id or '-' }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% else %}
+    <div class="empty-state">
+        <p>No denied attempts</p>
+        <p style="font-size: 0.875rem; color: var(--text-secondary);">
+            This actor has not been blocked by any governance gates.
+        </p>
+    </div>
+    {% endif %}
+</div>
+
+<!-- Back Link -->
+<div style="margin-top: 1rem;">
+    <a href="/console/agents?institution_id={{ institution_id }}{% if dept_id %}&dept_id={{ dept_id }}{% endif %}"
+       class="btn btn-secondary">&larr; Back to Agents</a>
+</div>
+
+<style>
+.stat-box {
+    background: var(--bg-secondary);
+    padding: 1rem;
+    border-radius: 4px;
+    text-align: center;
+}
+.stat-value {
+    font-size: 1.5rem;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+.stat-label {
+    font-size: 0.875rem;
+    color: var(--text-secondary);
+    margin-top: 0.25rem;
+}
+</style>
+{% endblock %}

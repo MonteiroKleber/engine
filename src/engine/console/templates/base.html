@@ -13,9 +13,14 @@
             <div class="logo">AXIOM Console</div>
             <nav>
                 <a href="/console/" class="{% if active_page == 'home' %}active{% endif %}">Home</a>
+                <a href="/console/onboarding" class="{% if active_page == 'onboarding' %}active{% endif %}">Onboarding</a>
                 {% if institution_id %}
                 <a href="/console/status?institution_id={{ institution_id }}{% if dept_id %}&dept_id={{ dept_id }}{% endif %}"
                    class="{% if active_page == 'status' %}active{% endif %}">Status</a>
+                <a href="/console/mandates?institution_id={{ institution_id }}{% if dept_id %}&dept_id={{ dept_id }}{% endif %}"
+                   class="{% if active_page == 'mandates' %}active{% endif %}">Mandates</a>
+                <a href="/console/ege?institution_id={{ institution_id }}{% if dept_id %}&dept_id={{ dept_id }}{% endif %}"
+                   class="{% if active_page == 'ege' %}active{% endif %}">EGE</a>
                 <a href="/console/bundles?institution_id={{ institution_id }}{% if dept_id %}&dept_id={{ dept_id }}{% endif %}"
                    class="{% if active_page == 'bundles' %}active{% endif %}">Bundles</a>
                 <a href="/console/contracts?institution_id={{ institution_id }}{% if dept_id %}&dept_id={{ dept_id }}{% endif %}"
@@ -24,7 +29,15 @@
                    class="{% if active_page == 'proof' %}active{% endif %}">Proof</a>
                 <a href="/console/legacy?institution_id={{ institution_id }}{% if dept_id %}&dept_id={{ dept_id }}{% endif %}"
                    class="{% if active_page == 'legacy' %}active{% endif %}">Legacy</a>
+                <a href="/console/intake?institution_id={{ institution_id }}{% if dept_id %}&dept_id={{ dept_id }}{% endif %}"
+                   class="{% if active_page == 'intake' %}active{% endif %}">Intake</a>
+                <a href="/console/agents?institution_id={{ institution_id }}{% if dept_id %}&dept_id={{ dept_id }}{% endif %}"
+                   class="{% if active_page == 'agents' %}active{% endif %}">Agents</a>
+                <a href="/console/denied?institution_id={{ institution_id }}{% if dept_id %}&dept_id={{ dept_id }}{% endif %}"
+                   class="{% if active_page == 'denied' %}active{% endif %}">Denied</a>
                 {% endif %}
+                <span style="margin-left: auto;"></span>
+                <a href="/console/logout" style="color: var(--text-secondary);">Logout</a>
             </nav>
         </div>
     </header>

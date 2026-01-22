@@ -1,0 +1,324 @@
+{% extends "base.html" %}
+
+{% block title %}Policy Proposal {{ proposal.proposal_id[:8] }}... - Libervia Console{% endblock %}
+
+{% block content %}
+<div class="container">
+    <nav class="breadcrumb">
+        <a href="{{ url_for('console_home') }}">Console</a> &gt;
+        <a href="{{ url_for('console_policies') }}">Policies</a> &gt;
+        <a href="{{ url_for('console_policies_proposals') }}">Proposals</a> &gt;
+        <span>{{ proposal.proposal_id[:8] }}...</span>
+    </nav>
+
+    <h1>Policy Proposal</h1>
+    <p class="subtitle">{{ proposal.proposal_id }}</p>
+
+    <!-- Status Badge -->
+    <div class="status-section">
+        {% if proposal.status == 'OPEN' %}
+            <span class="badge badge-warning">OPEN</span>
+        {% elif proposal.decision == 'approve' %}
+            <span class="badge badge-success">APPROVED</span>
+        {% else %}
+            <span class="badge badge-danger">REJECTED</span>
+        {% endif %}
+    </div>
+
+    <!-- Proposal Info -->
+    <section class="card">
+        <h2>Proposal Details</h2>
+        <table class="info-table">
+            <tr>
+                <th>Operation</th>
+                <td>
+                    {% if proposal.policy_operation == 'create' %}
+                        <span class="badge badge-success">CREATE</span>
+                    {% elif proposal.policy_operation == 'update' %}
+                        <span class="badge badge-warning">UPDATE</span>
+                    {% elif proposal.policy_operation == 'revoke' %}
+                        <span class="badge badge-danger">REVOKE</span>
+                    {% endif %}
+                </td>
+            </tr>
+            <tr>
+                <th>Policy ID</th>
+                <td><code>{{ proposal.policy_id }}</code></td>
+            </tr>
+            {% if proposal.dept_id %}
+            <tr>
+                <th>Department</th>
+                <td>{{ proposal.dept_id }}</td>
+            </tr>
+            {% endif %}
+            <tr>
+                <th>Created At</th>
+                <td>{{ proposal.created_at }}</td>
+            </tr>
+            <tr>
+                <th>Created By</th>
+                <td>{{ proposal.created_by }}</td>
+            </tr>
+            <tr>
+                <th>Reason</th>
+                <td>{{ proposal.reason }}</td>
+            </tr>
+        </table>
+    </section>
+
+    <!-- Policy Data -->
+    {% if proposal.policy_data %}
+    <section class="card">
+        <h2>Policy Data</h2>
+        <table class="info-table">
+            {% if proposal.policy_data.rule_type %}
+            <tr>
+                <th>Rule Type</th>
+                <td><code>{{ proposal.policy_data.rule_type }}</code></td>
+            </tr>
+            {% endif %}
+            {% if proposal.policy_data.field_path %}
+            <tr>
+                <th>Field Path</th>
+                <td><code>{{ proposal.policy_data.field_path }}</code></td>
+            </tr>
+            {% endif %}
+            {% if proposal.policy_data.phase %}
+            <tr>
+                <th>Phase</th>
+                <td>{{ proposal.policy_data.phase }}</td>
+            </tr>
+            {% endif %}
+            {% if proposal.policy_data.endpoint_sig %}
+            <tr>
+                <th>Endpoint</th>
+                <td><code>{{ proposal.policy_data.endpoint_sig }}</code></td>
+            </tr>
+            {% endif %}
+            {% if proposal.policy_data.value is defined %}
+            <tr>
+                <th>Value</th>
+                <td><code>{{ proposal.policy_data.value }}</code></td>
+            </tr>
+            {% endif %}
+            {% if proposal.policy_data.message %}
+            <tr>
+                <th>Message</th>
+                <td>{{ proposal.policy_data.message }}</td>
+            </tr>
+            {% endif %}
+        </table>
+
+        <details class="json-details">
+            <summary>Raw JSON</summary>
+            <pre><code>{{ proposal.policy_data | tojson(indent=2) }}</code></pre>
+        </details>
+    </section>
+    {% endif %}
+
+    <!-- Decision Info (if decided) -->
+    {% if proposal.status == 'DECIDED' %}
+    <section class="card">
+        <h2>Decision</h2>
+        <table class="info-table">
+            <tr>
+                <th>Decision</th>
+                <td>
+                    {% if proposal.decision == 'approve' %}
+                        <span class="badge badge-success">APPROVED</span>
+                    {% else %}
+                        <span class="badge badge-danger">REJECTED</span>
+                    {% endif %}
+                </td>
+            </tr>
+            <tr>
+                <th>Decided At</th>
+                <td>{{ proposal.decided_at }}</td>
+            </tr>
+            <tr>
+                <th>Decided By</th>
+                <td>{{ proposal.decided_by }}</td>
+            </tr>
+            {% if proposal.decision_reason %}
+            <tr>
+                <th>Reason</th>
+                <td>{{ proposal.decision_reason }}</td>
+            </tr>
+            {% endif %}
+        </table>
+    </section>
+    {% endif %}
+
+    <!-- Decision Form (if open) -->
+    {% if proposal.status == 'OPEN' %}
+    <section class="card">
+        <h2>Make Decision</h2>
+        <form method="POST" action="{{ url_for('console_policies_proposal_decide', proposal_id=proposal.proposal_id) }}">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+
+            <div class="form-group">
+                <label for="decision">Decision</label>
+                <select id="decision" name="decision" required>
+                    <option value="">-- Select --</option>
+                    <option value="approve">Approve</option>
+                    <option value="reject">Reject</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label for="reason">Reason (optional)</label>
+                <textarea id="reason" name="reason" rows="3" placeholder="Reason for the decision..."></textarea>
+            </div>
+
+            <div class="form-actions">
+                <button type="submit" class="btn btn-primary">Submit Decision</button>
+                <a href="{{ url_for('console_policies_proposals') }}" class="btn btn-secondary">Cancel</a>
+            </div>
+        </form>
+    </section>
+    {% endif %}
+
+    <!-- Back link -->
+    <div class="actions">
+        <a href="{{ url_for('console_policies_proposals') }}" class="btn btn-secondary">&larr; Back to Proposals</a>
+    </div>
+</div>
+
+<style>
+.subtitle {
+    color: #666;
+    font-family: monospace;
+    font-size: 0.9rem;
+    margin-top: -0.5rem;
+    margin-bottom: 1rem;
+}
+
+.status-section {
+    margin-bottom: 1.5rem;
+}
+
+.card {
+    background: #fff;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    padding: 1.5rem;
+    margin-bottom: 1.5rem;
+}
+
+.card h2 {
+    margin-top: 0;
+    margin-bottom: 1rem;
+    font-size: 1.2rem;
+    border-bottom: 1px solid #eee;
+    padding-bottom: 0.5rem;
+}
+
+.info-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.info-table th {
+    text-align: left;
+    width: 150px;
+    padding: 0.5rem;
+    vertical-align: top;
+    color: #666;
+}
+
+.info-table td {
+    padding: 0.5rem;
+}
+
+.badge {
+    display: inline-block;
+    padding: 0.25rem 0.5rem;
+    border-radius: 3px;
+    font-size: 0.85rem;
+    font-weight: 500;
+}
+
+.badge-success { background: #d4edda; color: #155724; }
+.badge-warning { background: #fff3cd; color: #856404; }
+.badge-danger { background: #f8d7da; color: #721c24; }
+
+.json-details {
+    margin-top: 1rem;
+}
+
+.json-details summary {
+    cursor: pointer;
+    color: #007bff;
+}
+
+.json-details pre {
+    background: #f8f9fa;
+    padding: 1rem;
+    border-radius: 4px;
+    overflow-x: auto;
+    margin-top: 0.5rem;
+}
+
+.form-group {
+    margin-bottom: 1rem;
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: 0.5rem;
+    font-weight: 500;
+}
+
+.form-group select,
+.form-group textarea {
+    width: 100%;
+    padding: 0.5rem;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    font-size: 1rem;
+}
+
+.form-actions {
+    margin-top: 1.5rem;
+}
+
+.btn {
+    display: inline-block;
+    padding: 0.5rem 1rem;
+    border-radius: 4px;
+    text-decoration: none;
+    font-size: 1rem;
+    cursor: pointer;
+    border: none;
+}
+
+.btn-primary {
+    background: #007bff;
+    color: #fff;
+}
+
+.btn-primary:hover {
+    background: #0056b3;
+}
+
+.btn-secondary {
+    background: #6c757d;
+    color: #fff;
+}
+
+.btn-secondary:hover {
+    background: #545b62;
+}
+
+.actions {
+    margin-top: 1.5rem;
+}
+
+code {
+    background: #f1f1f1;
+    padding: 0.2rem 0.4rem;
+    border-radius: 3px;
+    font-family: monospace;
+}
+</style>
+{% endblock %}

@@ -1,0 +1,18 @@
+{
+  "autonomy_schema_version": "1.0",
+  "current_level": 4,
+  "rules": [
+    {
+      "rule_id": "HR-AUT-001-expense-create",
+      "endpoint_sig": "POST /finance/expenses",
+      "phase": "pre",
+      "required_level": 1
+    },
+    {
+      "rule_id": "HR-AUT-002-approval-decide",
+      "endpoint_sig": "POST /approvals/{approval_id}/decide",
+      "phase": "pre",
+      "required_level": 2
+    }
+  ]
+}

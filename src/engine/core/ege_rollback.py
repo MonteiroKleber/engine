@@ -14,7 +14,7 @@ import tempfile
 from dataclasses import dataclass, asdict
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Any, Dict, Optional, Tuple
+from typing import Any, Dict, List, Optional, Tuple
 
 from engine.core.data_root import get_institution_root
 from engine.core.errors import (
@@ -31,6 +31,7 @@ from engine.core.institution_config import (
 from engine.core.ledger import get_ledger_for_institution
 from engine.core.runtime_state import runtime_state
 from engine.ise.release import get_bundles_root_for_institution
+from engine.core.runtime_reload import reload_active_runtime
 
 
 # Rollback state file name
@@ -332,6 +333,15 @@ def execute_governed_rollback(
         },
     )
 
+    # Trigger runtime hot-swap (Etapa 6.6)
+    # After successful rollback, reload the runtime to reflect the rolled-back bundle.
+    # This updates the ActiveRuntimeSnapshot, operations registry, and invalidates OpenAPI cache.
+    reload_active_runtime(
+        institution_id=institution_id,
+        reason="rollback",
+        bundle_path=pinned_path,  # Use the known pinned path
+    )
+
     return RollbackResult(
         success=True,
         rolled_back_to=pinned_release_id,
@@ -360,3 +370,55 @@ def get_current_release_id(institution_id: str) -> Optional[str]:
         return resolved.parent.name
     except OSError:
         return None
+
+
+def list_releases(institution_id: str, limit: int = 20) -> List[Dict[str, Any]]:
+    """List releases available for an institution.
+
+    Args:
+        institution_id: Institution UUID.
+        limit: Maximum number of releases to return.
+
+    Returns:
+        List of dicts with release_id, bundle_name, is_current, is_pinned, has_trace.
+    """
+    bundles_root = get_bundles_root_for_institution(institution_id)
+    releases_dir = bundles_root / "releases"
+
+    if not releases_dir.exists():
+        return []
+
+    config = get_effective_config(institution_id)
+    current_release = get_current_release_id(institution_id)
+    pinned_release = config.pinned_release_id
+
+    releases = []
+    try:
+        release_dirs = sorted(releases_dir.iterdir(), reverse=True)[:limit]
+    except OSError:
+        return []
+
+    for release_dir in release_dirs:
+        if not release_dir.is_dir():
+            continue
+
+        # Find bundle inside release
+        try:
+            for bundle_dir in release_dir.iterdir():
+                if bundle_dir.is_dir():
+                    # Check for trace
+                    trace_path = bundle_dir / "trace.json"
+                    has_trace = trace_path.exists()
+
+                    releases.append({
+                        "release_id": release_dir.name,
+                        "bundle_name": bundle_dir.name,
+                        "is_current": release_dir.name == current_release,
+                        "is_pinned": release_dir.name == pinned_release,
+                        "has_trace": has_trace,
+                    })
+                    break
+        except OSError:
+            continue
+
+    return releases

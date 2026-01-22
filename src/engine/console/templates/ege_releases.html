@@ -1,0 +1,71 @@
+{% extends "base.html" %}
+
+{% block title %}AXIOM Console - EGE Releases{% endblock %}
+
+{% block content %}
+<div class="card">
+    <h3 class="card-title">Releases</h3>
+
+    <div style="margin-bottom: 1rem;">
+        <a href="/console/ege?institution_id={{ institution_id }}" class="btn-link">&larr; Back to EGE</a>
+    </div>
+
+    <div class="info-row" style="margin-bottom: 1rem;">
+        <span class="info-label">Current Release:</span>
+        <span class="info-value mono">{{ current_release_id or '(none)' }}</span>
+    </div>
+    <div class="info-row" style="margin-bottom: 1rem;">
+        <span class="info-label">Pinned Release:</span>
+        <span class="info-value mono">{{ pinned_release_id or '(none)' }}</span>
+    </div>
+
+    {% if releases %}
+    <table>
+        <thead>
+            <tr>
+                <th>Release ID</th>
+                <th>Bundle</th>
+                <th>Status</th>
+                <th>Trace</th>
+                <th>Action</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for release in releases %}
+            <tr>
+                <td class="mono">{{ release.release_id }}</td>
+                <td class="mono">{{ release.bundle_name }}</td>
+                <td>
+                    {% if release.is_current %}
+                    <span class="badge badge-active">CURRENT</span>
+                    {% endif %}
+                    {% if release.is_pinned %}
+                    <span class="badge badge-unpinned">PINNED</span>
+                    {% endif %}
+                    {% if not release.is_current and not release.is_pinned %}
+                    <span style="color: var(--text-secondary);">-</span>
+                    {% endif %}
+                </td>
+                <td>
+                    {% if release.has_trace %}
+                    <span class="badge badge-active" style="font-size: 0.7rem;">available</span>
+                    {% else %}
+                    <span style="color: var(--text-secondary);">-</span>
+                    {% endif %}
+                </td>
+                <td>
+                    <a href="/console/ege/traces/{{ release.release_id }}?institution_id={{ institution_id }}"
+                       class="btn-link">View Trace</a>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    <div style="margin-top: 0.5rem; color: var(--text-secondary);">
+        Showing {{ total_releases }} release(s)
+    </div>
+    {% else %}
+    <div class="empty-state">No releases found</div>
+    {% endif %}
+</div>
+{% endblock %}

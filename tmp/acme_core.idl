@@ -1,0 +1,390 @@
+system AcmeCore {
+  name: "Acme Core"
+  description: "Multi-department governance for Acme Foods Distribution"
+  version: 1.0.0
+  domain: "finance"
+  owner: "Acme Foods"
+  contact: "ops@acmefoods.example"
+  tenancy: multi
+}
+
+actors {
+  human operator {
+    name: "Operator"
+    description: "Creates expenses and purchase requests"
+    authentication: token
+    permissions: [
+      finance.expense.create,
+      finance.expense.read,
+      finance.expense.submit,
+      procurement.purchase_request.create,
+      procurement.purchase_request.read,
+      ops.goods_received.create,
+      ops.goods_received.read
+    ]
+  }
+
+  human manager {
+    name: "Manager"
+    description: "Approves expenses and purchase requests"
+    authentication: token
+    permissions: [
+      finance.expense.read,
+      finance.expense.approve,
+      finance.expense.transition,
+      procurement.purchase_request.read,
+      procurement.purchase_request.approve
+    ]
+  }
+
+  human controller {
+    name: "Controller"
+    description: "Financial controller with elevated permissions"
+    authentication: token
+    permissions: [
+      finance.expense.read,
+      finance.expense.approve,
+      finance.expense.reject,
+      procurement.purchase_request.read,
+      procurement.purchase_request.approve,
+      ops.goods_received.read,
+      ops.goods_received.confirm
+    ]
+  }
+
+  system runtime {
+    name: "Runtime"
+    authentication: token
+    permissions: [runtime.bundle.load, runtime.proof.snapshot, runtime.safe_mode.enter]
+  }
+
+  system finance_bot {
+    name: "Finance Bot"
+    description: "AI agent for finance operations with limited permissions"
+    authentication: token
+    permissions: [
+      finance.expense.read,
+      finance.expense.create
+    ]
+  }
+}
+
+entities {
+  entity Expense {
+    storage {
+      tenant_field: tenant_id
+      version_field: version
+    }
+
+    field id: uuid required unique
+    field tenant_id: uuid required indexed
+    field amount: decimal required min(0)
+    field currency: string required
+    field description: text required
+    field category: string required
+    field created_by: uuid required indexed
+    field created_at: datetime required
+    field state: string required indexed
+    field version: int required default(1)
+  }
+
+  entity PurchaseRequest {
+    storage {
+      tenant_field: tenant_id
+      version_field: version
+    }
+
+    field id: uuid required unique
+    field tenant_id: uuid required indexed
+    field amount: decimal required min(0)
+    field currency: string required
+    field vendor: string required
+    field items: text required
+    field urgency: string required default("normal")
+    field created_by: uuid required indexed
+    field created_at: datetime required
+    field state: string required indexed
+    field version: int required default(1)
+  }
+
+  entity GoodsReceived {
+    storage {
+      tenant_field: tenant_id
+      version_field: version
+    }
+
+    field id: uuid required unique
+    field tenant_id: uuid required indexed
+    field purchase_request_id: uuid required indexed
+    field received_by: uuid required indexed
+    field received_at: datetime required
+    field condition: string required default("good")
+    field notes: text
+    field state: string required indexed
+    field version: int required default(1)
+  }
+}
+
+policy_context {
+  field jurisdiction: string required
+  field risk_level: string default("low")
+  field amount_threshold: decimal default(1000)
+}
+
+invariants {
+  invariant ExpensePositiveAmount {
+    applies_to: Expense
+    when: always
+    assert: Expense.amount > 0
+    severity: critical
+    message: "Expense amount must be positive."
+  }
+
+  invariant ExpenseMustHaveCurrency {
+    applies_to: Expense
+    when: always
+    assert: Expense.currency != ""
+    severity: high
+    message: "Expense currency must be defined."
+  }
+
+  invariant PurchaseRequestPositiveAmount {
+    applies_to: PurchaseRequest
+    when: always
+    assert: PurchaseRequest.amount > 0
+    severity: critical
+    message: "Purchase request amount must be positive."
+  }
+
+  invariant GoodsReceivedValidCondition {
+    applies_to: GoodsReceived
+    when: always
+    assert: GoodsReceived.condition != ""
+    severity: high
+    message: "Goods condition must be specified."
+  }
+}
+
+separation_of_duties {
+  rule NoSelfApprovalExpense {
+    on: Expense
+    forbid: Approve when actor.id == Expense.created_by
+    severity: critical
+    message: "Creator cannot approve their own expense."
+  }
+
+  rule NoSelfApprovalPurchase {
+    on: PurchaseRequest
+    forbid: Approve when actor.id == PurchaseRequest.created_by
+    severity: critical
+    message: "Creator cannot approve their own purchase request."
+  }
+}
+
+workflows {
+  workflow ExpenseFlow on Expense {
+    state Draft { initial: true }
+    state PendingApproval
+    state Approved { terminal: true }
+    state Rejected { terminal: true }
+
+    transition Submit: Draft -> PendingApproval {
+      guard: Expense.amount > 0
+      effects: [set_state("PendingApproval"), bump_version(1)]
+    }
+
+    transition Approve: PendingApproval -> Approved {
+      approvals: {
+        quorum: 1
+        roles: [manager, controller]
+        distinct_actors: true
+        expires_in: 48h
+      }
+      effects: [set_state("Approved"), bump_version(1)]
+    }
+
+    transition Reject: PendingApproval -> Rejected {
+      approvals: {
+        quorum: 1
+        roles: [manager, controller]
+        distinct_actors: true
+        expires_in: 48h
+      }
+      effects: [set_state("Rejected"), bump_version(1)]
+    }
+  }
+
+  workflow PurchaseFlow on PurchaseRequest {
+    state Draft { initial: true }
+    state PendingApproval
+    state Approved { terminal: true }
+    state Rejected { terminal: true }
+
+    transition Submit: Draft -> PendingApproval {
+      guard: PurchaseRequest.amount > 0
+      effects: [set_state("PendingApproval"), bump_version(1)]
+    }
+
+    transition Approve: PendingApproval -> Approved {
+      approvals: {
+        quorum: 1
+        roles: [manager, controller]
+        distinct_actors: true
+        expires_in: 72h
+      }
+      effects: [set_state("Approved"), bump_version(1)]
+    }
+
+    transition Reject: PendingApproval -> Rejected {
+      approvals: {
+        quorum: 1
+        roles: [manager, controller]
+        distinct_actors: true
+        expires_in: 72h
+      }
+      effects: [set_state("Rejected"), bump_version(1)]
+    }
+  }
+
+  workflow GoodsReceivedFlow on GoodsReceived {
+    state Pending { initial: true }
+    state Confirmed { terminal: true }
+    state Disputed
+
+    transition Confirm: Pending -> Confirmed {
+      guard: GoodsReceived.condition == "good"
+      effects: [set_state("Confirmed"), bump_version(1)]
+    }
+
+    transition Dispute: Pending -> Disputed {
+      guard: GoodsReceived.condition != "good"
+      effects: [set_state("Disputed"), bump_version(1)]
+    }
+
+    transition Resolve: Disputed -> Confirmed {
+      effects: [set_state("Confirmed"), bump_version(1)]
+    }
+  }
+}
+
+operations {
+  api {
+    endpoint expense_create {
+      method: POST
+      path: "/finance/expenses"
+      request: Expense
+      response: Expense
+      permission: finance.expense.create
+      scope: tenant
+      idempotency: required
+      errors: [400, 401, 403]
+      bind: { entity: Expense, kind: create }
+    }
+
+    endpoint expense_get {
+      method: GET
+      path: "/finance/expenses/{id}"
+      request: void
+      response: Expense
+      permission: finance.expense.read
+      scope: tenant
+      errors: [401, 403, 404]
+      bind: { entity: Expense, kind: read }
+    }
+
+    endpoint expense_submit {
+      method: POST
+      path: "/finance/expenses/{id}/submit"
+      request: void
+      response: Expense
+      permission: finance.expense.submit
+      scope: tenant
+      idempotency: required
+      errors: [400, 401, 403, 409]
+      bind: { entity: Expense, kind: transition, workflow: ExpenseFlow, transition: Submit }
+    }
+
+    endpoint expense_approve {
+      method: POST
+      path: "/finance/expenses/{id}/approve"
+      request: void
+      response: Expense
+      permission: finance.expense.approve
+      scope: tenant
+      idempotency: required
+      errors: [400, 401, 403, 409]
+      bind: { entity: Expense, kind: approval, workflow: ExpenseFlow, transition: Approve, decision: "approve" }
+    }
+
+    endpoint expense_reject {
+      method: POST
+      path: "/finance/expenses/{id}/reject"
+      request: void
+      response: Expense
+      permission: finance.expense.reject
+      scope: tenant
+      idempotency: required
+      errors: [400, 401, 403, 409]
+      bind: { entity: Expense, kind: approval, workflow: ExpenseFlow, transition: Reject, decision: "reject" }
+    }
+
+    endpoint purchase_request_create {
+      method: POST
+      path: "/procurement/purchase_requests"
+      request: PurchaseRequest
+      response: PurchaseRequest
+      permission: procurement.purchase_request.create
+      scope: tenant
+      idempotency: required
+      errors: [400, 401, 403]
+      bind: { entity: PurchaseRequest, kind: create }
+    }
+
+    endpoint purchase_request_get {
+      method: GET
+      path: "/procurement/purchase_requests/{id}"
+      request: void
+      response: PurchaseRequest
+      permission: procurement.purchase_request.read
+      scope: tenant
+      errors: [401, 403, 404]
+      bind: { entity: PurchaseRequest, kind: read }
+    }
+
+    endpoint purchase_request_approve {
+      method: POST
+      path: "/procurement/purchase_requests/{id}/approve"
+      request: void
+      response: PurchaseRequest
+      permission: procurement.purchase_request.approve
+      scope: tenant
+      idempotency: required
+      errors: [400, 401, 403, 409]
+      bind: { entity: PurchaseRequest, kind: approval, workflow: PurchaseFlow, transition: Approve, decision: "approve" }
+    }
+
+    endpoint goods_received_create {
+      method: POST
+      path: "/ops/goods_received"
+      request: GoodsReceived
+      response: GoodsReceived
+      permission: ops.goods_received.create
+      scope: tenant
+      idempotency: required
+      errors: [400, 401, 403]
+      bind: { entity: GoodsReceived, kind: create }
+    }
+
+    endpoint goods_received_confirm {
+      method: POST
+      path: "/ops/goods_received/{id}/confirm"
+      request: void
+      response: GoodsReceived
+      permission: ops.goods_received.confirm
+      scope: tenant
+      idempotency: required
+      errors: [400, 401, 403, 409]
+      bind: { entity: GoodsReceived, kind: transition, workflow: GoodsReceivedFlow, transition: Confirm }
+    }
+  }
+}

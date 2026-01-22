@@ -1,0 +1,11 @@
+{
+  "version": "1.0.0",
+  "name": "workflows",
+  "description": "Workflow definitions for finance-pilot",
+  "workflows": [
+    {
+      "name": "payment_approval",
+      "steps": ["submit", "review", "approve", "execute"]
+    }
+  ]
+}

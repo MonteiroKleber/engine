@@ -1,0 +1,78 @@
+{% extends "base.html" %}
+
+{% block title %}AXIOM Console - Policies{% endblock %}
+
+{% block content %}
+<div class="card">
+    <h3 class="card-title">Effective Policies</h3>
+    <div style="margin-bottom: 1rem; color: var(--text-secondary);">
+        Source: {{ source }}
+    </div>
+
+    {% if effective_policies %}
+    <table>
+        <thead>
+            <tr>
+                <th>Policy ID</th>
+                <th>Rule Type</th>
+                <th>Field</th>
+                <th>Endpoint</th>
+                <th>Phase</th>
+                <th>Value</th>
+                <th>Source</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for policy in effective_policies %}
+            <tr>
+                <td class="mono">{{ policy.policy_id }}</td>
+                <td>{{ policy.rule_type }}</td>
+                <td class="mono">{{ policy.field_path }}</td>
+                <td class="mono">{{ policy.endpoint_sig }}</td>
+                <td>{{ policy.phase }}</td>
+                <td class="mono">{{ policy.value }}</td>
+                <td>
+                    {% if policy.source == 'governed' %}
+                    <span class="badge badge-active">governed</span>
+                    {% else %}
+                    <span class="badge badge-unpinned">bundle</span>
+                    {% endif %}
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% else %}
+    <div class="empty-state">No policies configured</div>
+    {% endif %}
+
+    <div style="margin-top: 1rem;">
+        <a href="/console/policies/proposals?institution_id={{ institution_id }}{% if dept_id %}&dept_id={{ dept_id }}{% endif %}"
+           class="btn-link">View Proposals</a>
+        <a href="/console/policies/proposals/new?institution_id={{ institution_id }}{% if dept_id %}&dept_id={{ dept_id }}{% endif %}"
+           class="btn-link" style="margin-left: 1rem;">+ New Proposal</a>
+    </div>
+</div>
+
+{% if governed_policies %}
+<div class="card">
+    <h3 class="card-title">Governed Policies (Overrides)</h3>
+    <div style="margin-bottom: 1rem; color: var(--text-secondary);">
+        {{ governed_count }} policy(ies) governed via proposals
+    </div>
+
+    <ul style="margin: 0; padding-left: 1.5rem;">
+        {% for governed in governed_policies %}
+        <li style="margin-bottom: 0.5rem;">
+            <span class="mono">{{ governed.policy_id }}</span>
+            {% if governed.policy_data %}
+            — {{ governed.policy_data.rule_type or 'N/A' }} on {{ governed.policy_data.field_path or 'N/A' }}
+            {% else %}
+            — (revoked)
+            {% endif %}
+        </li>
+        {% endfor %}
+    </ul>
+</div>
+{% endif %}
+{% endblock %}

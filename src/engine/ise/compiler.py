@@ -24,6 +24,7 @@ from .emit import (
     ISEPolicyValidationError,
     emit_mandates_json,
     emit_autonomy_json,
+    emit_operations_json,
 )
 from .emit.openapi_emit import emit_openapi_yaml
 from .idl_parser import IDLDepartment, IDLParseError
@@ -455,7 +456,11 @@ def _create_dept_parsed(parsed: ParsedIDL, dept: IDLDepartment) -> ParsedIDL:
     )
 
 
-def _emit_all_contracts(parsed: ParsedIDL) -> Dict[str, str]:
+def _emit_all_contracts(
+    parsed: ParsedIDL,
+    ir: Optional[Dict[str, Any]] = None,
+    dept_id: Optional[str] = None,
+) -> Dict[str, str]:
     """Emit all contracts from parsed IDL.
 
     Per MVP decision (2026-01-17): policies.json, mandates.json, autonomy.json
@@ -463,6 +468,8 @@ def _emit_all_contracts(parsed: ParsedIDL) -> Dict[str, str]:
 
     Args:
         parsed: Parsed IDL structure.
+        ir: Optional IRCS v1 dict for operations.json emission.
+        dept_id: Optional department ID for multi-dept mode.
 
     Returns:
         Dict mapping filename to content string.
@@ -517,6 +524,12 @@ def _emit_all_contracts(parsed: ParsedIDL) -> Dict[str, str]:
     # Autonomy contract - ALWAYS emit
     autonomy_json = emit_autonomy_json(parsed)
     contracts["autonomy.json"] = autonomy_json
+
+    # Operations contract - emit from IRCS if available, otherwise from ParsedIDL
+    # This is optional for legacy bundles but emitted when we have the data
+    source = ir if ir else parsed
+    operations_json = emit_operations_json(source, dept_id)
+    contracts["operations.json"] = operations_json
 
     return contracts
 
@@ -729,8 +742,9 @@ def compile_from_ircs(
     source_idl_sha256 = get_source_idl_sha256(ir)
 
     # Generate contracts using existing emitters
+    # Pass ir to emit operations.json from IRCS data
     try:
-        contracts = _emit_all_contracts(parsed)
+        contracts = _emit_all_contracts(parsed, ir=ir)
     except ISEPolicyValidationError as e:
         return CompileResult(
             success=False,

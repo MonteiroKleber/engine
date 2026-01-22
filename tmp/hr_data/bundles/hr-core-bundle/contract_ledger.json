@@ -1,0 +1,67 @@
+{
+  "audit_trail": [
+    {
+      "details": {
+        "bundle_name": "hr-core-bundle",
+        "contract_count": 9
+      },
+      "event": "bundle_compiled",
+      "timestamp": "2026-01-21T19:09:10.697680+00:00"
+    }
+  ],
+  "bundle_name": "hr-core-bundle",
+  "bundle_version": "idl.v1.2.2",
+  "contracts": [
+    {
+      "content_hash": "b3bc2b1da8103daafeb9c5d67c140c90dc6809c918f0ca762588b70a8e237f53",
+      "contract_name": "approvals.json",
+      "status": "active"
+    },
+    {
+      "content_hash": "1faa39db9e09f2a4cd4e6fc4582a10ecec6c9be6d2745440531d55b2ffb85722",
+      "contract_name": "autonomy.json",
+      "status": "active"
+    },
+    {
+      "content_hash": "0ef7d54b008c437a6c7ad52dc2c479a160e9d8e93e8a855bae1ee2c72cc827e5",
+      "contract_name": "invariants.json",
+      "status": "active"
+    },
+    {
+      "content_hash": "fb6fd52e5171ba21e6eca87e623319c7774052c097d6ebebb312e24a5e87e5ef",
+      "contract_name": "mandates.json",
+      "status": "active"
+    },
+    {
+      "content_hash": "c54ca17039f6ea8ab83289d2d692b30bf38dd04b5d6a493bef4de84340a84e47",
+      "contract_name": "openapi.yaml",
+      "status": "active"
+    },
+    {
+      "content_hash": "d6c07203f38893484deae5e433ad25e5d880ef478460a957fbe810b6ea402654",
+      "contract_name": "policies.json",
+      "status": "active"
+    },
+    {
+      "content_hash": "72d94191335d560b7fe97f6ad636dcf627ffbd4e9c749f1c4eb922207b1117d2",
+      "contract_name": "rbac.json",
+      "status": "active"
+    },
+    {
+      "content_hash": "5b63e2657e8890bdae293d31596c71753a99c5617ee51f5dbfd4e076f0d6c9fb",
+      "contract_name": "sod.json",
+      "status": "active"
+    },
+    {
+      "content_hash": "96cf4a434bce28b6572fa4867713fd75c8f7b463401822048fcad2f5e2747ebf",
+      "contract_name": "workflows.json",
+      "status": "active"
+    }
+  ],
+  "created_at": "2026-01-21T19:09:10.697676+00:00",
+  "idl_hash": "65e989fd5125bd613bebfce3a0ae4253da76584aae3f174212c090415b0d3cea",
+  "ledger_id": "641da11d30dc2940",
+  "ledger_version": "1.0",
+  "manifest_hash": "3fea8462eedcb6eafc222a684a6a913386d1e1bdc6a2fd93326755d89ece41f8",
+  "source_idl_sha256": "4b6e00f1fe2ce218b82423e96f327955f68cb877cb344aecdb87524ace70305d"
+}

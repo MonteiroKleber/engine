@@ -1,0 +1,28 @@
+{
+  "actions": {
+    "beca3d60-2453-46fb-a841-705e3e7646e5": {
+      "acked_at": null,
+      "action_id": "beca3d60-2453-46fb-a841-705e3e7646e5",
+      "action_type": "increase_limit",
+      "approval_id": null,
+      "approved_by": null,
+      "case_id": "beca3d60-2453-46fb-a841-705e3e7646e5",
+      "created_at": "2026-01-21T21:14:39.610917+00:00",
+      "denied_by": "NO_APPROVAL_RULE",
+      "denied_reason": "No approval rule configured for this action in production mode",
+      "dept_id": "finance",
+      "enqueued_at": null,
+      "institution_id": "a38c63d0-4ceb-4630-8474-7d2ad5713ecf",
+      "intent_sha256": "61cdd7baf453e71544d5549afce226f7935cacbac23d1b7f15de31ce87dd6a7e",
+      "mandate_id": null,
+      "params": {
+        "customer_id": "cust-001",
+        "new_limit": 1500,
+        "reason": "test"
+      },
+      "requested_by": "console",
+      "status": "denied"
+    }
+  },
+  "schema_version": "1.0"
+}

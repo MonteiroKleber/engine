@@ -400,6 +400,7 @@ class EndpointNode(ASTNode):
     id: str = ""
     method: HttpMethod = HttpMethod.GET
     path: Optional[str] = None
+    path_params: list[str] = field(default_factory=list)  # CHANGE-5: Extracted path parameters
     request_type: Optional[str] = None
     response_type: Optional[str] = None
     permission: Optional[str] = None

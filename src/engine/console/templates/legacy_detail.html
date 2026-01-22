@@ -1,0 +1,144 @@
+{% extends "base.html" %}
+
+{% block title %}AXIOM Console - Legacy Asset Detail{% endblock %}
+
+{% block content %}
+{% if verify_result %}
+<div class="card" style="margin-bottom: 1rem; border-left: 4px solid {% if verify_result == 'MATCH' %}var(--success-color, #28a745){% elif verify_result == 'DRIFT_DETECTED' %}var(--error-color, #dc3545){% elif verify_result == 'MISSING' %}var(--warning-color, #ffc107){% else %}var(--text-secondary){% endif %};">
+    {% if verify_result == 'MATCH' %}
+    <div style="color: var(--success-color, #155724);">
+        <strong>Verification passed:</strong> Content hash matches expected value.
+    </div>
+    {% elif verify_result == 'DRIFT_DETECTED' %}
+    <div style="color: var(--error-color, #721c24);">
+        <strong>Drift detected:</strong> Content hash does not match expected value.
+    </div>
+    {% elif verify_result == 'MISSING' %}
+    <div style="color: var(--warning-color, #856404);">
+        <strong>Asset missing:</strong> Source file not found or inaccessible.
+    </div>
+    {% else %}
+    <div style="color: var(--text-secondary);">
+        <strong>Verification result:</strong> {{ verify_result }}
+    </div>
+    {% endif %}
+</div>
+{% endif %}
+
+<div class="card">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+        <h3 class="card-title" style="margin-bottom: 0;">Asset: {{ asset.name }}</h3>
+        <span class="badge {% if asset.status == 'active' %}badge-active{% elif asset.status == 'drift_detected' %}badge-error{% else %}badge-unpinned{% endif %}">
+            {{ asset.status | upper }}
+        </span>
+    </div>
+
+    <div style="margin-bottom: 1rem;">
+        <a href="/console/legacy?institution_id={{ institution_id }}{% if dept_id %}&dept_id={{ dept_id }}{% endif %}" class="btn-link">&larr; Back to Legacy Assets</a>
+    </div>
+
+    <div class="info-row">
+        <span class="info-label">Asset ID:</span>
+        <span class="info-value mono">{{ asset.asset_id }}</span>
+    </div>
+    <div class="info-row">
+        <span class="info-label">Name:</span>
+        <span class="info-value">{{ asset.name }}</span>
+    </div>
+    {% if asset.description %}
+    <div class="info-row">
+        <span class="info-label">Description:</span>
+        <span class="info-value">{{ asset.description }}</span>
+    </div>
+    {% endif %}
+    <div class="info-row">
+        <span class="info-label">Source Type:</span>
+        <span class="info-value">{{ asset.source_type }}</span>
+    </div>
+    <div class="info-row">
+        <span class="info-label">Source Format:</span>
+        <span class="info-value">{{ asset.source_format }}</span>
+    </div>
+    <div class="info-row">
+        <span class="info-label">Source Location:</span>
+        <span class="info-value mono">{{ asset.source_location }}</span>
+    </div>
+    <div class="info-row">
+        <span class="info-label">Registered At:</span>
+        <span class="info-value">{{ asset.registered_at[:19] if asset.registered_at else '-' }}</span>
+    </div>
+    <div class="info-row">
+        <span class="info-label">Registered By:</span>
+        <span class="info-value">{{ asset.registered_by or 'system' }}</span>
+    </div>
+</div>
+
+<!-- Snapshot Info -->
+<div class="card" style="margin-top: 1rem;">
+    <h4 style="margin-bottom: 1rem;">Last Snapshot</h4>
+
+    {% if last_snapshot %}
+    <div class="info-row">
+        <span class="info-label">Snapshot ID:</span>
+        <span class="info-value mono" style="font-size: 0.85rem;">{{ last_snapshot.snapshot_id }}</span>
+    </div>
+    <div class="info-row">
+        <span class="info-label">Content SHA256:</span>
+        <span class="info-value mono" style="font-size: 0.75rem;">{{ last_snapshot.content_sha256 }}</span>
+    </div>
+    <div class="info-row">
+        <span class="info-label">Content Size:</span>
+        <span class="info-value">{{ last_snapshot.content_size_bytes }} bytes</span>
+    </div>
+    {% if last_snapshot.content_line_count %}
+    <div class="info-row">
+        <span class="info-label">Line Count:</span>
+        <span class="info-value">{{ last_snapshot.content_line_count }}</span>
+    </div>
+    {% endif %}
+    <div class="info-row">
+        <span class="info-label">Snapshot At:</span>
+        <span class="info-value">{{ last_snapshot.snapshot_at[:19] if last_snapshot.snapshot_at else '-' }}</span>
+    </div>
+    <div class="info-row">
+        <span class="info-label">Verified By:</span>
+        <span class="info-value">{{ last_snapshot.verified_by or 'system' }}</span>
+    </div>
+    {% if last_snapshot.drift_detected %}
+    <div class="info-row">
+        <span class="info-label">Drift Detected:</span>
+        <span class="info-value"><span class="badge badge-error">YES</span></span>
+    </div>
+    {% if last_snapshot.drift_type %}
+    <div class="info-row">
+        <span class="info-label">Drift Type:</span>
+        <span class="info-value">{{ last_snapshot.drift_type }}</span>
+    </div>
+    {% endif %}
+    {% endif %}
+    {% else %}
+    <div class="empty-state">
+        <p>No snapshots recorded yet</p>
+    </div>
+    {% endif %}
+</div>
+
+<!-- Verify Action -->
+<div class="card" style="margin-top: 1rem;">
+    <h4 style="margin-bottom: 1rem;">Verify Asset</h4>
+    <p style="color: var(--text-secondary); margin-bottom: 1rem;">
+        Verify computes the current hash of the source file and compares it with the last known hash.
+        This is a read-only operation that does not modify the source file.
+    </p>
+    <form action="/console/legacy/{{ asset.asset_id }}/verify" method="POST">
+        <input type="hidden" name="institution_id" value="{{ institution_id }}">
+        {% if dept_id %}
+        <input type="hidden" name="dept_id" value="{{ dept_id }}">
+        {% endif %}
+        {% if csrf_token %}<input type="hidden" name="_csrf_token" value="{{ csrf_token }}">{% endif %}
+        <button type="submit" class="btn-link" style="background: var(--primary-color, #0066cc); color: white; padding: 0.5rem 1rem; text-decoration: none; border-radius: 4px; border: none; cursor: pointer;">
+            Verify Now
+        </button>
+    </form>
+</div>
+{% endblock %}

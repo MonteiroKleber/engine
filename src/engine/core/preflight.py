@@ -1,7 +1,9 @@
-"""Preflight checks for multi-tenant path isolation.
+"""Preflight checks for secure engine startup.
 
-This module validates that environment configuration doesn't break
-multi-tenant isolation when require_institution_header_for_runtime is active.
+This module validates environment configuration at startup:
+- Multi-tenant path isolation (Etapa 2.6)
+- Console session secret (Etapa 4.1)
+- Production mode security requirements (GAP 5)
 """
 
 import os
@@ -12,6 +14,9 @@ from typing import List, Optional
 from engine.core.errors import (
     PATH_MISCONFIG_ABSOLUTE_LEDGER,
     PATH_MISCONFIG_ABSOLUTE_STATE_STORE,
+    CONSOLE_SESSION_SECRET_MISSING,
+    PREFLIGHT_ADMIN_TOKEN_MISSING,
+    PREFLIGHT_AUTH_MODE_INSECURE,
 )
 
 
@@ -112,10 +117,93 @@ def is_multi_tenant_mode_active() -> bool:
         return False
 
 
+def check_console_session_secret() -> PreflightResult:
+    """Check that console session secret is configured.
+
+    This is required for browser-based auth (Etapa 4.1).
+
+    Returns:
+        PreflightResult with ok=True if configured.
+    """
+    from engine.console.session import check_session_secret_configured
+
+    ok, error_message = check_session_secret_configured()
+    if not ok:
+        return PreflightResult(
+            ok=False,
+            code=CONSOLE_SESSION_SECRET_MISSING,
+            message=error_message,
+            details=[error_message],
+        )
+    return PreflightResult(ok=True)
+
+
+def check_prod_mode_requirements() -> PreflightResult:
+    """Check production mode security requirements.
+
+    GAP 5: In ENGINE_INSTALL_MODE=prod, enforce:
+    - ENGINE_ISE_ADMIN_TOKEN must be set (admin API authentication)
+    - ENGINE_AUTH_MODE must be 'strict' (identity verification via tokens)
+
+    In dev mode, these checks are skipped for backward compatibility.
+
+    Returns:
+        PreflightResult with ok=True if requirements met or dev mode.
+    """
+    from engine.core.install_mode import is_prod_mode
+
+    if not is_prod_mode():
+        # Dev mode - skip production security checks
+        return PreflightResult(ok=True)
+
+    # Check 1: Admin token must be set in prod mode
+    admin_token = os.environ.get("ENGINE_ISE_ADMIN_TOKEN")
+    if not admin_token:
+        return PreflightResult(
+            ok=False,
+            code=PREFLIGHT_ADMIN_TOKEN_MISSING,
+            message=(
+                "Production mode (ENGINE_INSTALL_MODE=prod) requires "
+                "ENGINE_ISE_ADMIN_TOKEN to be set. This token is used for "
+                "admin API authentication (/admin/* endpoints). "
+                "Generate with: python -c \"import secrets; print(secrets.token_urlsafe(32))\""
+            ),
+            details=[
+                "ENGINE_ISE_ADMIN_TOKEN is not set",
+                "Admin APIs would be inaccessible without authentication",
+            ],
+        )
+
+    # Check 2: Auth mode must be strict in prod mode
+    auth_mode = os.environ.get("ENGINE_AUTH_MODE", "dev").lower()
+    if auth_mode != "strict":
+        return PreflightResult(
+            ok=False,
+            code=PREFLIGHT_AUTH_MODE_INSECURE,
+            message=(
+                f"Production mode (ENGINE_INSTALL_MODE=prod) requires "
+                f"ENGINE_AUTH_MODE=strict. Current value: '{auth_mode}'. "
+                "Strict mode ensures actor identity is verified via tokens, "
+                "preventing identity spoofing through headers."
+            ),
+            details=[
+                f"ENGINE_AUTH_MODE is '{auth_mode}', expected 'strict'",
+                "Dev mode allows unverified identity headers (X-Actor-Id)",
+                "Set ENGINE_AUTH_MODE=strict for production security",
+            ],
+        )
+
+    return PreflightResult(ok=True)
+
+
 def run_preflight_checks() -> PreflightResult:
     """Run all preflight checks.
 
     This should be called at startup to validate configuration.
+    Checks run in order:
+    1. Path isolation (multi-tenant mode)
+    2. Console session secret
+    3. Production mode requirements (GAP 5)
 
     Returns:
         PreflightResult with ok=True if all checks pass.
@@ -126,6 +214,16 @@ def run_preflight_checks() -> PreflightResult:
 
     if not path_check.ok:
         return path_check
+
+    # Check 2: Console session secret (Etapa 4.1)
+    session_check = check_console_session_secret()
+    if not session_check.ok:
+        return session_check
+
+    # Check 3: Production mode requirements (GAP 5)
+    prod_check = check_prod_mode_requirements()
+    if not prod_check.ok:
+        return prod_check
 
     # All checks passed
     return PreflightResult(ok=True)

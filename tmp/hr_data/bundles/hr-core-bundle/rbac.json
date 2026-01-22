@@ -1,0 +1,66 @@
+{
+  "name": "rbac",
+  "roles": [
+    {
+      "name": "hr_controller",
+      "permissions": [
+        "approval.decide",
+        "expense.approve",
+        "expense.read",
+        "expense.reject",
+        "hr.candidate.read",
+        "hr.hire_request.approve",
+        "hr.hire_request.read",
+        "hr.hire_request.reject"
+      ]
+    },
+    {
+      "name": "hr_bot",
+      "permissions": [
+        "expense.create",
+        "expense.read",
+        "hr.candidate.create",
+        "hr.candidate.read",
+        "hr.hire_request.create",
+        "hr.hire_request.read"
+      ]
+    },
+    {
+      "name": "hr_manager",
+      "permissions": [
+        "approval.decide",
+        "expense.approve",
+        "expense.read",
+        "expense.transition",
+        "hr.candidate.read",
+        "hr.candidate.update",
+        "hr.hire_request.approve",
+        "hr.hire_request.read",
+        "hr.hire_request.transition"
+      ]
+    },
+    {
+      "name": "hr_operator",
+      "permissions": [
+        "expense.create",
+        "expense.read",
+        "expense.submit",
+        "hr.candidate.create",
+        "hr.candidate.read",
+        "hr.candidate.update",
+        "hr.hire_request.create",
+        "hr.hire_request.read",
+        "hr.hire_request.submit"
+      ]
+    },
+    {
+      "name": "runtime",
+      "permissions": [
+        "runtime.bundle.load",
+        "runtime.proof.snapshot",
+        "runtime.safe_mode.enter"
+      ]
+    }
+  ],
+  "version": "1.0"
+}

@@ -1,0 +1,57 @@
+{
+  "expenses": {
+    "c4ebeb74-274f-4caf-817d-0eb6bd071ba6": {
+      "expense_id": "c4ebeb74-274f-4caf-817d-0eb6bd071ba6",
+      "status": "PENDING_APPROVAL",
+      "approval_id": "80bab4a8-0411-440e-a363-96355b8b6d18",
+      "payload_sha256": "016b74f3c7a52d55cd8e65253f397d6a5cc4dc4f3016bdfa44e978b5d5d4ce7b",
+      "payload_raw": "ewogICAgImFtb3VudCI6IDE1MC4wMCwKICAgICJjdXJyZW5jeSI6ICJCUkwiLAogICAgImRlc2NyaXB0aW9uIjogIk9mZmljZSBzdXBwbGllcyBwdXJjaGFzZSIsCiAgICAiY2F0ZWdvcnkiOiAic3VwcGxpZXMiCiAgfQ==",
+      "created_at": "2026-01-21T14:28:00.403290+00:00",
+      "updated_at": null
+    },
+    "e095f543-e7a4-4dc4-87f4-063a6f424656": {
+      "expense_id": "e095f543-e7a4-4dc4-87f4-063a6f424656",
+      "status": "PENDING_APPROVAL",
+      "approval_id": "6307fed6-d6aa-4c42-9f5a-209351282e9a",
+      "payload_sha256": "08dcc0a4f58cdfde00ead0f894ff83c688e5376c9828806fe1f9eb5f001cd7cd",
+      "payload_raw": "eyJhbW91bnQiOiAxNTAwLjAwLCAiY3VycmVuY3kiOiAiQlJMIiwgImRlc2NyaXB0aW9uIjogIkNvbXByYSBkZSBtYXRlcmlhaXMgZGUgZXNjcml0w7NyaW8iLCAiY2F0ZWdvcnkiOiAic3VwcGxpZXMifQ==",
+      "created_at": "2026-01-21T14:39:29.755597+00:00",
+      "updated_at": null
+    },
+    "238e68ed-55c4-4771-a295-b8cb528f9fc5": {
+      "expense_id": "238e68ed-55c4-4771-a295-b8cb528f9fc5",
+      "status": "COMMITTED",
+      "approval_id": "7519eea6-0993-42b1-a50c-736dd3a34616",
+      "payload_sha256": "76e47428271f223ccfd0ca6497d6962e230cf15abf22ea28e07b1a1f776cccfb",
+      "payload_raw": "eyJhbW91bnQiOiAyNTAwLjAwLCAiY3VycmVuY3kiOiAiQlJMIiwgImRlc2NyaXB0aW9uIjogIkNvbXByYSBkZSBtYXRlcmlhaXMgcGFyYSBldmVudG8gY29ycG9yYXRpdm8iLCAiY2F0ZWdvcnkiOiAiZXZlbnRzIn0=",
+      "created_at": "2026-01-21T14:41:03.472969+00:00",
+      "updated_at": "2026-01-21T14:41:03.608383+00:00"
+    },
+    "f62fa284-c813-4ad1-8063-4717515e690e": {
+      "expense_id": "f62fa284-c813-4ad1-8063-4717515e690e",
+      "status": "PENDING_APPROVAL",
+      "approval_id": "043f50a5-f065-4647-bb92-53924068f1c5",
+      "payload_sha256": "b834b5b328fb44808e2775af0cf8f9c14c44b53e22c6ccb76948f158297a0c77",
+      "payload_raw": "eyJhbW91bnQiOiA3NTAuMDAsICJjdXJyZW5jeSI6ICJCUkwiLCAiZGVzY3JpcHRpb24iOiAiQXV0b21hdGVkIHJlY3VycmluZyBleHBlbnNlIC0gY2xvdWQgc2VydmljZXMiLCAiY2F0ZWdvcnkiOiAidGVjaCJ9",
+      "created_at": "2026-01-21T14:41:57.080699+00:00",
+      "updated_at": null
+    },
+    "a400718d-8d87-4c7b-9f74-a6cedfba7bab": {
+      "expense_id": "a400718d-8d87-4c7b-9f74-a6cedfba7bab",
+      "status": "PENDING_APPROVAL",
+      "approval_id": "6a927f4a-484c-4cc7-98c8-8088a7db65c3",
+      "payload_sha256": "7c8666759d18329bb2f1f55b388d41cc18194770fc6377644bbf74641ee53504",
+      "payload_raw": "eyJhbW91bnQiOiAzMDAuMDAsICJjdXJyZW5jeSI6ICJCUkwiLCAiZGVzY3JpcHRpb24iOiAiTm9ybWFsIG9wZXJhdGlvbiByZXN0b3JlZCIsICJjYXRlZ29yeSI6ICJ0ZXN0In0=",
+      "created_at": "2026-01-21T14:44:03.389823+00:00",
+      "updated_at": null
+    }
+  },
+  "approval_index": {
+    "80bab4a8-0411-440e-a363-96355b8b6d18": "c4ebeb74-274f-4caf-817d-0eb6bd071ba6",
+    "6307fed6-d6aa-4c42-9f5a-209351282e9a": "e095f543-e7a4-4dc4-87f4-063a6f424656",
+    "7519eea6-0993-42b1-a50c-736dd3a34616": "238e68ed-55c4-4771-a295-b8cb528f9fc5",
+    "043f50a5-f065-4647-bb92-53924068f1c5": "f62fa284-c813-4ad1-8063-4717515e690e",
+    "6a927f4a-484c-4cc7-98c8-8088a7db65c3": "a400718d-8d87-4c7b-9f74-a6cedfba7bab"
+  },
+  "tickets": {}
+}

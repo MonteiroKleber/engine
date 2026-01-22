@@ -1,0 +1,82 @@
+{% extends "base.html" %}
+
+{% block title %}AXIOM Console - Policy Proposals{% endblock %}
+
+{% block content %}
+{% if success_message %}
+<div class="card" style="background: var(--success-bg, #d4edda); border-left: 4px solid var(--success-color, #28a745); margin-bottom: 1rem;">
+    <div style="color: var(--success-color, #155724);">
+        {{ success_message }}
+    </div>
+</div>
+{% endif %}
+
+<div class="card">
+    <h3 class="card-title">Policy Proposals</h3>
+
+    <div style="margin-bottom: 1rem; display: flex; justify-content: space-between; align-items: center;">
+        <a href="/console/policies/proposals/new?institution_id={{ institution_id }}{% if dept_id %}&dept_id={{ dept_id }}{% endif %}"
+           class="btn-link">+ New Proposal</a>
+
+        <div>
+            Filter:
+            <select onchange="window.location.href=this.value" style="padding: 0.25rem 0.5rem;">
+                <option value="/console/policies/proposals?institution_id={{ institution_id }}{% if dept_id %}&dept_id={{ dept_id }}{% endif %}"
+                        {% if not status_filter %}selected{% endif %}>All</option>
+                <option value="/console/policies/proposals?institution_id={{ institution_id }}{% if dept_id %}&dept_id={{ dept_id }}{% endif %}&status=OPEN"
+                        {% if status_filter == 'OPEN' %}selected{% endif %}>Open</option>
+                <option value="/console/policies/proposals?institution_id={{ institution_id }}{% if dept_id %}&dept_id={{ dept_id }}{% endif %}&status=DECIDED"
+                        {% if status_filter == 'DECIDED' %}selected{% endif %}>Decided</option>
+            </select>
+        </div>
+    </div>
+
+    {% if proposals %}
+    <table>
+        <thead>
+            <tr>
+                <th>Status</th>
+                <th>Operation</th>
+                <th>Policy</th>
+                <th>Created</th>
+                <th>Action</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for proposal in proposals %}
+            <tr>
+                <td>
+                    {% if proposal.status == 'OPEN' %}
+                    <span class="badge badge-unpinned">OPEN</span>
+                    {% elif proposal.decision == 'approve' %}
+                    <span class="badge badge-active">APPROVED</span>
+                    {% elif proposal.decision == 'reject' %}
+                    <span class="badge badge-error">REJECTED</span>
+                    {% else %}
+                    <span class="badge">{{ proposal.status }}</span>
+                    {% endif %}
+                </td>
+                <td>{{ proposal.policy_operation }}</td>
+                <td class="mono">{{ proposal.policy_id }}</td>
+                <td>{{ proposal.created_at[:19] }}</td>
+                <td>
+                    <a href="/console/policies/proposals/{{ proposal.proposal_id }}?institution_id={{ institution_id }}{% if dept_id %}&dept_id={{ dept_id }}{% endif %}"
+                       class="btn-link">View</a>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    <div style="margin-top: 0.5rem; color: var(--text-secondary);">
+        Showing {{ proposals|length }} proposal(s)
+    </div>
+    {% else %}
+    <div class="empty-state">No proposals found</div>
+    {% endif %}
+
+    <div style="margin-top: 1rem;">
+        <a href="/console/policies?institution_id={{ institution_id }}{% if dept_id %}&dept_id={{ dept_id }}{% endif %}"
+           class="btn-link">&larr; Back to Policies</a>
+    </div>
+</div>
+{% endblock %}

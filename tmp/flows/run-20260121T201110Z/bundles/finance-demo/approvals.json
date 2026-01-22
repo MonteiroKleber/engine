@@ -1,0 +1,16 @@
+{
+  "name": "approvals",
+  "rules": [
+    {
+      "approver_roles": [
+        "manager"
+      ],
+      "quorum": 1,
+      "rule_name": "account.create",
+      "trigger": {
+        "api": "POST /finance/accounts"
+      }
+    }
+  ],
+  "version": "1.0"
+}

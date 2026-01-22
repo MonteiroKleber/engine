@@ -61,6 +61,67 @@
     </div>
 </div>
 
+<!-- IDL Migration Status (Etapa 6.7) -->
+<div class="card">
+    <h3 class="card-title">IDL Migration Status</h3>
+    <div class="grid grid-2">
+        <div>
+            <div class="info-row">
+                <span class="info-label">API Mode</span>
+                <span class="info-value">
+                    {% if migration.api_mode == 'idl' %}
+                    <span class="badge badge-active">IDL</span>
+                    {% elif migration.api_mode == 'both' %}
+                    <span class="badge badge-drift">BOTH</span>
+                    {% else %}
+                    <span class="badge badge-unpinned">{{ migration.api_mode|upper }}</span>
+                    {% endif %}
+                </span>
+            </div>
+            <div class="info-row">
+                <span class="info-label">Migration Complete</span>
+                <span class="info-value">
+                    {% if migration.migration_complete %}
+                    <span class="badge badge-clear">YES</span>
+                    {% else %}
+                    <span class="badge badge-safe-mode">NO</span>
+                    {% endif %}
+                </span>
+            </div>
+        </div>
+        <div>
+            <div class="info-row">
+                <span class="info-label">Depts Migrated</span>
+                <span class="info-value">{{ migration.depts_migrated|length }} / {{ migration.depts_installed|length }}</span>
+            </div>
+            {% if migration.depts_not_migrated %}
+            <div class="info-row">
+                <span class="info-label">Not Migrated</span>
+                <span class="info-value" style="color: var(--warning-color);">{{ migration.depts_not_migrated|join(', ') }}</span>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+    {% if migration.unsupported_binds %}
+    <div style="margin-top: 0.5rem; padding: 0.5rem; background: var(--error-bg, #fdd); border-radius: 4px; font-size: 0.85em;">
+        <strong>Unsupported bind.kind:</strong> {{ migration.unsupported_binds|length }} operation(s)
+    </div>
+    {% endif %}
+    {% if migration.warnings and migration.api_mode == 'both' %}
+    <div style="margin-top: 0.5rem; padding: 0.5rem; background: var(--warning-bg, #fff3cd); border-radius: 4px; font-size: 0.85em;">
+        <strong>Warnings:</strong>
+        <ul style="margin: 0.25rem 0 0 1rem; padding: 0;">
+            {% for w in migration.warnings[:5] %}
+            <li>{{ w }}</li>
+            {% endfor %}
+            {% if migration.warnings|length > 5 %}
+            <li>... and {{ migration.warnings|length - 5 }} more</li>
+            {% endif %}
+        </ul>
+    </div>
+    {% endif %}
+</div>
+
 <!-- Institution Config -->
 <div class="card">
     <h3 class="card-title">Institution Configuration</h3>

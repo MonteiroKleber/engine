@@ -1,0 +1,13 @@
+{
+  "name": "sod",
+  "rules": [
+    {
+      "constraint": "no_self_approval",
+      "rule_name": "no_self_approval_account",
+      "scope": {
+        "entity": "account"
+      }
+    }
+  ],
+  "version": "1.0"
+}

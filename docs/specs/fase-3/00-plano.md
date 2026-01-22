@@ -4,13 +4,25 @@
 **Base:** Engine v8.1.1 + Fase 2 concluída (DSL→IR→bundle, prova offline, rollback, multi-dept/tenant, legacy bridge RO, mandatos governados)
 ## 0.1) Mapa de etapas → pastas
 
-- **Etapa 3.3** (proof no console): `docs/specs/fase-3/03-3-proof-console/`
-
-- **Etapa 3.2** (institutional explorer): `docs/specs/fase-3/03-2-institutional-explorer/`
-
 - **Etapa 3.1** (console mínimo read-only): `docs/specs/fase-3/03-1-console-readonly/`
+- **Etapa 3.2** (institutional explorer): `docs/specs/fase-3/03-2-institutional-explorer/`
+- **Etapa 3.3** (proof no console): `docs/specs/fase-3/03-3-proof-console/`
+- **Etapa 3.4** (mandates governance UI): `docs/specs/fase-3/03-4-mandates-governance-ui/`
+- **Etapa 3.5** (EGE console): `docs/specs/fase-3/03-5-ege-console/`
+- **Etapa 3.6** (legacy console): `docs/specs/fase-3/03-6-legacy-console/`
+- **Etapa 3.7** (intake assistido): `docs/specs/fase-3/03-7-intake-assisted/`
 
+## 0.2) Status atual (Fase 3)
 
+| Etapa | Tema | Status | Pasta |
+|------:|------|:------:|-------|
+| 3.1 | Console mínimo (read-only) | ✅ | `docs/specs/fase-3/03-1-console-readonly/` |
+| 3.2 | Institutional Explorer (contracts) | ✅ | `docs/specs/fase-3/03-2-institutional-explorer/` |
+| 3.3 | Prova offline no console (UX + export) | ✅ | `docs/specs/fase-3/03-3-proof-console/` |
+| 3.4 | Governança de mandatos (UI) | ✅ | `docs/specs/fase-3/03-4-mandates-governance-ui/` |
+| 3.5 | EGE no console (proposals/releases/rollback) | ✅ | `docs/specs/fase-3/03-5-ege-console/` |
+| 3.6 | Legacy Bridge no console | ✅ | `docs/specs/fase-3/03-6-legacy-console/` |
+| 3.7 | Intake assistido (NL/DSL → draft/gaps/export) | ✅ | `docs/specs/fase-3/03-7-intake-assisted/` |
 ## Objetivo da Fase 3
 
 Transformar o engine em **produto operável** para CTO/COO/Arquitetura e para operação diária, sem quebrar os princípios:
@@ -77,3 +89,22 @@ Transformar o engine em **produto operável** para CTO/COO/Arquitetura e para op
 ## Saída esperada da Fase 3
 
 - Um CTO consegue navegar, provar e governar um fluxo piloto (finance/support), e integrar um legado read-only, tudo com evidência.
+
+## Encerramento (Fase 3)
+
+A Fase 3 está concluída quando o console permite, de ponta a ponta:
+
+- observar estado (ACTIVE/SAFE_MODE, drift, freeze/emergency)
+- inspecionar contratos e provas (manifest/ledger/contracts + proof report)
+- governar mandatos (proposal/decide/apply)
+- operar EGE (proposals/pins/releases) e executar rollback governado
+- operar Legacy Bridge read-only (list + verify)
+- fazer intake assistido e exportar DSL/IR
+
+Próximos candidatos naturais (Fase 4)
+
+- Auth de browser (sessão/cookie) para console
+- Onboarding e templates por indústria/departamento
+- Write-mode governado para Legacy Bridge (após avaliação de risco)
+- Expansão do subset DSL (com controle de escopo)
+

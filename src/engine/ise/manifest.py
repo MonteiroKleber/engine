@@ -61,6 +61,7 @@ REQUIRED_CONTRACTS: Set[str] = frozenset({
 OPTIONAL_CONTRACTS: Set[str] = frozenset({
     "openapi.yaml",
     "contracts.json",  # interdepartmental contracts (multi mode)
+    "operations.json",  # OperationRegistry (optional for legacy compatibility)
 })
 
 

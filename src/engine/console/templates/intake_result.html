@@ -1,0 +1,162 @@
+{% extends "base.html" %}
+
+{% block title %}AXIOM Console - Resultado do Intake{% endblock %}
+
+{% block content %}
+<!-- Validation Status -->
+<div class="card" style="margin-bottom: 1rem; border-left: 4px solid {% if is_valid %}var(--success-color, #28a745){% else %}var(--warning-color, #ffc107){% endif %};">
+    {% if is_valid %}
+    <div style="color: var(--success-color, #155724);">
+        <strong>IDL Finalizado com Sucesso</strong>
+    </div>
+    {% else %}
+    <div style="color: var(--warning-color, #856404);">
+        <strong>IDL Finalizado com Avisos</strong>
+    </div>
+    {% if validation_errors %}
+    <ul style="margin: 0.5rem 0 0 0; padding-left: 1.5rem;">
+        {% for error in validation_errors %}
+        <li style="color: var(--warning-color, #856404);">{{ error }}</li>
+        {% endfor %}
+    </ul>
+    {% endif %}
+    {% endif %}
+</div>
+
+<!-- Back Link -->
+<div style="margin-bottom: 1rem;">
+    <a href="/console/intake?institution_id={{ institution_id }}{% if dept_id %}&dept_id={{ dept_id }}{% endif %}&mode={{ mode }}"
+       class="btn-link">&larr; Novo Intake</a>
+</div>
+
+<!-- Final IDL -->
+<div class="card">
+    <h3 class="card-title">IDL Final</h3>
+
+    <!-- Metadata -->
+    <div style="margin-bottom: 1rem;">
+        <div class="info-row">
+            <span class="info-label">Name:</span>
+            <span class="info-value">{{ final_idl.name or 'policy' }}</span>
+        </div>
+        <div class="info-row">
+            <span class="info-label">Version:</span>
+            <span class="info-value">{{ final_idl.version or '1.0' }}</span>
+        </div>
+        {% if final_idl.ir_version %}
+        <div class="info-row">
+            <span class="info-label">IR Version:</span>
+            <span class="info-value">{{ final_idl.ir_version }}</span>
+        </div>
+        {% endif %}
+        {% if final_idl.source_idl_version %}
+        <div class="info-row">
+            <span class="info-label">Source IDL Version:</span>
+            <span class="info-value">{{ final_idl.source_idl_version }}</span>
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- JSON Preview -->
+    <details open>
+        <summary style="cursor: pointer; color: var(--primary-color); margin-bottom: 0.5rem;">Ver JSON Completo</summary>
+        <pre style="background: var(--bg-secondary); padding: 1rem; border-radius: 4px; overflow-x: auto; font-size: 0.75rem; max-height: 400px; overflow-y: auto;">{{ final_idl_json }}</pre>
+    </details>
+
+    <!-- Warnings -->
+    {% if final_idl._warnings %}
+    <div style="margin-top: 1rem; padding: 1rem; background: #fff3cd; border-radius: 4px;">
+        <strong style="color: #856404;">Avisos ({{ final_idl._warnings | length }}):</strong>
+        <ul style="margin: 0.5rem 0 0 0; padding-left: 1.5rem;">
+            {% for warning in final_idl._warnings %}
+            <li style="color: #856404; font-size: 0.875rem;">
+                <span class="badge {% if warning.severity == 'required' %}badge-error{% else %}badge-safe-mode{% endif %}" style="font-size: 0.65rem;">{{ warning.severity }}</span>
+                {{ warning.description }}
+            </li>
+            {% endfor %}
+        </ul>
+    </div>
+    {% endif %}
+</div>
+
+<!-- Export Section -->
+<div class="card" style="margin-top: 1rem;">
+    <h4 style="margin-bottom: 0.5rem;">Exportar</h4>
+    <p style="color: var(--text-secondary); margin-bottom: 1rem; font-size: 0.875rem;">
+        Exporte o resultado para revisao humana. O arquivo pode ser usado como entrada para o pipeline de deploy (governado).
+    </p>
+
+    <div style="display: flex; gap: 1rem; flex-wrap: wrap;">
+        <!-- Export IR JSON -->
+        <a href="/console/intake/export?institution_id={{ institution_id }}{% if dept_id %}&dept_id={{ dept_id }}{% endif %}&format=ir&idl_json={{ final_idl_json | urlencode }}"
+           class="btn-link" style="background: var(--primary-color, #0066cc); color: white; padding: 0.5rem 1rem; text-decoration: none; border-radius: 4px;">
+            Download IR JSON
+        </a>
+
+        <!-- Copy to Clipboard -->
+        <button type="button" onclick="copyToClipboard()" class="btn-link" style="background: var(--bg-secondary); color: var(--text-primary); padding: 0.5rem 1rem; text-decoration: none; border-radius: 4px; border: 1px solid var(--border-color); cursor: pointer;">
+            Copiar JSON
+        </button>
+    </div>
+</div>
+
+<!-- Summary Section -->
+<div class="card" style="margin-top: 1rem;">
+    <h4 style="margin-bottom: 0.5rem;">Resumo</h4>
+
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 1rem;">
+        {% if final_idl.rbac and final_idl.rbac.roles %}
+        <div style="padding: 0.75rem; background: var(--bg-secondary); border-radius: 4px; text-align: center;">
+            <div style="font-size: 1.5rem; font-weight: bold;">{{ final_idl.rbac.roles | length }}</div>
+            <div style="font-size: 0.75rem; color: var(--text-secondary);">Roles</div>
+        </div>
+        {% endif %}
+
+        {% if final_idl.approvals and final_idl.approvals.rules %}
+        <div style="padding: 0.75rem; background: var(--bg-secondary); border-radius: 4px; text-align: center;">
+            <div style="font-size: 1.5rem; font-weight: bold;">{{ final_idl.approvals.rules | length }}</div>
+            <div style="font-size: 0.75rem; color: var(--text-secondary);">Approval Rules</div>
+        </div>
+        {% endif %}
+
+        {% if final_idl.sod and final_idl.sod.rules %}
+        <div style="padding: 0.75rem; background: var(--bg-secondary); border-radius: 4px; text-align: center;">
+            <div style="font-size: 1.5rem; font-weight: bold;">{{ final_idl.sod.rules | length }}</div>
+            <div style="font-size: 0.75rem; color: var(--text-secondary);">SoD Rules</div>
+        </div>
+        {% endif %}
+
+        {% if final_idl.actors %}
+        <div style="padding: 0.75rem; background: var(--bg-secondary); border-radius: 4px; text-align: center;">
+            <div style="font-size: 1.5rem; font-weight: bold;">{{ final_idl.actors | length }}</div>
+            <div style="font-size: 0.75rem; color: var(--text-secondary);">Actors</div>
+        </div>
+        {% endif %}
+
+        {% if final_idl.entities %}
+        <div style="padding: 0.75rem; background: var(--bg-secondary); border-radius: 4px; text-align: center;">
+            <div style="font-size: 1.5rem; font-weight: bold;">{{ final_idl.entities | length }}</div>
+            <div style="font-size: 0.75rem; color: var(--text-secondary);">Entities</div>
+        </div>
+        {% endif %}
+
+        {% if final_idl._warnings %}
+        <div style="padding: 0.75rem; background: #fff3cd; border-radius: 4px; text-align: center;">
+            <div style="font-size: 1.5rem; font-weight: bold; color: #856404;">{{ final_idl._warnings | length }}</div>
+            <div style="font-size: 0.75rem; color: #856404;">Warnings</div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<script>
+function copyToClipboard() {
+    const json = {{ final_idl_json | tojson }};
+    navigator.clipboard.writeText(json).then(function() {
+        alert('JSON copiado para a area de transferencia!');
+    }, function(err) {
+        alert('Erro ao copiar: ' + err);
+    });
+}
+</script>
+{% endblock %}

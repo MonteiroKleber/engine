@@ -1,0 +1,64 @@
+{
+  "_metadata": {
+    "bundle_hash": "36bb830c52c6a2677c62f1e9543a2f9528c66e91bfa7c4330310550f913782dc",
+    "created_at": "2026-01-21T22:32:13.797272+00:00",
+    "manifest_version": "1.0",
+    "mode": "single",
+    "system_name": "Finance Test"
+  },
+  "contracts": [
+    {
+      "file": "approvals.json",
+      "required": true,
+      "sha256": "SHA256:b17a4c5ea1851f9210faaa69391d48001453f1ae6523680e6e011dd17492b24e"
+    },
+    {
+      "file": "autonomy.json",
+      "required": true,
+      "sha256": "SHA256:2872f901adca305e01ef2d01c6479dbb490380cb6a6cecff9ecffa1e35cc8919"
+    },
+    {
+      "file": "invariants.json",
+      "required": true,
+      "sha256": "SHA256:837a08ff8056c994b2feecf793d6f588cf811c3dfd4586556476d93341f1c1f1"
+    },
+    {
+      "file": "mandates.json",
+      "required": true,
+      "sha256": "SHA256:7f1ab6c108b087e5e96062f709d4eca5d61bbb46b406a4c1054873ac3c5c41f1"
+    },
+    {
+      "file": "openapi.yaml",
+      "required": false,
+      "sha256": "SHA256:e53be1ebd72922a58a1f3596cea2a2704dd00e67073efa4f57b6b43c4a1d86ae"
+    },
+    {
+      "file": "operations.json",
+      "required": false,
+      "sha256": "SHA256:d1b43066179811e261f2fc5ba176bae5ff558454a90e54662e87e09ed0b95cbb"
+    },
+    {
+      "file": "policies.json",
+      "required": true,
+      "sha256": "SHA256:d6c07203f38893484deae5e433ad25e5d880ef478460a957fbe810b6ea402654"
+    },
+    {
+      "file": "rbac.json",
+      "required": true,
+      "sha256": "SHA256:1ba444d06f9017e419a718be22bf7545bf7bd3d7d5c674b16a3d34cd941c2942"
+    },
+    {
+      "file": "sod.json",
+      "required": true,
+      "sha256": "SHA256:7861a3f90c8bfb0e0d1acd96de0ba7da05e4cf47293d5be107f3ea1458652a1d"
+    },
+    {
+      "file": "workflows.json",
+      "required": true,
+      "sha256": "SHA256:0938323a1fa6ee61e1b016cbfa521375dd1187296128b0ae289fa8b13ceddbd3"
+    }
+  ],
+  "description": "Finance Test bundle",
+  "name": "test-operations",
+  "version": "1.0.0"
+}

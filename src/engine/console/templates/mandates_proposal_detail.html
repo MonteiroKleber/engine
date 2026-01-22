@@ -1,0 +1,180 @@
+{% extends "base.html" %}
+
+{% block title %}AXIOM Console - Proposal {{ proposal.proposal_id[:8] }}...{% endblock %}
+
+{% block content %}
+{% if error %}
+<div class="card" style="background: var(--error-bg, #f8d7da); border-left: 4px solid var(--error-color, #dc3545); margin-bottom: 1rem;">
+    <div style="color: var(--error-color, #721c24);">
+        {{ error }}
+    </div>
+</div>
+{% endif %}
+
+<div class="card">
+    <h3 class="card-title">
+        Proposal: {{ proposal.proposal_id[:12] }}...
+        {% if proposal.status == 'OPEN' %}
+        <span class="badge badge-unpinned" style="margin-left: 0.5rem;">OPEN</span>
+        {% elif proposal.decision == 'approve' %}
+        <span class="badge badge-active" style="margin-left: 0.5rem;">APPROVED</span>
+        {% elif proposal.decision == 'reject' %}
+        <span class="badge badge-error" style="margin-left: 0.5rem;">REJECTED</span>
+        {% endif %}
+    </h3>
+
+    <div class="grid grid-2" style="gap: 1rem; margin-bottom: 1rem;">
+        <div>
+            <div class="info-row">
+                <span class="info-label">Operation</span>
+                <span class="info-value">{{ proposal.mandate_operation|upper }}</span>
+            </div>
+            <div class="info-row">
+                <span class="info-label">Mandate</span>
+                <span class="info-value mono">{{ proposal.mandate_id }}</span>
+            </div>
+            <div class="info-row">
+                <span class="info-label">Created</span>
+                <span class="info-value">{{ proposal.created_at[:19] }} by {{ proposal.created_by }}</span>
+            </div>
+        </div>
+        <div>
+            <div class="info-row">
+                <span class="info-label">Reason</span>
+                <span class="info-value">{{ proposal.reason }}</span>
+            </div>
+            {% if proposal.status == 'DECIDED' %}
+            <div class="info-row">
+                <span class="info-label">Decision</span>
+                <span class="info-value">
+                    {{ proposal.decision|upper }} by {{ proposal.decided_by }}
+                    at {{ proposal.decided_at[:19] }}
+                </span>
+            </div>
+            {% if proposal.decision_reason %}
+            <div class="info-row">
+                <span class="info-label">Decision Reason</span>
+                <span class="info-value">{{ proposal.decision_reason }}</span>
+            </div>
+            {% endif %}
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+{% if proposal.mandate_operation in ('update', 'revoke', 'create') %}
+<div class="card">
+    <h3 class="card-title">Diff: Before &rarr; After</h3>
+
+    <div class="grid grid-2" style="gap: 1rem;">
+        <div>
+            <h4 style="margin-bottom: 0.5rem; color: var(--text-secondary);">
+                {% if proposal.mandate_operation == 'create' %}
+                Current (does not exist)
+                {% else %}
+                Current
+                {% endif %}
+            </h4>
+            {% if current_mandate_json %}
+            <pre class="code-block" style="max-height: 300px; overflow: auto;">{{ current_mandate_json }}</pre>
+            {% elif proposal.mandate_operation == 'create' %}
+            <div class="empty-state" style="padding: 2rem; text-align: center;">(new mandate)</div>
+            {% else %}
+            <div class="empty-state" style="padding: 2rem; text-align: center;">(not found)</div>
+            {% endif %}
+        </div>
+        <div>
+            <h4 style="margin-bottom: 0.5rem; color: var(--text-secondary);">
+                {% if proposal.mandate_operation == 'revoke' %}
+                Proposed (will be removed)
+                {% else %}
+                Proposed
+                {% endif %}
+            </h4>
+            {% if proposed_mandate_json and proposal.mandate_operation != 'revoke' %}
+            <pre class="code-block" style="max-height: 300px; overflow: auto;">{{ proposed_mandate_json }}</pre>
+            {% elif proposal.mandate_operation == 'revoke' %}
+            <div class="empty-state" style="padding: 2rem; text-align: center; color: var(--error-color, #dc3545);">(will be revoked)</div>
+            {% else %}
+            <div class="empty-state" style="padding: 2rem; text-align: center;">(no data)</div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endif %}
+
+{% if proposal.status == 'OPEN' %}
+<div class="card">
+    <h3 class="card-title">Decision</h3>
+
+    <form method="POST" action="/console/mandates/proposals/{{ proposal.proposal_id }}/decide">
+        <input type="hidden" name="institution_id" value="{{ institution_id }}">
+        {% if dept_id %}
+        <input type="hidden" name="dept_id" value="{{ dept_id }}">
+        {% endif %}
+        {% if csrf_token %}<input type="hidden" name="_csrf_token" value="{{ csrf_token }}">{% endif %}
+
+        <div class="form-group" style="margin-bottom: 1rem;">
+            <div style="display: flex; flex-direction: column; gap: 0.5rem;">
+                <label style="display: flex; align-items: center; gap: 0.5rem;">
+                    <input type="radio" name="decision" value="approve" checked>
+                    <span style="color: var(--success-color, #28a745);">Approve</span>
+                </label>
+                <label style="display: flex; align-items: center; gap: 0.5rem;">
+                    <input type="radio" name="decision" value="reject">
+                    <span style="color: var(--error-color, #dc3545);">Reject</span>
+                </label>
+            </div>
+        </div>
+
+        <div class="form-group" style="margin-bottom: 1rem;">
+            <label for="decision_reason" style="display: block; margin-bottom: 0.5rem; font-weight: 500;">
+                Reason
+                <span id="reason-required" style="font-weight: normal; color: var(--text-secondary);">— optional for approve, required for reject</span>
+            </label>
+            <textarea id="decision_reason" name="decision_reason" rows="3"
+                      style="width: 100%; padding: 0.5rem; resize: vertical;"
+                      placeholder="Reason for your decision..."></textarea>
+        </div>
+
+        <div style="display: flex; gap: 1rem;">
+            <a href="/console/mandates/proposals?institution_id={{ institution_id }}{% if dept_id %}&dept_id={{ dept_id }}{% endif %}"
+               class="btn-link">Cancel</a>
+            <button type="submit" style="padding: 0.5rem 1rem; cursor: pointer;">Submit Decision</button>
+        </div>
+    </form>
+</div>
+
+<script>
+// Validate reason for reject
+document.querySelector('form').addEventListener('submit', function(e) {
+    const decision = document.querySelector('input[name="decision"]:checked').value;
+    const reason = document.getElementById('decision_reason').value.trim();
+
+    if (decision === 'reject' && !reason) {
+        e.preventDefault();
+        alert('Reason is required for rejection');
+    }
+});
+
+// Update reason label based on decision
+document.querySelectorAll('input[name="decision"]').forEach(radio => {
+    radio.addEventListener('change', function() {
+        const reasonLabel = document.getElementById('reason-required');
+        if (this.value === 'reject') {
+            reasonLabel.style.color = 'var(--error-color, #dc3545)';
+            reasonLabel.textContent = '— required for reject';
+        } else {
+            reasonLabel.style.color = 'var(--text-secondary)';
+            reasonLabel.textContent = '— optional for approve';
+        }
+    });
+});
+</script>
+{% endif %}
+
+<div style="margin-top: 1rem;">
+    <a href="/console/mandates/proposals?institution_id={{ institution_id }}{% if dept_id %}&dept_id={{ dept_id }}{% endif %}"
+       class="btn-link">&larr; Back to Proposals</a>
+</div>
+{% endblock %}

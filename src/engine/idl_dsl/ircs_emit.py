@@ -290,7 +290,8 @@ class IRCSEmitter:
         if node.guard:
             result["guard"] = self._emit_expr(node.guard)
         else:
-            result["guard"] = None
+            # CHANGE-2: Emit explicit {"kind": "always"} instead of null
+            result["guard"] = {"kind": "always"}
 
         if node.approvals:
             result["approvals"] = self._emit_approvals(node.approvals)
@@ -352,6 +353,7 @@ class IRCSEmitter:
             "id": node.id,
             "method": node.method.value,
             "path": node.path or "",
+            "path_params": node.path_params,  # CHANGE-5: Include extracted path parameters
             "request_type": node.request_type or "void",
             "response_type": node.response_type or "void",
             "permission": node.permission or "",

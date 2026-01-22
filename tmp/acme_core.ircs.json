@@ -1,0 +1,1034 @@
+{
+  "ir_version": "ircs.v1",
+  "source_idl_version": "idl.v1.2.2",
+  "source_idl_sha256": "bc81502ffb54d9541dc4a9cf8f1821daf258525ec8bff4e5eda25c0542d1effd",
+  "system": {
+    "id": "AcmeCore",
+    "name": "Acme Core",
+    "description": "Multi-department governance for Acme Foods Distribution",
+    "domain": "finance",
+    "owner": "Acme Foods",
+    "contact": "ops@acmefoods.example"
+  },
+  "department": {
+    "dept_id": "finance",
+    "name": "Acme Core",
+    "namespace": "finance",
+    "tenancy": "multi",
+    "entrypoints": {
+      "api_prefix": "/finance",
+      "permission_prefix": "finance.",
+      "event_prefix": "finance."
+    }
+  },
+  "policy_context": {
+    "schema": [
+      {
+        "name": "jurisdiction",
+        "type": "string",
+        "required": true
+      },
+      {
+        "name": "risk_level",
+        "type": "string",
+        "required": false,
+        "default": "low"
+      },
+      {
+        "name": "amount_threshold",
+        "type": "decimal",
+        "required": false,
+        "default": 1000
+      }
+    ]
+  },
+  "actors": [
+    {
+      "kind": "human",
+      "id": "operator",
+      "name": "Operator",
+      "description": "Creates expenses and purchase requests",
+      "auth": "token",
+      "permissions": [
+        "finance.expense.create",
+        "finance.expense.read",
+        "finance.expense.submit",
+        "procurement.purchase_request.create",
+        "procurement.purchase_request.read",
+        "ops.goods_received.create",
+        "ops.goods_received.read"
+      ]
+    },
+    {
+      "kind": "human",
+      "id": "manager",
+      "name": "Manager",
+      "description": "Approves expenses and purchase requests",
+      "auth": "token",
+      "permissions": [
+        "finance.expense.read",
+        "finance.expense.approve",
+        "finance.expense.transition",
+        "procurement.purchase_request.read",
+        "procurement.purchase_request.approve"
+      ]
+    },
+    {
+      "kind": "human",
+      "id": "controller",
+      "name": "Controller",
+      "description": "Financial controller with elevated permissions",
+      "auth": "token",
+      "permissions": [
+        "finance.expense.read",
+        "finance.expense.approve",
+        "finance.expense.reject",
+        "procurement.purchase_request.read",
+        "procurement.purchase_request.approve",
+        "ops.goods_received.read",
+        "ops.goods_received.confirm"
+      ]
+    },
+    {
+      "kind": "system",
+      "id": "runtime",
+      "name": "Runtime",
+      "description": "",
+      "auth": "token",
+      "permissions": [
+        "runtime.bundle.load",
+        "runtime.proof.snapshot",
+        "runtime.safe_mode.enter"
+      ]
+    },
+    {
+      "kind": "system",
+      "id": "finance_bot",
+      "name": "Finance Bot",
+      "description": "AI agent for finance operations with limited permissions",
+      "auth": "token",
+      "permissions": [
+        "finance.expense.read",
+        "finance.expense.create"
+      ]
+    }
+  ],
+  "entities": [
+    {
+      "name": "Expense",
+      "storage": {
+        "tenant_field": "tenant_id",
+        "version_field": "version"
+      },
+      "fields": [
+        {
+          "name": "id",
+          "type": "uuid",
+          "required": true,
+          "unique": true
+        },
+        {
+          "name": "tenant_id",
+          "type": "uuid",
+          "required": true,
+          "indexed": true
+        },
+        {
+          "name": "amount",
+          "type": "decimal",
+          "required": true,
+          "min": 0
+        },
+        {
+          "name": "currency",
+          "type": "string",
+          "required": true
+        },
+        {
+          "name": "description",
+          "type": "text",
+          "required": true
+        },
+        {
+          "name": "category",
+          "type": "string",
+          "required": true
+        },
+        {
+          "name": "created_by",
+          "type": "uuid",
+          "required": true,
+          "indexed": true
+        },
+        {
+          "name": "created_at",
+          "type": "datetime",
+          "required": true
+        },
+        {
+          "name": "state",
+          "type": "string",
+          "required": true,
+          "indexed": true
+        },
+        {
+          "name": "version",
+          "type": "int",
+          "required": true,
+          "default": 1
+        }
+      ]
+    },
+    {
+      "name": "PurchaseRequest",
+      "storage": {
+        "tenant_field": "tenant_id",
+        "version_field": "version"
+      },
+      "fields": [
+        {
+          "name": "id",
+          "type": "uuid",
+          "required": true,
+          "unique": true
+        },
+        {
+          "name": "tenant_id",
+          "type": "uuid",
+          "required": true,
+          "indexed": true
+        },
+        {
+          "name": "amount",
+          "type": "decimal",
+          "required": true,
+          "min": 0
+        },
+        {
+          "name": "currency",
+          "type": "string",
+          "required": true
+        },
+        {
+          "name": "vendor",
+          "type": "string",
+          "required": true
+        },
+        {
+          "name": "items",
+          "type": "text",
+          "required": true
+        },
+        {
+          "name": "urgency",
+          "type": "string",
+          "required": true,
+          "default": "normal"
+        },
+        {
+          "name": "created_by",
+          "type": "uuid",
+          "required": true,
+          "indexed": true
+        },
+        {
+          "name": "created_at",
+          "type": "datetime",
+          "required": true
+        },
+        {
+          "name": "state",
+          "type": "string",
+          "required": true,
+          "indexed": true
+        },
+        {
+          "name": "version",
+          "type": "int",
+          "required": true,
+          "default": 1
+        }
+      ]
+    },
+    {
+      "name": "GoodsReceived",
+      "storage": {
+        "tenant_field": "tenant_id",
+        "version_field": "version"
+      },
+      "fields": [
+        {
+          "name": "id",
+          "type": "uuid",
+          "required": true,
+          "unique": true
+        },
+        {
+          "name": "tenant_id",
+          "type": "uuid",
+          "required": true,
+          "indexed": true
+        },
+        {
+          "name": "purchase_request_id",
+          "type": "uuid",
+          "required": true,
+          "indexed": true
+        },
+        {
+          "name": "received_by",
+          "type": "uuid",
+          "required": true,
+          "indexed": true
+        },
+        {
+          "name": "received_at",
+          "type": "datetime",
+          "required": true
+        },
+        {
+          "name": "condition",
+          "type": "string",
+          "required": true,
+          "default": "good"
+        },
+        {
+          "name": "notes",
+          "type": "text",
+          "required": false
+        },
+        {
+          "name": "state",
+          "type": "string",
+          "required": true,
+          "indexed": true
+        },
+        {
+          "name": "version",
+          "type": "int",
+          "required": true,
+          "default": 1
+        }
+      ]
+    }
+  ],
+  "invariants": [
+    {
+      "name": "ExpensePositiveAmount",
+      "applies_to": "Expense",
+      "when": {
+        "kind": "always"
+      },
+      "assert": {
+        "kind": "compare",
+        "op": ">",
+        "lhs": {
+          "ref": "Expense.amount",
+          "type": "unknown"
+        },
+        "rhs": {
+          "lit": 0,
+          "type": "int"
+        }
+      },
+      "severity": "critical",
+      "message": "Expense amount must be positive."
+    },
+    {
+      "name": "ExpenseMustHaveCurrency",
+      "applies_to": "Expense",
+      "when": {
+        "kind": "always"
+      },
+      "assert": {
+        "kind": "compare",
+        "op": "!=",
+        "lhs": {
+          "ref": "Expense.currency",
+          "type": "unknown"
+        },
+        "rhs": {
+          "lit": "",
+          "type": "string"
+        }
+      },
+      "severity": "high",
+      "message": "Expense currency must be defined."
+    },
+    {
+      "name": "PurchaseRequestPositiveAmount",
+      "applies_to": "PurchaseRequest",
+      "when": {
+        "kind": "always"
+      },
+      "assert": {
+        "kind": "compare",
+        "op": ">",
+        "lhs": {
+          "ref": "PurchaseRequest.amount",
+          "type": "unknown"
+        },
+        "rhs": {
+          "lit": 0,
+          "type": "int"
+        }
+      },
+      "severity": "critical",
+      "message": "Purchase request amount must be positive."
+    },
+    {
+      "name": "GoodsReceivedValidCondition",
+      "applies_to": "GoodsReceived",
+      "when": {
+        "kind": "always"
+      },
+      "assert": {
+        "kind": "compare",
+        "op": "!=",
+        "lhs": {
+          "ref": "GoodsReceived.condition",
+          "type": "unknown"
+        },
+        "rhs": {
+          "lit": "",
+          "type": "string"
+        }
+      },
+      "severity": "high",
+      "message": "Goods condition must be specified."
+    }
+  ],
+  "separation_of_duties": [
+    {
+      "name": "NoSelfApprovalExpense",
+      "on_entity": "Expense",
+      "forbid": {
+        "action": "Approve",
+        "when": {
+          "kind": "compare",
+          "op": "==",
+          "lhs": {
+            "ref": "actor.id",
+            "type": "unknown"
+          },
+          "rhs": {
+            "ref": "Expense.created_by",
+            "type": "unknown"
+          }
+        }
+      },
+      "severity": "critical",
+      "message": "Creator cannot approve their own expense."
+    },
+    {
+      "name": "NoSelfApprovalPurchase",
+      "on_entity": "PurchaseRequest",
+      "forbid": {
+        "action": "Approve",
+        "when": {
+          "kind": "compare",
+          "op": "==",
+          "lhs": {
+            "ref": "actor.id",
+            "type": "unknown"
+          },
+          "rhs": {
+            "ref": "PurchaseRequest.created_by",
+            "type": "unknown"
+          }
+        }
+      },
+      "severity": "critical",
+      "message": "Creator cannot approve their own purchase request."
+    }
+  ],
+  "workflows": [
+    {
+      "name": "ExpenseFlow",
+      "on_entity": "Expense",
+      "state_field": "state",
+      "states": [
+        {
+          "name": "Draft",
+          "initial": true,
+          "terminal": false
+        },
+        {
+          "name": "PendingApproval",
+          "initial": false,
+          "terminal": false
+        },
+        {
+          "name": "Approved",
+          "initial": false,
+          "terminal": true
+        },
+        {
+          "name": "Rejected",
+          "initial": false,
+          "terminal": true
+        }
+      ],
+      "transitions": [
+        {
+          "name": "Submit",
+          "from": "Draft",
+          "to": "PendingApproval",
+          "guard": {
+            "kind": "compare",
+            "op": ">",
+            "lhs": {
+              "ref": "Expense.amount",
+              "type": "unknown"
+            },
+            "rhs": {
+              "lit": 0,
+              "type": "int"
+            }
+          },
+          "approvals": null,
+          "effects": [
+            {
+              "kind": "set_state",
+              "value": "PendingApproval"
+            },
+            {
+              "kind": "bump_version",
+              "field": "version",
+              "by": 1
+            }
+          ]
+        },
+        {
+          "name": "Approve",
+          "from": "PendingApproval",
+          "to": "Approved",
+          "guard": {
+            "kind": "always"
+          },
+          "approvals": {
+            "quorum": 1,
+            "roles": [
+              "manager",
+              "controller"
+            ],
+            "distinct_actors": true,
+            "expires_in": "48h"
+          },
+          "effects": [
+            {
+              "kind": "set_state",
+              "value": "Approved"
+            },
+            {
+              "kind": "bump_version",
+              "field": "version",
+              "by": 1
+            }
+          ]
+        },
+        {
+          "name": "Reject",
+          "from": "PendingApproval",
+          "to": "Rejected",
+          "guard": {
+            "kind": "always"
+          },
+          "approvals": {
+            "quorum": 1,
+            "roles": [
+              "manager",
+              "controller"
+            ],
+            "distinct_actors": true,
+            "expires_in": "48h"
+          },
+          "effects": [
+            {
+              "kind": "set_state",
+              "value": "Rejected"
+            },
+            {
+              "kind": "bump_version",
+              "field": "version",
+              "by": 1
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "PurchaseFlow",
+      "on_entity": "PurchaseRequest",
+      "state_field": "state",
+      "states": [
+        {
+          "name": "Draft",
+          "initial": true,
+          "terminal": false
+        },
+        {
+          "name": "PendingApproval",
+          "initial": false,
+          "terminal": false
+        },
+        {
+          "name": "Approved",
+          "initial": false,
+          "terminal": true
+        },
+        {
+          "name": "Rejected",
+          "initial": false,
+          "terminal": true
+        }
+      ],
+      "transitions": [
+        {
+          "name": "Submit",
+          "from": "Draft",
+          "to": "PendingApproval",
+          "guard": {
+            "kind": "compare",
+            "op": ">",
+            "lhs": {
+              "ref": "PurchaseRequest.amount",
+              "type": "unknown"
+            },
+            "rhs": {
+              "lit": 0,
+              "type": "int"
+            }
+          },
+          "approvals": null,
+          "effects": [
+            {
+              "kind": "set_state",
+              "value": "PendingApproval"
+            },
+            {
+              "kind": "bump_version",
+              "field": "version",
+              "by": 1
+            }
+          ]
+        },
+        {
+          "name": "Approve",
+          "from": "PendingApproval",
+          "to": "Approved",
+          "guard": {
+            "kind": "always"
+          },
+          "approvals": {
+            "quorum": 1,
+            "roles": [
+              "manager",
+              "controller"
+            ],
+            "distinct_actors": true,
+            "expires_in": "72h"
+          },
+          "effects": [
+            {
+              "kind": "set_state",
+              "value": "Approved"
+            },
+            {
+              "kind": "bump_version",
+              "field": "version",
+              "by": 1
+            }
+          ]
+        },
+        {
+          "name": "Reject",
+          "from": "PendingApproval",
+          "to": "Rejected",
+          "guard": {
+            "kind": "always"
+          },
+          "approvals": {
+            "quorum": 1,
+            "roles": [
+              "manager",
+              "controller"
+            ],
+            "distinct_actors": true,
+            "expires_in": "72h"
+          },
+          "effects": [
+            {
+              "kind": "set_state",
+              "value": "Rejected"
+            },
+            {
+              "kind": "bump_version",
+              "field": "version",
+              "by": 1
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "GoodsReceivedFlow",
+      "on_entity": "GoodsReceived",
+      "state_field": "state",
+      "states": [
+        {
+          "name": "Pending",
+          "initial": true,
+          "terminal": false
+        },
+        {
+          "name": "Confirmed",
+          "initial": false,
+          "terminal": true
+        },
+        {
+          "name": "Disputed",
+          "initial": false,
+          "terminal": false
+        }
+      ],
+      "transitions": [
+        {
+          "name": "Confirm",
+          "from": "Pending",
+          "to": "Confirmed",
+          "guard": {
+            "kind": "compare",
+            "op": "==",
+            "lhs": {
+              "ref": "GoodsReceived.condition",
+              "type": "unknown"
+            },
+            "rhs": {
+              "lit": "good",
+              "type": "string"
+            }
+          },
+          "approvals": null,
+          "effects": [
+            {
+              "kind": "set_state",
+              "value": "Confirmed"
+            },
+            {
+              "kind": "bump_version",
+              "field": "version",
+              "by": 1
+            }
+          ]
+        },
+        {
+          "name": "Dispute",
+          "from": "Pending",
+          "to": "Disputed",
+          "guard": {
+            "kind": "compare",
+            "op": "!=",
+            "lhs": {
+              "ref": "GoodsReceived.condition",
+              "type": "unknown"
+            },
+            "rhs": {
+              "lit": "good",
+              "type": "string"
+            }
+          },
+          "approvals": null,
+          "effects": [
+            {
+              "kind": "set_state",
+              "value": "Disputed"
+            },
+            {
+              "kind": "bump_version",
+              "field": "version",
+              "by": 1
+            }
+          ]
+        },
+        {
+          "name": "Resolve",
+          "from": "Disputed",
+          "to": "Confirmed",
+          "guard": {
+            "kind": "always"
+          },
+          "approvals": null,
+          "effects": [
+            {
+              "kind": "set_state",
+              "value": "Confirmed"
+            },
+            {
+              "kind": "bump_version",
+              "field": "version",
+              "by": 1
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "operations": {
+    "api": [
+      {
+        "id": "expense_create",
+        "method": "POST",
+        "path": "/finance/expenses",
+        "path_params": [],
+        "request_type": "Expense",
+        "response_type": "Expense",
+        "permission": "finance.expense.create",
+        "scope": "tenant",
+        "idempotency": "required",
+        "errors": [
+          400,
+          401,
+          403
+        ],
+        "bind": {
+          "entity": "Expense",
+          "kind": "create"
+        }
+      },
+      {
+        "id": "expense_get",
+        "method": "GET",
+        "path": "/finance/expenses/{id}",
+        "path_params": [
+          "id"
+        ],
+        "request_type": "void",
+        "response_type": "Expense",
+        "permission": "finance.expense.read",
+        "scope": "tenant",
+        "idempotency": "none",
+        "errors": [
+          401,
+          403,
+          404
+        ],
+        "bind": {
+          "entity": "Expense",
+          "kind": "read"
+        }
+      },
+      {
+        "id": "expense_submit",
+        "method": "POST",
+        "path": "/finance/expenses/{id}/submit",
+        "path_params": [
+          "id"
+        ],
+        "request_type": "void",
+        "response_type": "Expense",
+        "permission": "finance.expense.submit",
+        "scope": "tenant",
+        "idempotency": "required",
+        "errors": [
+          400,
+          401,
+          403,
+          409
+        ],
+        "bind": {
+          "entity": "Expense",
+          "kind": "transition",
+          "workflow": "ExpenseFlow",
+          "transition": "Submit"
+        }
+      },
+      {
+        "id": "expense_approve",
+        "method": "POST",
+        "path": "/finance/expenses/{id}/approve",
+        "path_params": [
+          "id"
+        ],
+        "request_type": "void",
+        "response_type": "Expense",
+        "permission": "finance.expense.approve",
+        "scope": "tenant",
+        "idempotency": "required",
+        "errors": [
+          400,
+          401,
+          403,
+          409
+        ],
+        "bind": {
+          "entity": "Expense",
+          "kind": "approval",
+          "workflow": "ExpenseFlow",
+          "transition": "Approve",
+          "decision": "approve"
+        }
+      },
+      {
+        "id": "expense_reject",
+        "method": "POST",
+        "path": "/finance/expenses/{id}/reject",
+        "path_params": [
+          "id"
+        ],
+        "request_type": "void",
+        "response_type": "Expense",
+        "permission": "finance.expense.reject",
+        "scope": "tenant",
+        "idempotency": "required",
+        "errors": [
+          400,
+          401,
+          403,
+          409
+        ],
+        "bind": {
+          "entity": "Expense",
+          "kind": "approval",
+          "workflow": "ExpenseFlow",
+          "transition": "Reject",
+          "decision": "reject"
+        }
+      },
+      {
+        "id": "purchase_request_create",
+        "method": "POST",
+        "path": "/procurement/purchase_requests",
+        "path_params": [],
+        "request_type": "PurchaseRequest",
+        "response_type": "PurchaseRequest",
+        "permission": "procurement.purchase_request.create",
+        "scope": "tenant",
+        "idempotency": "required",
+        "errors": [
+          400,
+          401,
+          403
+        ],
+        "bind": {
+          "entity": "PurchaseRequest",
+          "kind": "create"
+        }
+      },
+      {
+        "id": "purchase_request_get",
+        "method": "GET",
+        "path": "/procurement/purchase_requests/{id}",
+        "path_params": [
+          "id"
+        ],
+        "request_type": "void",
+        "response_type": "PurchaseRequest",
+        "permission": "procurement.purchase_request.read",
+        "scope": "tenant",
+        "idempotency": "none",
+        "errors": [
+          401,
+          403,
+          404
+        ],
+        "bind": {
+          "entity": "PurchaseRequest",
+          "kind": "read"
+        }
+      },
+      {
+        "id": "purchase_request_approve",
+        "method": "POST",
+        "path": "/procurement/purchase_requests/{id}/approve",
+        "path_params": [
+          "id"
+        ],
+        "request_type": "void",
+        "response_type": "PurchaseRequest",
+        "permission": "procurement.purchase_request.approve",
+        "scope": "tenant",
+        "idempotency": "required",
+        "errors": [
+          400,
+          401,
+          403,
+          409
+        ],
+        "bind": {
+          "entity": "PurchaseRequest",
+          "kind": "approval",
+          "workflow": "PurchaseFlow",
+          "transition": "Approve",
+          "decision": "approve"
+        }
+      },
+      {
+        "id": "goods_received_create",
+        "method": "POST",
+        "path": "/ops/goods_received",
+        "path_params": [],
+        "request_type": "GoodsReceived",
+        "response_type": "GoodsReceived",
+        "permission": "ops.goods_received.create",
+        "scope": "tenant",
+        "idempotency": "required",
+        "errors": [
+          400,
+          401,
+          403
+        ],
+        "bind": {
+          "entity": "GoodsReceived",
+          "kind": "create"
+        }
+      },
+      {
+        "id": "goods_received_confirm",
+        "method": "POST",
+        "path": "/ops/goods_received/{id}/confirm",
+        "path_params": [
+          "id"
+        ],
+        "request_type": "void",
+        "response_type": "GoodsReceived",
+        "permission": "ops.goods_received.confirm",
+        "scope": "tenant",
+        "idempotency": "required",
+        "errors": [
+          400,
+          401,
+          403,
+          409
+        ],
+        "bind": {
+          "entity": "GoodsReceived",
+          "kind": "transition",
+          "workflow": "GoodsReceivedFlow",
+          "transition": "Confirm"
+        }
+      }
+    ]
+  },
+  "runtime": {
+    "safe_mode": {
+      "enabled": true,
+      "on_invariant_violation": "enter",
+      "on_contract_tamper": "enter"
+    },
+    "proof": {
+      "snapshot_enabled": true
+    },
+    "gate_order": [
+      "safe_mode",
+      "rbac",
+      "policy_pre",
+      "sod",
+      "workflow",
+      "invariants",
+      "commit",
+      "policy_post",
+      "ledger_finalize"
+    ]
+  }
+}

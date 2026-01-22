@@ -1,0 +1,280 @@
+{% extends "base.html" %}
+
+{% block title %}Autonomy - Libervia Console{% endblock %}
+
+{% block content %}
+<div class="container">
+    <nav class="breadcrumb">
+        <a href="{{ url_for('console_home') }}">Console</a> &gt;
+        <span>Autonomy</span>
+    </nav>
+
+    <h1>Autonomy Governance</h1>
+    <p class="description">View and manage autonomy levels and rules through governed proposals.</p>
+
+    <!-- Navigation -->
+    <div class="nav-tabs">
+        <a href="{{ url_for('console_autonomy') }}" class="tab active">Effective Autonomy</a>
+        <a href="{{ url_for('console_autonomy_proposals') }}" class="tab">Proposals</a>
+    </div>
+
+    <!-- Current Level -->
+    <section class="card">
+        <h2>Current Autonomy Level</h2>
+        <div class="level-display">
+            <div class="level-badge level-{{ effective.current_level }}">
+                L{{ effective.current_level }}
+            </div>
+            <div class="level-description">
+                {% if effective.current_level == 0 %}
+                    Full human oversight required
+                {% elif effective.current_level == 1 %}
+                    Minimal autonomy
+                {% elif effective.current_level == 2 %}
+                    Moderate autonomy
+                {% elif effective.current_level == 3 %}
+                    High autonomy
+                {% elif effective.current_level == 4 %}
+                    Full autonomy (allow-all)
+                {% endif %}
+            </div>
+        </div>
+        <div class="source-info">
+            Source: <span class="badge badge-{{ effective.source }}">{{ effective.source | upper }}</span>
+        </div>
+    </section>
+
+    <!-- Autonomy Rules -->
+    <section class="card">
+        <h2>Autonomy Rules</h2>
+        {% if effective.rules %}
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>Rule ID</th>
+                    <th>Endpoint</th>
+                    <th>Phase</th>
+                    <th>Required Level</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for rule in effective.rules %}
+                <tr>
+                    <td><code>{{ rule.rule_id }}</code></td>
+                    <td><code>{{ rule.endpoint_sig }}</code></td>
+                    <td>{{ rule.phase }}</td>
+                    <td>
+                        <span class="level-badge level-{{ rule.required_level }} small">
+                            L{{ rule.required_level }}
+                        </span>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% else %}
+        <p class="empty-state">No autonomy rules defined. All operations require default level.</p>
+        {% endif %}
+    </section>
+
+    <!-- Level Reference -->
+    <section class="card">
+        <h2>Autonomy Levels Reference</h2>
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>Level</th>
+                    <th>Name</th>
+                    <th>Description</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><span class="level-badge level-0 small">L0</span></td>
+                    <td>Full Oversight</td>
+                    <td>All actions require human approval</td>
+                </tr>
+                <tr>
+                    <td><span class="level-badge level-1 small">L1</span></td>
+                    <td>Minimal</td>
+                    <td>Most actions require approval, basic automation only</td>
+                </tr>
+                <tr>
+                    <td><span class="level-badge level-2 small">L2</span></td>
+                    <td>Moderate</td>
+                    <td>Routine operations automated, complex actions need approval</td>
+                </tr>
+                <tr>
+                    <td><span class="level-badge level-3 small">L3</span></td>
+                    <td>High</td>
+                    <td>Most operations automated, only critical actions need approval</td>
+                </tr>
+                <tr>
+                    <td><span class="level-badge level-4 small">L4</span></td>
+                    <td>Full</td>
+                    <td>All operations automated (allow-all)</td>
+                </tr>
+            </tbody>
+        </table>
+    </section>
+
+    <!-- Actions -->
+    <div class="actions">
+        <a href="{{ url_for('console_autonomy_proposal_new') }}" class="btn btn-primary">+ New Proposal</a>
+    </div>
+</div>
+
+<style>
+.description {
+    color: #666;
+    margin-bottom: 1.5rem;
+}
+
+.nav-tabs {
+    display: flex;
+    gap: 0;
+    margin-bottom: 1.5rem;
+    border-bottom: 2px solid #ddd;
+}
+
+.tab {
+    padding: 0.75rem 1.5rem;
+    text-decoration: none;
+    color: #666;
+    border-bottom: 2px solid transparent;
+    margin-bottom: -2px;
+}
+
+.tab:hover {
+    color: #333;
+}
+
+.tab.active {
+    color: #007bff;
+    border-bottom-color: #007bff;
+}
+
+.card {
+    background: #fff;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    padding: 1.5rem;
+    margin-bottom: 1.5rem;
+}
+
+.card h2 {
+    margin-top: 0;
+    margin-bottom: 1rem;
+    font-size: 1.2rem;
+    border-bottom: 1px solid #eee;
+    padding-bottom: 0.5rem;
+}
+
+.level-display {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    margin-bottom: 1rem;
+}
+
+.level-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    font-size: 1.5rem;
+    font-weight: bold;
+    color: #fff;
+}
+
+.level-badge.small {
+    width: 32px;
+    height: 32px;
+    font-size: 0.9rem;
+}
+
+.level-0 { background: #dc3545; }
+.level-1 { background: #fd7e14; }
+.level-2 { background: #ffc107; color: #333; }
+.level-3 { background: #28a745; }
+.level-4 { background: #007bff; }
+
+.level-description {
+    font-size: 1.1rem;
+    color: #333;
+}
+
+.source-info {
+    color: #666;
+    font-size: 0.9rem;
+}
+
+.badge {
+    display: inline-block;
+    padding: 0.25rem 0.5rem;
+    border-radius: 3px;
+    font-size: 0.85rem;
+    font-weight: 500;
+}
+
+.badge-governed { background: #d4edda; color: #155724; }
+.badge-bundle { background: #cce5ff; color: #004085; }
+.badge-merged { background: #fff3cd; color: #856404; }
+.badge-none { background: #e2e3e5; color: #383d41; }
+
+.data-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.data-table th,
+.data-table td {
+    padding: 0.75rem;
+    text-align: left;
+    border-bottom: 1px solid #eee;
+}
+
+.data-table th {
+    background: #f8f9fa;
+    font-weight: 600;
+}
+
+.empty-state {
+    color: #666;
+    font-style: italic;
+    text-align: center;
+    padding: 2rem;
+}
+
+.actions {
+    margin-top: 1.5rem;
+}
+
+.btn {
+    display: inline-block;
+    padding: 0.5rem 1rem;
+    border-radius: 4px;
+    text-decoration: none;
+    font-size: 1rem;
+}
+
+.btn-primary {
+    background: #007bff;
+    color: #fff;
+}
+
+.btn-primary:hover {
+    background: #0056b3;
+}
+
+code {
+    background: #f1f1f1;
+    padding: 0.2rem 0.4rem;
+    border-radius: 3px;
+    font-family: monospace;
+    font-size: 0.9rem;
+}
+</style>
+{% endblock %}

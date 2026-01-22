@@ -1,0 +1,38 @@
+{
+  "name": "rbac",
+  "roles": [
+    {
+      "name": "controller",
+      "permissions": [
+        "finance.expense.approve",
+        "finance.expense.read",
+        "finance.expense.transition"
+      ]
+    },
+    {
+      "name": "manager",
+      "permissions": [
+        "finance.expense.approve",
+        "finance.expense.read",
+        "finance.expense.transition"
+      ]
+    },
+    {
+      "name": "operator",
+      "permissions": [
+        "finance.expense.create",
+        "finance.expense.read",
+        "finance.expense.submit"
+      ]
+    },
+    {
+      "name": "runtime",
+      "permissions": [
+        "runtime.bundle.load",
+        "runtime.proof.snapshot",
+        "runtime.safe_mode.enter"
+      ]
+    }
+  ],
+  "version": "1.0"
+}

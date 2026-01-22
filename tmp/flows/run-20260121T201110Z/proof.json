@@ -1,0 +1,11 @@
+{
+  "passed": true,
+  "error_code": null,
+  "error_message": null,
+  "bundle_name": "finance-demo",
+  "bundle_version": "idl.v1.2.2",
+  "source_idl_sha256": "9ef76983753ab85c6b6435ce8583279bd2738f55137e2474d682d976d9a3274c",
+  "manifest_hash": "9a34f9fb13306bc75ffa501a1e496cfc911eaee3fd0b0878a9bcb322f029178d",
+  "contracts_verified": 9,
+  "details": {}
+}

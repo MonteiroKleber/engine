@@ -1,0 +1,47 @@
+{
+  "name": "rbac",
+  "version": "1.0",
+  "roles": [
+    {
+      "name": "operator",
+      "permissions": [
+        "expense.create",
+        "expense.read",
+        "expense.submit"
+      ]
+    },
+    {
+      "name": "manager",
+      "permissions": [
+        "expense.read",
+        "expense.approve",
+        "expense.transition",
+        "approval.decide"
+      ]
+    },
+    {
+      "name": "controller",
+      "permissions": [
+        "expense.read",
+        "expense.approve",
+        "expense.reject",
+        "approval.decide"
+      ]
+    },
+    {
+      "name": "finance_bot",
+      "permissions": [
+        "expense.create",
+        "expense.read"
+      ]
+    },
+    {
+      "name": "runtime",
+      "permissions": [
+        "runtime.bundle.load",
+        "runtime.proof.snapshot",
+        "runtime.safe_mode.enter"
+      ]
+    }
+  ]
+}

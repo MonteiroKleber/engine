@@ -1,0 +1,84 @@
+{
+  "ledger_version": "1.0",
+  "ledger_id": "finance-pilot-a38c63d0-20260121201517",
+  "bundle_name": "finance-pilot",
+  "bundle_version": "1.0.0",
+  "manifest_hash": "SHA256:27159fbfe7f3eb6322d1efae674bd92082d831982e83e6ab4b2c9459c1cc4275",
+  "idl_hash": "SHA256:abe451b82e81612a3de8b4bb00c15b7311676326bf6f715ccb486a58193ffecb",
+  "created_at": "2026-01-21T20:15:17.551418+00:00",
+  "contracts": [
+    {
+      "contract_name": "approvals.json",
+      "content_hash": "SHA256:49699db08dcd1c427be630fe9090c73e6c923793bb4f2783171a338107333f51",
+      "status": "active"
+    },
+    {
+      "contract_name": "autonomy.json",
+      "content_hash": "SHA256:0151ac1f38390bd100cb6dac40ac42cff341ae19ecff5bec7ba29157106b9336",
+      "status": "active"
+    },
+    {
+      "contract_name": "invariants.json",
+      "content_hash": "SHA256:3e17572bd74f31c558b5690c2e696b84352ff078ffda81b5e72019f6a5104c7f",
+      "status": "active"
+    },
+    {
+      "contract_name": "mandates.json",
+      "content_hash": "SHA256:1a3ce1b59ff21a9033d4e5dcfa22a9168cc114e801b856348d583197dccd493d",
+      "status": "active"
+    },
+    {
+      "contract_name": "openapi.yaml",
+      "content_hash": "SHA256:c96f851f30cf93204efe2bbce5c820737d0a1a65c0deb4b50de65e1610042fc5",
+      "status": "active"
+    },
+    {
+      "contract_name": "policies.json",
+      "content_hash": "SHA256:f2df6d753b154e6aa3abe70cdc277e914aeed775b63f91745075c200e1ebe09d",
+      "status": "active"
+    },
+    {
+      "contract_name": "rbac.json",
+      "content_hash": "SHA256:64907fac9729f9fc371b2a523048a2cd690216a3e0b9e08967f72de884ac8e05",
+      "status": "active"
+    },
+    {
+      "contract_name": "sod.json",
+      "content_hash": "SHA256:eaea64d77e9c5b0ba2d5318696c1a390da3a8d177249eb3e53e40d33659c7400",
+      "status": "active"
+    },
+    {
+      "contract_name": "workflows.json",
+      "content_hash": "SHA256:c473056482e60e9b11a254a4445ebb1c7e18c1a69c94ae8339d408234e66ae71",
+      "status": "active"
+    },
+    {
+      "contract_name": "source.idl",
+      "content_hash": "SHA256:9ef76983753ab85c6b6435ce8583279bd2738f55137e2474d682d976d9a3274c",
+      "status": "active"
+    }
+  ],
+  "audit_trail": [
+    {
+      "event": "bundle_compiled",
+      "timestamp": "2025-01-18T00:00:00+00:00",
+      "details": {
+        "contract_count": 9,
+        "bundle_name": "finance-pilot",
+        "note": "Manual bundle for finance pilot - offline proof compliant"
+      }
+    },
+    {
+      "event": "bundle_generated",
+      "timestamp": "2026-01-21T20:15:17.551418+00:00",
+      "details": {
+        "institution_id": "a38c63d0-4ceb-4630-8474-7d2ad5713ecf",
+        "template_name": "finance-pilot",
+        "generation_method": "onboarding_wizard",
+        "source_idl_sha256": "9ef76983753ab85c6b6435ce8583279bd2738f55137e2474d682d976d9a3274c"
+      }
+    }
+  ],
+  "source_idl_sha256": "9ef76983753ab85c6b6435ce8583279bd2738f55137e2474d682d976d9a3274c",
+  "source_idl_version": "idl.v1.2.2"
+}

@@ -1,0 +1,67 @@
+{
+  "audit_trail": [
+    {
+      "details": {
+        "bundle_name": "finance-demo",
+        "contract_count": 9
+      },
+      "event": "bundle_compiled",
+      "timestamp": "2026-01-21T20:11:10.520581+00:00"
+    }
+  ],
+  "bundle_name": "finance-demo",
+  "bundle_version": "idl.v1.2.2",
+  "contracts": [
+    {
+      "content_hash": "2d7aea34d65a54aeb71f023186d06194e53fe98d19d402fc92afb3a12820bed7",
+      "contract_name": "approvals.json",
+      "status": "active"
+    },
+    {
+      "content_hash": "2872f901adca305e01ef2d01c6479dbb490380cb6a6cecff9ecffa1e35cc8919",
+      "contract_name": "autonomy.json",
+      "status": "active"
+    },
+    {
+      "content_hash": "62d1c27fc0fe3354e88355c222b315d408ac3382539f9912c6c512380837fbce",
+      "contract_name": "invariants.json",
+      "status": "active"
+    },
+    {
+      "content_hash": "7f1ab6c108b087e5e96062f709d4eca5d61bbb46b406a4c1054873ac3c5c41f1",
+      "contract_name": "mandates.json",
+      "status": "active"
+    },
+    {
+      "content_hash": "29da6ad8a3e3bc77ab73b502d4e1e5406291ace4a961d46180c099020613041b",
+      "contract_name": "openapi.yaml",
+      "status": "active"
+    },
+    {
+      "content_hash": "d6c07203f38893484deae5e433ad25e5d880ef478460a957fbe810b6ea402654",
+      "contract_name": "policies.json",
+      "status": "active"
+    },
+    {
+      "content_hash": "9bfb0c6fcd89f172c597c57abbe5491c0b5b389e5a77a36e3cc57b1bcd1f28c0",
+      "contract_name": "rbac.json",
+      "status": "active"
+    },
+    {
+      "content_hash": "9f3f421415f63ee5e1986f1c93a9e962fd0488a546f0227b06b2d495656f107f",
+      "contract_name": "sod.json",
+      "status": "active"
+    },
+    {
+      "content_hash": "c04542c4d46d907a7529c21c895d59b936550c052d28932389c3042009ceb4e0",
+      "contract_name": "workflows.json",
+      "status": "active"
+    }
+  ],
+  "created_at": "2026-01-21T20:11:10.520572+00:00",
+  "idl_hash": "c696cc381406f40ce86165414e44aef15683c0f97cd0d5d012dd02dc99f49d40",
+  "ledger_id": "56efb306c3fecfb5",
+  "ledger_version": "1.0",
+  "manifest_hash": "9a34f9fb13306bc75ffa501a1e496cfc911eaee3fd0b0878a9bcb322f029178d",
+  "source_idl_sha256": "9ef76983753ab85c6b6435ce8583279bd2738f55137e2474d682d976d9a3274c"
+}

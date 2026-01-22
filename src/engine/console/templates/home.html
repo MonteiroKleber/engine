@@ -9,7 +9,15 @@
     <form method="get" action="/console/status">
         <div class="form-group">
             <label for="institution_id">Institution</label>
-            <select name="institution_id" id="institution_id" required>
+            <select
+                name="institution_id"
+                id="institution_id"
+                required
+                hx-get="/console/partials/departments"
+                hx-trigger="change"
+                hx-target="#dept_id"
+                hx-swap="innerHTML"
+            >
                 <option value="">-- Select Institution --</option>
                 {% for inst in institutions %}
                 <option value="{{ inst.id }}">{{ inst.name or inst.slug or inst.id }}</option>
@@ -21,9 +29,6 @@
             <label for="dept_id">Department (optional)</label>
             <select name="dept_id" id="dept_id">
                 <option value="">-- All Departments --</option>
-                {% for dept in departments %}
-                <option value="{{ dept }}">{{ dept }}</option>
-                {% endfor %}
             </select>
         </div>
 

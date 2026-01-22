@@ -49,11 +49,33 @@ def _get_default_max_body_bytes() -> int:
 
 @dataclass
 class ConfigFlags:
-    """Configuration flags."""
+    """Configuration flags.
+
+    Note: Default values are permissive (dev-friendly).
+    Use get_secure_config_flags() for production defaults.
+    """
 
     require_institution_header_for_runtime: bool = False
     allow_legacy_routes: bool = True
     enable_contracts_stub: bool = True
+
+
+def get_secure_config_flags() -> ConfigFlags:
+    """Get secure configuration flags for production mode.
+
+    GAP 5: Production mode should use secure defaults:
+    - require_institution_header_for_runtime=True (multi-tenant isolation)
+    - allow_legacy_routes=False (prevent legacy route bypass)
+    - enable_contracts_stub=False (require real contract verification)
+
+    Returns:
+        ConfigFlags with secure production defaults.
+    """
+    return ConfigFlags(
+        require_institution_header_for_runtime=True,
+        allow_legacy_routes=False,
+        enable_contracts_stub=False,
+    )
 
 
 @dataclass
@@ -622,3 +644,69 @@ def invalidate_config_cache(institution_id: str) -> None:
 def reset_config_cache() -> None:
     """Reset entire config cache (for testing)."""
     _config_cache.clear()
+
+
+def get_secure_defaults_for_prod() -> Dict[str, Any]:
+    """Get secure default config for production mode.
+
+    GAP 5: When ENGINE_INSTALL_MODE=prod, new institutions should be
+    created with secure defaults rather than permissive dev defaults.
+
+    Secure defaults include:
+    - require_institution_header_for_runtime=True (multi-tenant isolation)
+    - allow_legacy_routes=False (prevent legacy route bypass)
+    - enable_contracts_stub=False (require real contract verification)
+
+    Returns:
+        Config dict with secure production defaults.
+    """
+    secure_flags = get_secure_config_flags()
+
+    return {
+        "schema_version": CONFIG_SCHEMA_VERSION,
+        "flags": {
+            "require_institution_header_for_runtime": secure_flags.require_institution_header_for_runtime,
+            "allow_legacy_routes": secure_flags.allow_legacy_routes,
+            "enable_contracts_stub": secure_flags.enable_contracts_stub,
+        },
+        "limits": {
+            "rate_limit_per_minute": _get_default_rate_limit(),
+            "max_body_bytes": _get_default_max_body_bytes(),
+        },
+        "defaults": {
+            "default_dept": "finance",
+            "default_bundle_name": "finance-pilot",
+        },
+        "freeze_mode": False,
+        "emergency_stop": {
+            "enabled": False,
+            "blocked_endpoints": [],
+        },
+    }
+
+
+def create_secure_config_for_institution(
+    institution_id: str,
+    updated_by: str = "system:secure_defaults",
+) -> Tuple[Optional[InstitutionConfig], Optional[str], Optional[str]]:
+    """Create secure config for a new institution in production mode.
+
+    GAP 5: Called when creating institutions in ENGINE_INSTALL_MODE=prod
+    to ensure they start with secure defaults.
+
+    Args:
+        institution_id: Institution UUID.
+        updated_by: Actor ID for audit trail.
+
+    Returns:
+        Tuple of (config, error_code, error_message).
+        On success: (InstitutionConfig, None, None)
+        On failure: (None, error_code, error_message)
+    """
+    secure_config = get_secure_defaults_for_prod()
+    config, error_code, error_message, _ = save_active_config(
+        institution_id=institution_id,
+        config_dict=secure_config,
+        updated_by=updated_by,
+    )
+    return config, error_code, error_message

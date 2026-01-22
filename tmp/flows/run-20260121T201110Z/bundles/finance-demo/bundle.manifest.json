@@ -1,0 +1,59 @@
+{
+  "_metadata": {
+    "bundle_hash": "19353299536b4709f92464bd90f952d1a02b7b2d5d8eaeddee3bce5c73c54e48",
+    "created_at": "2026-01-21T20:11:10.519826+00:00",
+    "manifest_version": "1.0",
+    "mode": "single",
+    "system_name": "Finance Pilot"
+  },
+  "contracts": [
+    {
+      "file": "approvals.json",
+      "required": true,
+      "sha256": "SHA256:2d7aea34d65a54aeb71f023186d06194e53fe98d19d402fc92afb3a12820bed7"
+    },
+    {
+      "file": "autonomy.json",
+      "required": true,
+      "sha256": "SHA256:2872f901adca305e01ef2d01c6479dbb490380cb6a6cecff9ecffa1e35cc8919"
+    },
+    {
+      "file": "invariants.json",
+      "required": true,
+      "sha256": "SHA256:62d1c27fc0fe3354e88355c222b315d408ac3382539f9912c6c512380837fbce"
+    },
+    {
+      "file": "mandates.json",
+      "required": true,
+      "sha256": "SHA256:7f1ab6c108b087e5e96062f709d4eca5d61bbb46b406a4c1054873ac3c5c41f1"
+    },
+    {
+      "file": "openapi.yaml",
+      "required": false,
+      "sha256": "SHA256:29da6ad8a3e3bc77ab73b502d4e1e5406291ace4a961d46180c099020613041b"
+    },
+    {
+      "file": "policies.json",
+      "required": true,
+      "sha256": "SHA256:d6c07203f38893484deae5e433ad25e5d880ef478460a957fbe810b6ea402654"
+    },
+    {
+      "file": "rbac.json",
+      "required": true,
+      "sha256": "SHA256:9bfb0c6fcd89f172c597c57abbe5491c0b5b389e5a77a36e3cc57b1bcd1f28c0"
+    },
+    {
+      "file": "sod.json",
+      "required": true,
+      "sha256": "SHA256:9f3f421415f63ee5e1986f1c93a9e962fd0488a546f0227b06b2d495656f107f"
+    },
+    {
+      "file": "workflows.json",
+      "required": true,
+      "sha256": "SHA256:c04542c4d46d907a7529c21c895d59b936550c052d28932389c3042009ceb4e0"
+    }
+  ],
+  "description": "Finance Pilot bundle",
+  "name": "finance-demo",
+  "version": "idl.v1.2.2"
+}

@@ -1,0 +1,56 @@
+{
+  "candidate": {
+    "dept_name": {
+      "max_len": 280,
+      "required": true
+    },
+    "email": {
+      "max_len": 280,
+      "required": true
+    },
+    "full_name": {
+      "max_len": 280,
+      "required": true
+    },
+    "phone": {
+      "max_len": 280,
+      "required": false
+    },
+    "position_applied": {
+      "max_len": 280,
+      "required": true
+    },
+    "source": {
+      "max_len": 280,
+      "required": false
+    },
+    "state": {
+      "max_len": 280,
+      "required": true
+    }
+  },
+  "hirerequest": {
+    "currency": {
+      "max_len": 280,
+      "required": true
+    },
+    "dept_name": {
+      "max_len": 280,
+      "required": true
+    },
+    "employment_type": {
+      "max_len": 280,
+      "required": true
+    },
+    "position_title": {
+      "max_len": 280,
+      "required": true
+    },
+    "state": {
+      "max_len": 280,
+      "required": true
+    }
+  },
+  "name": "invariants",
+  "version": "1.0"
+}

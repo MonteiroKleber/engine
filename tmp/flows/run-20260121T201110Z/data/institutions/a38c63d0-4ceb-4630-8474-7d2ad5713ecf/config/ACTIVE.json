@@ -1,0 +1,29 @@
+{
+  "schema_version": "1.4",
+  "updated_at": "2026-01-21T20:13:45.284516+00:00",
+  "updated_by": "system:secure_defaults",
+  "flags": {
+    "require_institution_header_for_runtime": true,
+    "allow_legacy_routes": false,
+    "enable_contracts_stub": false
+  },
+  "limits": {
+    "rate_limit_per_minute": 100,
+    "max_body_bytes": 262144
+  },
+  "defaults": {
+    "default_dept": "finance",
+    "default_bundle_name": "finance-pilot"
+  },
+  "freeze_mode": false,
+  "emergency_stop": {
+    "enabled": false,
+    "blocked_endpoints": []
+  },
+  "pinned_bundle_manifest_sha256": null,
+  "pinned_contract_ledger_sha256": null,
+  "ege_enforce_drift": true,
+  "auto_propose_pin_on_deploy": true,
+  "auto_accept_pin_on_deploy": false,
+  "pinned_release_id": null
+}

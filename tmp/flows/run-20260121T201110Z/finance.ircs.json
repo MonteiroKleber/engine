@@ -1,0 +1,523 @@
+{
+  "actors": [
+    {
+      "auth": "oauth2",
+      "description": "Creates and submits expenses.",
+      "id": "operator",
+      "kind": "human",
+      "name": "Operator",
+      "permissions": [
+        "finance.expense.create",
+        "finance.expense.read",
+        "finance.expense.submit"
+      ]
+    },
+    {
+      "auth": "oauth2",
+      "description": "Approves expenses under policy constraints.",
+      "id": "manager",
+      "kind": "human",
+      "name": "Manager",
+      "permissions": [
+        "finance.expense.read",
+        "finance.expense.approve",
+        "finance.expense.transition"
+      ]
+    },
+    {
+      "auth": "oauth2",
+      "description": "Second approver / financial control.",
+      "id": "controller",
+      "kind": "human",
+      "name": "Controller",
+      "permissions": [
+        "finance.expense.read",
+        "finance.expense.approve",
+        "finance.expense.transition"
+      ]
+    },
+    {
+      "auth": "token",
+      "description": "Institutional runtime actor.",
+      "id": "runtime",
+      "kind": "system",
+      "name": "Runtime",
+      "permissions": [
+        "runtime.bundle.load",
+        "runtime.proof.snapshot",
+        "runtime.safe_mode.enter"
+      ]
+    }
+  ],
+  "department": {
+    "dept_id": "finance",
+    "entrypoints": {
+      "api_prefix": "/finance",
+      "event_prefix": "finance.",
+      "permission_prefix": "finance."
+    },
+    "name": "Finance Pilot",
+    "namespace": "finance",
+    "tenancy": "multi"
+  },
+  "entities": [
+    {
+      "fields": [
+        {
+          "name": "id",
+          "required": true,
+          "type": "uuid",
+          "unique": true
+        },
+        {
+          "indexed": true,
+          "name": "tenant_id",
+          "required": true,
+          "type": "uuid"
+        },
+        {
+          "min": 0,
+          "name": "amount",
+          "required": true,
+          "type": "decimal"
+        },
+        {
+          "name": "currency",
+          "required": true,
+          "type": "string"
+        },
+        {
+          "name": "description",
+          "required": true,
+          "type": "text"
+        },
+        {
+          "indexed": true,
+          "name": "created_by",
+          "required": true,
+          "type": "uuid"
+        },
+        {
+          "name": "created_at",
+          "required": true,
+          "type": "datetime"
+        },
+        {
+          "indexed": true,
+          "name": "state",
+          "required": true,
+          "type": "string"
+        },
+        {
+          "default": 1,
+          "name": "version",
+          "required": true,
+          "type": "int"
+        }
+      ],
+      "name": "Expense",
+      "storage": {
+        "tenant_field": "tenant_id",
+        "version_field": "version"
+      }
+    },
+    {
+      "fields": [
+        {
+          "name": "id",
+          "required": true,
+          "type": "uuid",
+          "unique": true
+        },
+        {
+          "indexed": true,
+          "name": "tenant_id",
+          "required": true,
+          "type": "uuid"
+        },
+        {
+          "name": "balance",
+          "required": true,
+          "type": "decimal"
+        },
+        {
+          "name": "currency",
+          "required": true,
+          "type": "string"
+        },
+        {
+          "default": 1,
+          "name": "version",
+          "required": true,
+          "type": "int"
+        }
+      ],
+      "name": "Account",
+      "storage": {
+        "tenant_field": "tenant_id",
+        "version_field": "version"
+      }
+    }
+  ],
+  "invariants": [
+    {
+      "applies_to": "Account",
+      "assert": {
+        "kind": "compare",
+        "lhs": {
+          "ref": "Account.balance",
+          "type": "unknown"
+        },
+        "op": ">=",
+        "rhs": {
+          "lit": 0,
+          "type": "int"
+        }
+      },
+      "message": "Account balance cannot be negative.",
+      "name": "NoNegativeAccountBalance",
+      "severity": "critical",
+      "when": {
+        "kind": "always"
+      }
+    },
+    {
+      "applies_to": "Expense",
+      "assert": {
+        "kind": "compare",
+        "lhs": {
+          "ref": "Expense.currency",
+          "type": "unknown"
+        },
+        "op": "!=",
+        "rhs": {
+          "lit": "",
+          "type": "string"
+        }
+      },
+      "message": "Expense currency must be defined.",
+      "name": "ExpenseMustHaveCurrency",
+      "severity": "high",
+      "when": {
+        "kind": "always"
+      }
+    }
+  ],
+  "ir_version": "ircs.v1",
+  "operations": {
+    "api": [
+      {
+        "bind": {
+          "entity": "Expense",
+          "kind": "create"
+        },
+        "errors": [
+          400,
+          401,
+          403
+        ],
+        "id": "expense_create",
+        "idempotency": "required",
+        "method": "POST",
+        "path": "/finance/expenses",
+        "path_params": [],
+        "permission": "finance.expense.create",
+        "request_type": "Expense",
+        "response_type": "Expense",
+        "scope": "tenant"
+      },
+      {
+        "bind": {
+          "entity": "Expense",
+          "kind": "read"
+        },
+        "errors": [
+          401,
+          403,
+          404
+        ],
+        "id": "expense_get",
+        "idempotency": "none",
+        "method": "GET",
+        "path": "/finance/expenses/{id}",
+        "path_params": [
+          "id"
+        ],
+        "permission": "finance.expense.read",
+        "request_type": "void",
+        "response_type": "Expense",
+        "scope": "tenant"
+      },
+      {
+        "bind": {
+          "entity": "Expense",
+          "kind": "transition",
+          "transition": "Submit",
+          "workflow": "ExpenseFlow"
+        },
+        "errors": [
+          401,
+          403,
+          409
+        ],
+        "id": "expense_submit",
+        "idempotency": "required",
+        "method": "POST",
+        "path": "/finance/expenses/{id}/transitions/submit",
+        "path_params": [
+          "id"
+        ],
+        "permission": "finance.expense.submit",
+        "request_type": "void",
+        "response_type": "any",
+        "scope": "tenant"
+      },
+      {
+        "bind": {
+          "decision": "approve",
+          "entity": "Expense",
+          "kind": "approval",
+          "transition": "Approve",
+          "workflow": "ExpenseFlow"
+        },
+        "errors": [
+          401,
+          403,
+          409
+        ],
+        "id": "expense_approve",
+        "idempotency": "required",
+        "method": "POST",
+        "path": "/finance/expenses/{id}/approvals/approve",
+        "path_params": [
+          "id"
+        ],
+        "permission": "finance.expense.approve",
+        "request_type": "void",
+        "response_type": "any",
+        "scope": "tenant"
+      }
+    ]
+  },
+  "policy_context": {
+    "schema": [
+      {
+        "name": "jurisdiction",
+        "required": true,
+        "type": "string"
+      },
+      {
+        "default": "low",
+        "name": "risk_level",
+        "required": false,
+        "type": "string"
+      },
+      {
+        "default": false,
+        "name": "sanctions_hit",
+        "required": false,
+        "type": "bool"
+      }
+    ]
+  },
+  "runtime": {
+    "gate_order": [
+      "safe_mode",
+      "rbac",
+      "policy_pre",
+      "sod",
+      "workflow",
+      "invariants",
+      "commit",
+      "policy_post",
+      "ledger_finalize"
+    ],
+    "proof": {
+      "snapshot_enabled": true
+    },
+    "safe_mode": {
+      "enabled": true,
+      "on_contract_tamper": "enter",
+      "on_invariant_violation": "enter"
+    }
+  },
+  "separation_of_duties": [
+    {
+      "forbid": {
+        "action": "Approve",
+        "when": {
+          "kind": "compare",
+          "lhs": {
+            "ref": "actor.id",
+            "type": "unknown"
+          },
+          "op": "==",
+          "rhs": {
+            "ref": "Expense.created_by",
+            "type": "unknown"
+          }
+        }
+      },
+      "message": "Creator cannot approve their own expense.",
+      "name": "NoSelfApproval",
+      "on_entity": "Expense",
+      "severity": "critical"
+    },
+    {
+      "forbid": {
+        "action": "Approve",
+        "when": {
+          "kind": "compare",
+          "lhs": {
+            "ref": "actor.id",
+            "type": "unknown"
+          },
+          "op": "in",
+          "rhs": {
+            "attr": "actors",
+            "history": "Submit",
+            "type": "set<uuid>"
+          }
+        }
+      },
+      "message": "Submitter cannot approve.",
+      "name": "NoSubmitterApproval",
+      "on_entity": "Expense",
+      "severity": "critical"
+    }
+  ],
+  "source_idl_sha256": "9ef76983753ab85c6b6435ce8583279bd2738f55137e2474d682d976d9a3274c",
+  "source_idl_version": "idl.v1.2.2",
+  "system": {
+    "contact": "ops@libervia.xyz",
+    "description": "Governed finance department with approvals, SoD and hard invariants.",
+    "domain": "finance",
+    "id": "FinancePilot",
+    "name": "Finance Pilot",
+    "owner": "Libervia"
+  },
+  "workflows": [
+    {
+      "name": "ExpenseFlow",
+      "on_entity": "Expense",
+      "state_field": "state",
+      "states": [
+        {
+          "initial": true,
+          "name": "Draft",
+          "terminal": false
+        },
+        {
+          "initial": false,
+          "name": "PendingApproval",
+          "terminal": false
+        },
+        {
+          "initial": false,
+          "name": "Approved",
+          "terminal": true
+        },
+        {
+          "initial": false,
+          "name": "Rejected",
+          "terminal": true
+        }
+      ],
+      "transitions": [
+        {
+          "approvals": null,
+          "effects": [
+            {
+              "kind": "set_state",
+              "value": "PendingApproval"
+            },
+            {
+              "by": 1,
+              "field": "version",
+              "kind": "bump_version"
+            }
+          ],
+          "from": "Draft",
+          "guard": {
+            "kind": "compare",
+            "lhs": {
+              "ref": "context.sanctions_hit",
+              "type": "unknown"
+            },
+            "op": "==",
+            "rhs": {
+              "lit": false,
+              "type": "bool"
+            }
+          },
+          "name": "Submit",
+          "to": "PendingApproval"
+        },
+        {
+          "approvals": {
+            "distinct_actors": true,
+            "expires_in": "48h",
+            "quorum": 2,
+            "roles": [
+              "manager",
+              "controller"
+            ]
+          },
+          "effects": [
+            {
+              "kind": "set_state",
+              "value": "Approved"
+            },
+            {
+              "by": 1,
+              "field": "version",
+              "kind": "bump_version"
+            }
+          ],
+          "from": "PendingApproval",
+          "guard": {
+            "kind": "compare",
+            "lhs": {
+              "ref": "context.risk_level",
+              "type": "unknown"
+            },
+            "op": "!=",
+            "rhs": {
+              "lit": "high",
+              "type": "string"
+            }
+          },
+          "name": "Approve",
+          "to": "Approved"
+        },
+        {
+          "approvals": {
+            "distinct_actors": true,
+            "expires_in": "48h",
+            "quorum": 1,
+            "roles": [
+              "controller"
+            ]
+          },
+          "effects": [
+            {
+              "kind": "set_state",
+              "value": "Rejected"
+            },
+            {
+              "by": 1,
+              "field": "version",
+              "kind": "bump_version"
+            }
+          ],
+          "from": "PendingApproval",
+          "guard": {
+            "kind": "always"
+          },
+          "name": "Reject",
+          "to": "Rejected"
+        }
+      ]
+    }
+  ]
+}

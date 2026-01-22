@@ -294,6 +294,7 @@ def evaluate_autonomy(
     phase: str,
     dept_id: Optional[str],
     endpoint_sig: str,
+    institution_id: Optional[str] = None,
 ) -> AutonomyEvalResult:
     """Evaluate autonomy for a request.
 
@@ -308,11 +309,17 @@ def evaluate_autonomy(
         phase: "pre" or "post".
         dept_id: Department ID (None for single mode).
         endpoint_sig: Canonical endpoint signature.
+        institution_id: Optional institution ID for governed autonomy lookup.
 
     Returns:
         AutonomyEvalResult with decision and details.
     """
-    autonomy_def = get_autonomy_for_dept(dept_id)
+    # If institution_id is provided, use governed autonomy (override + bundle)
+    if institution_id:
+        from engine.core.governed_autonomy import get_effective_autonomy
+        autonomy_def = get_effective_autonomy(institution_id, dept_id)
+    else:
+        autonomy_def = get_autonomy_for_dept(dept_id)
 
     if autonomy_def is None:
         # No autonomy.json loaded - allow (no contract = allow)

@@ -1,0 +1,46 @@
+{
+  "SHA256:58ef50629ae48115223e3ca993e4c13255a46cfbac9bd5ebae2aa1cf73734f0e": {
+    "token_sha256": "SHA256:58ef50629ae48115223e3ca993e4c13255a46cfbac9bd5ebae2aa1cf73734f0e",
+    "actor_id": "739bffc8-d000-4c90-9886-1c71eab001e3",
+    "roles": [
+      "analyst"
+    ],
+    "status": "active",
+    "created_at": "2026-01-21T20:13:45.285098Z",
+    "created_by": "system",
+    "is_agent": false
+  },
+  "SHA256:4bb718d28b3ce2796b56841be3d581274b6954f27c14d940141f6a70eb1ede21": {
+    "token_sha256": "SHA256:4bb718d28b3ce2796b56841be3d581274b6954f27c14d940141f6a70eb1ede21",
+    "actor_id": "f246eaae-e6ba-4626-8f51-63d8048e2c33",
+    "roles": [
+      "manager"
+    ],
+    "status": "active",
+    "created_at": "2026-01-21T20:13:45.285368Z",
+    "created_by": "system",
+    "is_agent": false
+  },
+  "SHA256:3386b20ce0d30c7720d3be5b7f7753c89fa52d4f0056bfc004786c0d0ab28d30": {
+    "token_sha256": "SHA256:3386b20ce0d30c7720d3be5b7f7753c89fa52d4f0056bfc004786c0d0ab28d30",
+    "actor_id": "d4f5639d-3128-497a-9415-68f8934d3130",
+    "roles": [
+      "admin"
+    ],
+    "status": "active",
+    "created_at": "2026-01-21T20:13:45.286013Z",
+    "created_by": "system",
+    "is_agent": false
+  },
+  "SHA256:bdc8c4c6546b6f9213ef77aae486be5d321a73eba8235f8320fc74f9803d26a7": {
+    "token_sha256": "SHA256:bdc8c4c6546b6f9213ef77aae486be5d321a73eba8235f8320fc74f9803d26a7",
+    "actor_id": "99e97d57-257e-45d0-8ae2-7a1de868c39d",
+    "roles": [
+      "analyst"
+    ],
+    "status": "active",
+    "created_at": "2026-01-21T20:13:45.290685Z",
+    "created_by": "system",
+    "is_agent": true
+  }
+}

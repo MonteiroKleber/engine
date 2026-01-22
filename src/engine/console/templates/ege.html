@@ -1,0 +1,156 @@
+{% extends "base.html" %}
+
+{% block title %}AXIOM Console - EGE Overview{% endblock %}
+
+{% block content %}
+{% if success == 'rollback_executed' %}
+<div class="card" style="background: var(--success-bg, #d4edda); border-left: 4px solid var(--success-color, #28a745); margin-bottom: 1rem;">
+    <div style="color: var(--success-color, #155724);">
+        Rollback executed successfully. Now at release <strong>{{ rolled_back_to }}</strong>.
+    </div>
+</div>
+{% endif %}
+
+{% if error == 'rollback_failed' %}
+<div class="card" style="background: var(--error-bg, #f8d7da); border-left: 4px solid var(--error-color, #dc3545); margin-bottom: 1rem;">
+    <div style="color: var(--error-color, #721c24);">
+        Rollback failed: {{ request.query_params.get('message', 'Unknown error') | urldecode }}
+    </div>
+</div>
+{% elif error == 'safe_mode_activated' %}
+<div class="card" style="background: var(--error-bg, #f8d7da); border-left: 4px solid var(--error-color, #dc3545); margin-bottom: 1rem;">
+    <div style="color: var(--error-color, #721c24);">
+        <strong>SAFE_MODE activated:</strong> No pinned release available for rollback.
+    </div>
+</div>
+{% elif error == 'not_confirmed' %}
+<div class="card" style="background: var(--error-bg, #f8d7da); border-left: 4px solid var(--error-color, #dc3545); margin-bottom: 1rem;">
+    <div style="color: var(--error-color, #721c24);">
+        Rollback cancelled: confirmation not received.
+    </div>
+</div>
+{% endif %}
+
+<div class="card">
+    <h3 class="card-title">Evolution Governance Engine (EGE)</h3>
+
+    <div class="grid grid-2" style="gap: 1.5rem;">
+        <!-- Drift Status -->
+        <div class="card" style="background: var(--bg-secondary, #f5f5f5);">
+            <h4 style="margin-bottom: 0.75rem;">Drift Status</h4>
+            <div class="info-row">
+                <span class="info-label">Status:</span>
+                <span class="info-value">
+                    {% if drift_status == 'CLEAR' %}
+                    <span class="badge badge-active">CLEAR</span>
+                    {% elif drift_status == 'ACTIVE' %}
+                    <span class="badge badge-error">ACTIVE</span>
+                    {% elif drift_status == 'UNPINNED' %}
+                    <span class="badge badge-unpinned">UNPINNED</span>
+                    {% else %}
+                    <span class="badge">{{ drift_status }}</span>
+                    {% endif %}
+                </span>
+            </div>
+            {% if drift_checked_at %}
+            <div class="info-row">
+                <span class="info-label">Last checked:</span>
+                <span class="info-value mono">{{ drift_checked_at[:19] }}</span>
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- Pin Status -->
+        <div class="card" style="background: var(--bg-secondary, #f5f5f5);">
+            <h4 style="margin-bottom: 0.75rem;">Pin Status</h4>
+            <div class="info-row">
+                <span class="info-label">Pinned Release:</span>
+                <span class="info-value mono">{{ pinned_release_id or '(none)' }}</span>
+            </div>
+            <div class="info-row">
+                <span class="info-label">Current Release:</span>
+                <span class="info-value mono">{{ current_release_id or '(none)' }}</span>
+            </div>
+            {% if pin_status and pin_status.pinned and pin_status.pinned.bundle_manifest_sha256 %}
+            <div class="info-row">
+                <span class="info-label">Pinned Manifest:</span>
+                <span class="info-value mono" style="font-size: 0.75rem;">{{ pin_status.pinned.bundle_manifest_sha256[:16] }}...</span>
+            </div>
+            {% elif pin_status and pin_status.pinned %}
+            <div class="info-row">
+                <span class="info-label">Pinned Manifest:</span>
+                <span class="info-value mono" style="font-size: 0.75rem;">(none)</span>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<div class="grid grid-2" style="gap: 1rem; margin-top: 1rem;">
+    <!-- Proposals Summary -->
+    <div class="card">
+        <h4 style="margin-bottom: 0.75rem;">EGE Proposals</h4>
+        <div class="info-row">
+            <span class="info-label">Open:</span>
+            <span class="info-value">{{ open_proposals_count }}</span>
+        </div>
+        <div class="info-row">
+            <span class="info-label">Total:</span>
+            <span class="info-value">{{ total_proposals_count }}</span>
+        </div>
+        <div style="margin-top: 1rem;">
+            <a href="/console/ege/proposals?institution_id={{ institution_id }}" class="btn-link">View Proposals</a>
+        </div>
+    </div>
+
+    <!-- Releases Summary -->
+    <div class="card">
+        <h4 style="margin-bottom: 0.75rem;">Releases</h4>
+        <div class="info-row">
+            <span class="info-label">Current:</span>
+            <span class="info-value mono">{{ current_release_id or '(none)' }}</span>
+        </div>
+        <div class="info-row">
+            <span class="info-label">Pinned:</span>
+            <span class="info-value mono">{{ pinned_release_id or '(none)' }}</span>
+        </div>
+        <div style="margin-top: 1rem;">
+            <a href="/console/ege/releases?institution_id={{ institution_id }}" class="btn-link">View Releases</a>
+        </div>
+    </div>
+</div>
+
+<!-- Rollback Section -->
+<div class="card" style="margin-top: 1rem;">
+    <h4 style="margin-bottom: 0.75rem;">Governed Rollback</h4>
+
+    {% if rollback_blocked %}
+    <div style="background: var(--error-bg, #f8d7da); padding: 0.75rem; border-radius: 4px; margin-bottom: 1rem;">
+        <strong>Rollback blocked:</strong> {{ rollback_block_reason }}
+    </div>
+    {% endif %}
+
+    {% if can_rollback and not rollback_blocked %}
+    <p style="margin-bottom: 1rem;">
+        You can rollback from <strong class="mono">{{ current_release_id }}</strong>
+        to pinned release <strong class="mono">{{ pinned_release_id }}</strong>.
+    </p>
+    <a href="/console/ege/rollback/confirm?institution_id={{ institution_id }}"
+       class="btn-link" style="background: var(--error-color, #dc3545); color: white; padding: 0.5rem 1rem; text-decoration: none; border-radius: 4px;">
+        Execute Rollback...
+    </a>
+    {% elif not pinned_release_id %}
+    <p style="color: var(--text-secondary);">
+        No pinned release configured. Rollback would activate SAFE_MODE.
+    </p>
+    {% elif current_release_id == pinned_release_id %}
+    <p style="color: var(--text-secondary);">
+        Current release matches pinned release. No rollback needed.
+    </p>
+    {% else %}
+    <p style="color: var(--text-secondary);">
+        Rollback not available.
+    </p>
+    {% endif %}
+</div>
+{% endblock %}

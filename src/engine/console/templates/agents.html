@@ -1,0 +1,92 @@
+{% extends "base.html" %}
+
+{% block title %}AXIOM Console - Agents{% endblock %}
+
+{% block content %}
+<div class="card">
+    <h3 class="card-title">Agents & Actors</h3>
+    <p style="color: var(--text-secondary); margin-bottom: 1rem;">
+        View actors that have performed actions in the system. Includes both registered agents and unregistered actors from ledger history.
+    </p>
+
+    {% if agents %}
+    <table>
+        <thead>
+            <tr>
+                <th>Name / Actor ID</th>
+                <th>Status</th>
+                <th>Roles</th>
+                <th>Events</th>
+                <th>Denied</th>
+                <th>Last Active</th>
+                <th>Action</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for agent in agents %}
+            <tr>
+                <td>
+                    <div>
+                        {% if agent.registered %}
+                        <strong>{{ agent.name }}</strong>
+                        {% else %}
+                        <span style="color: var(--text-secondary);">{{ agent.name }}</span>
+                        {% endif %}
+                    </div>
+                    <div class="mono" style="font-size: 0.75rem; color: var(--text-secondary);">{{ agent.actor_id }}</div>
+                </td>
+                <td>
+                    {% if agent.registered %}
+                    <span class="badge badge-active">Registered</span>
+                    {% else %}
+                    <span class="badge badge-unpinned">From Ledger</span>
+                    {% endif %}
+                </td>
+                <td>
+                    {% if agent.roles %}
+                    <span style="font-size: 0.85rem;">{{ agent.roles | join(", ") }}</span>
+                    {% else %}
+                    <span style="color: var(--text-secondary);">-</span>
+                    {% endif %}
+                </td>
+                <td style="text-align: center;">{{ agent.total_events }}</td>
+                <td style="text-align: center;">
+                    {% if agent.denied_count > 0 %}
+                    <span class="badge badge-error">{{ agent.denied_count }}</span>
+                    {% else %}
+                    <span style="color: var(--text-secondary);">0</span>
+                    {% endif %}
+                </td>
+                <td>{{ agent.last_active[:19] if agent.last_active else 'Never' }}</td>
+                <td>
+                    <a href="/console/agents/{{ agent.actor_id }}?institution_id={{ institution_id }}{% if dept_id %}&dept_id={{ dept_id }}{% endif %}"
+                       class="btn-link">View</a>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    <div style="margin-top: 0.5rem; color: var(--text-secondary);">
+        Showing {{ agents | length }} actor(s)
+    </div>
+    {% else %}
+    <div class="empty-state">
+        <p>No actors found</p>
+        <p style="font-size: 0.875rem; margin-top: 0.5rem;">
+            Actors appear here when they perform actions recorded in the ledger.
+        </p>
+    </div>
+    {% endif %}
+</div>
+
+<!-- Quick Links -->
+<div class="card" style="margin-top: 1rem;">
+    <h3 class="card-title">Quick Links</h3>
+    <div style="display: flex; gap: 1rem; flex-wrap: wrap;">
+        <a href="/console/denied?institution_id={{ institution_id }}{% if dept_id %}&dept_id={{ dept_id }}{% endif %}"
+           class="btn btn-secondary">View Denied Attempts</a>
+        <a href="/console/mandates?institution_id={{ institution_id }}{% if dept_id %}&dept_id={{ dept_id }}{% endif %}"
+           class="btn btn-secondary">Manage Mandates</a>
+    </div>
+</div>
+{% endblock %}

@@ -1,4 +1,9 @@
-"""Approvals API endpoint."""
+"""Approvals API endpoint.
+
+Supports approvals for:
+- Finance expenses (original use case)
+- Legacy write actions (GAP 3: no self-approved)
+"""
 
 from typing import Any, Dict, List, Optional
 
@@ -32,6 +37,7 @@ from engine.core.errors import (
     POLICY_DENIED,
     MANDATE_DENIED,
     AUTONOMY_INSUFFICIENT,
+    LEGACY_WRITE_ACTION_NOT_FOUND,
 )
 from engine.core.policy import (
     evaluate_policies,
@@ -54,6 +60,37 @@ class DecideRequest(BaseModel):
     """Request body for decide endpoint."""
     decision: str
     reason: Optional[str] = None
+
+
+def _is_legacy_write_approval(rule_name: str) -> bool:
+    """Check if approval is for a legacy write action.
+
+    Legacy write rules have trigger_api like "POST /bridge/write/{action_type}".
+
+    Args:
+        rule_name: The approval rule name.
+
+    Returns:
+        True if this is a legacy write approval.
+    """
+    # Check if rule name contains legacy write indicators
+    return rule_name.startswith("legacy.") or "bridge/write" in rule_name
+
+
+def _get_legacy_write_registry(institution_id: str, dept_id: Optional[str] = None):
+    """Get legacy write registry for institution.
+
+    Lazy import to avoid circular dependency.
+
+    Args:
+        institution_id: Institution UUID.
+        dept_id: Optional department ID.
+
+    Returns:
+        LegacyWriteRegistry instance.
+    """
+    from engine.legacy_bridge.write_registry import LegacyWriteRegistry
+    return LegacyWriteRegistry(institution_id, dept_id)
 
 
 def emit_case_committed(
@@ -242,6 +279,19 @@ async def decide_approval(
                 },
             )
 
+    # Check if this is a legacy write approval (GAP 3)
+    if _is_legacy_write_approval(rule_name):
+        return await _handle_legacy_write_decision(
+            request=request,
+            approval_id=approval_id,
+            rule=rule,
+            actor=actor,
+            decision=body.decision,
+            reason=body.reason,
+            institution_id=institution_id,
+        )
+
+    # Original finance expense flow below
     # Lookup expense via state store (institution-aware)
     state_store = get_state_store(institution_id=institution_id)
     if not state_store:
@@ -443,3 +493,122 @@ async def decide_approval(
         "decision": body.decision,
         "case_status": STATUS_COMMITTED,
     }
+
+
+async def _handle_legacy_write_decision(
+    request: Request,
+    approval_id: str,
+    rule: Any,
+    actor: ActorContext,
+    decision: str,
+    reason: Optional[str],
+    institution_id: Optional[str],
+) -> Dict[str, Any]:
+    """Handle approval decision for legacy write action.
+
+    GAP 3: Legacy writes are handled via the write registry, which:
+    - Completes the action if approved (writes to outbox)
+    - Rejects the action if rejected
+    - Tracks approved_by as the actual approver (not requester)
+
+    Args:
+        request: FastAPI request object.
+        approval_id: The approval ID.
+        rule: The approval rule.
+        actor: The deciding actor.
+        decision: "approve" or "reject".
+        reason: Optional decision reason.
+        institution_id: Institution ID.
+
+    Returns:
+        Decision result.
+
+    Raises:
+        HTTPException: Various error codes.
+    """
+    if not institution_id:
+        raise HTTPException(
+            status_code=400,
+            detail={
+                "code": "INSTITUTION_REQUIRED",
+                "message": "Institution ID required for legacy write approval",
+            },
+        )
+
+    # Get write registry for this institution
+    # Note: dept_id would need to be extracted from the approval request payload
+    # For now, use None (single-dept mode) - can be enhanced later
+    registry = _get_legacy_write_registry(institution_id, dept_id=None)
+
+    # Find action by approval_id
+    action = registry.get_action_by_approval_id(approval_id)
+    if not action:
+        raise HTTPException(
+            status_code=404,
+            detail={
+                "code": LEGACY_WRITE_ACTION_NOT_FOUND,
+                "message": f"Legacy write action not found for approval: {approval_id}",
+            },
+        )
+
+    # Emit APPROVAL_DECIDED event
+    emit_approval_decided(
+        approval_id=approval_id,
+        rule=rule,
+        actor=actor,
+        decision=decision,
+        reason=reason,
+    )
+
+    if decision == "reject":
+        # Reject the action
+        result = registry.reject_action(
+            action_id=action.action_id,
+            rejected_by=actor.actor_id,
+            reason=reason,
+            rejector_roles=actor.roles,
+        )
+
+        if not result.success and result.error_code not in ["LEGACY_WRITE_DENIED"]:
+            raise HTTPException(
+                status_code=500,
+                detail={
+                    "code": result.error_code,
+                    "message": result.error_message,
+                },
+            )
+
+        return {
+            "status": "decided",
+            "approval_id": approval_id,
+            "action_id": action.action_id,
+            "decision": decision,
+            "action_status": "denied",
+        }
+
+    else:
+        # Approve and complete the action
+        result = registry.complete_approved_action(
+            action_id=action.action_id,
+            approved_by=actor.actor_id,  # GAP 3: actual approver, not requester
+            approver_roles=actor.roles,
+        )
+
+        if not result.success:
+            raise HTTPException(
+                status_code=403 if result.denied_by else 500,
+                detail={
+                    "code": result.error_code,
+                    "message": result.error_message,
+                    "denied_by": result.denied_by,
+                },
+            )
+
+        return {
+            "status": "decided",
+            "approval_id": approval_id,
+            "action_id": action.action_id,
+            "decision": decision,
+            "action_status": "enqueued",
+            "outbox_path": result.outbox_path,
+        }

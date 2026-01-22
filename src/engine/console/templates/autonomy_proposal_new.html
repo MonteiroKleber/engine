@@ -1,0 +1,333 @@
+{% extends "base.html" %}
+
+{% block title %}New Autonomy Proposal - Libervia Console{% endblock %}
+
+{% block content %}
+<div class="container">
+    <nav class="breadcrumb">
+        <a href="{{ url_for('console_home') }}">Console</a> &gt;
+        <a href="{{ url_for('console_autonomy') }}">Autonomy</a> &gt;
+        <a href="{{ url_for('console_autonomy_proposals') }}">Proposals</a> &gt;
+        <span>New</span>
+    </nav>
+
+    <h1>New Autonomy Proposal</h1>
+    <p class="description">Create a proposal to modify autonomy settings. Proposals must be approved before taking effect.</p>
+
+    {% if error %}
+    <div class="alert alert-danger">{{ error }}</div>
+    {% endif %}
+
+    <form method="POST" action="{{ url_for('console_autonomy_proposal_new') }}" id="proposalForm">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+
+        <!-- Operation Selection -->
+        <section class="card">
+            <h2>Operation Type</h2>
+            <div class="operation-grid">
+                <label class="operation-option">
+                    <input type="radio" name="operation" value="update_level" required checked>
+                    <div class="operation-content">
+                        <span class="operation-title">Update Level</span>
+                        <span class="operation-desc">Change the current autonomy level</span>
+                    </div>
+                </label>
+                <label class="operation-option">
+                    <input type="radio" name="operation" value="create_rule">
+                    <div class="operation-content">
+                        <span class="operation-title">Create Rule</span>
+                        <span class="operation-desc">Add a new autonomy rule</span>
+                    </div>
+                </label>
+                <label class="operation-option">
+                    <input type="radio" name="operation" value="update_rule">
+                    <div class="operation-content">
+                        <span class="operation-title">Update Rule</span>
+                        <span class="operation-desc">Modify an existing rule</span>
+                    </div>
+                </label>
+                <label class="operation-option">
+                    <input type="radio" name="operation" value="revoke_rule">
+                    <div class="operation-content">
+                        <span class="operation-title">Revoke Rule</span>
+                        <span class="operation-desc">Remove an existing rule</span>
+                    </div>
+                </label>
+            </div>
+        </section>
+
+        <!-- Update Level Section -->
+        <section class="card" id="levelSection">
+            <h2>Autonomy Level</h2>
+            <div class="form-group">
+                <label for="current_level">New Level</label>
+                <select id="current_level" name="current_level">
+                    <option value="0">L0 - Full human oversight required</option>
+                    <option value="1">L1 - Minimal autonomy</option>
+                    <option value="2">L2 - Moderate autonomy</option>
+                    <option value="3" selected>L3 - High autonomy</option>
+                    <option value="4">L4 - Full autonomy (allow-all)</option>
+                </select>
+            </div>
+        </section>
+
+        <!-- Rule Section -->
+        <section class="card" id="ruleSection" style="display: none;">
+            <h2>Rule Details</h2>
+
+            <div class="form-group">
+                <label for="rule_id">Rule ID</label>
+                <input type="text" id="rule_id" name="rule_id"
+                       placeholder="e.g., expense-approval-rule"
+                       pattern="[a-z0-9-]+"
+                       title="Lowercase letters, numbers, and hyphens only">
+                <span class="help-text">Unique identifier for the rule</span>
+            </div>
+
+            <div class="form-group">
+                <label for="endpoint_sig">Endpoint Signature</label>
+                <select id="endpoint_sig" name="endpoint_sig">
+                    <option value="">-- Select Endpoint --</option>
+                    <option value="POST /finance/expenses">POST /finance/expenses</option>
+                    <option value="POST /approvals/{approval_id}/decide">POST /approvals/{approval_id}/decide</option>
+                    <option value="POST /support/tickets">POST /support/tickets</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label for="phase">Phase</label>
+                <select id="phase" name="phase">
+                    <option value="pre">Pre (before execution)</option>
+                    <option value="post">Post (after execution)</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label for="required_level">Required Level</label>
+                <select id="required_level" name="required_level">
+                    <option value="0">L0 - Requires full oversight</option>
+                    <option value="1">L1 - Requires minimal autonomy</option>
+                    <option value="2" selected>L2 - Requires moderate autonomy</option>
+                    <option value="3">L3 - Requires high autonomy</option>
+                    <option value="4">L4 - Requires full autonomy</option>
+                </select>
+            </div>
+        </section>
+
+        <!-- Reason -->
+        <section class="card">
+            <h2>Justification</h2>
+            <div class="form-group">
+                <label for="reason">Reason for this proposal</label>
+                <textarea id="reason" name="reason" rows="3" required
+                          placeholder="Explain why this change is needed..."></textarea>
+            </div>
+        </section>
+
+        <!-- Submit -->
+        <div class="form-actions">
+            <button type="submit" class="btn btn-primary">Create Proposal</button>
+            <a href="{{ url_for('console_autonomy_proposals') }}" class="btn btn-secondary">Cancel</a>
+        </div>
+    </form>
+</div>
+
+<style>
+.description {
+    color: #666;
+    margin-bottom: 1.5rem;
+}
+
+.alert {
+    padding: 1rem;
+    border-radius: 4px;
+    margin-bottom: 1.5rem;
+}
+
+.alert-danger {
+    background: #f8d7da;
+    color: #721c24;
+    border: 1px solid #f5c6cb;
+}
+
+.card {
+    background: #fff;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    padding: 1.5rem;
+    margin-bottom: 1.5rem;
+}
+
+.card h2 {
+    margin-top: 0;
+    margin-bottom: 1rem;
+    font-size: 1.2rem;
+    border-bottom: 1px solid #eee;
+    padding-bottom: 0.5rem;
+}
+
+.operation-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1rem;
+}
+
+.operation-option {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.75rem;
+    padding: 1rem;
+    border: 2px solid #ddd;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.operation-option:hover {
+    border-color: #007bff;
+    background: #f8f9fa;
+}
+
+.operation-option input[type="radio"] {
+    margin-top: 0.25rem;
+}
+
+.operation-option input[type="radio"]:checked + .operation-content {
+    color: #007bff;
+}
+
+.operation-option:has(input:checked) {
+    border-color: #007bff;
+    background: #e7f1ff;
+}
+
+.operation-content {
+    display: flex;
+    flex-direction: column;
+}
+
+.operation-title {
+    font-weight: 600;
+    margin-bottom: 0.25rem;
+}
+
+.operation-desc {
+    font-size: 0.9rem;
+    color: #666;
+}
+
+.form-group {
+    margin-bottom: 1rem;
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: 0.5rem;
+    font-weight: 500;
+}
+
+.form-group input[type="text"],
+.form-group select,
+.form-group textarea {
+    width: 100%;
+    padding: 0.5rem;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    font-size: 1rem;
+}
+
+.form-group input:focus,
+.form-group select:focus,
+.form-group textarea:focus {
+    outline: none;
+    border-color: #007bff;
+    box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.25);
+}
+
+.help-text {
+    display: block;
+    font-size: 0.85rem;
+    color: #666;
+    margin-top: 0.25rem;
+}
+
+.form-actions {
+    margin-top: 1.5rem;
+    display: flex;
+    gap: 1rem;
+}
+
+.btn {
+    display: inline-block;
+    padding: 0.75rem 1.5rem;
+    border-radius: 4px;
+    text-decoration: none;
+    font-size: 1rem;
+    cursor: pointer;
+    border: none;
+}
+
+.btn-primary {
+    background: #007bff;
+    color: #fff;
+}
+
+.btn-primary:hover {
+    background: #0056b3;
+}
+
+.btn-secondary {
+    background: #6c757d;
+    color: #fff;
+}
+
+.btn-secondary:hover {
+    background: #545b62;
+}
+
+@media (max-width: 768px) {
+    .operation-grid {
+        grid-template-columns: 1fr;
+    }
+}
+</style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const operationRadios = document.querySelectorAll('input[name="operation"]');
+    const levelSection = document.getElementById('levelSection');
+    const ruleSection = document.getElementById('ruleSection');
+    const ruleIdInput = document.getElementById('rule_id');
+    const endpointSelect = document.getElementById('endpoint_sig');
+
+    function updateSections() {
+        const selectedOp = document.querySelector('input[name="operation"]:checked').value;
+
+        if (selectedOp === 'update_level') {
+            levelSection.style.display = 'block';
+            ruleSection.style.display = 'none';
+            ruleIdInput.required = false;
+            endpointSelect.required = false;
+        } else {
+            levelSection.style.display = 'none';
+            ruleSection.style.display = 'block';
+            ruleIdInput.required = true;
+
+            if (selectedOp === 'revoke_rule') {
+                // For revoke, only rule_id is needed
+                endpointSelect.required = false;
+            } else {
+                endpointSelect.required = true;
+            }
+        }
+    }
+
+    operationRadios.forEach(radio => {
+        radio.addEventListener('change', updateSections);
+    });
+
+    // Initial state
+    updateSections();
+});
+</script>
+{% endblock %}

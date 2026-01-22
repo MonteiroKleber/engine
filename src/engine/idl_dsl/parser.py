@@ -73,7 +73,150 @@ class Parser:
             if section_name:
                 seen_sections.add(section_name)
 
+        # CHANGE-1: Semantic validation pass
+        self._validate_semantic(doc)
+
         return doc
+
+    def _validate_semantic(self, doc: DocumentNode) -> None:
+        """Validate semantic references in the document.
+
+        CHANGE-1: Second pass validation to check that all references
+        are valid (entities, fields, workflows, transitions, actors).
+        """
+        # Build lookup tables
+        entity_names = {e.name for e in doc.entities}
+        entity_fields: dict[str, set[str]] = {
+            e.name: {f.name for f in e.fields} for e in doc.entities
+        }
+        actor_ids = {a.id for a in doc.actors}
+        workflow_names = {w.name for w in doc.workflows}
+        workflow_transitions: dict[str, set[str]] = {
+            w.name: {t.name for t in w.transitions} for w in doc.workflows
+        }
+
+        # Validate invariants
+        for inv in doc.invariants:
+            if inv.applies_to and inv.applies_to not in entity_names:
+                raise IDLSemanticError(
+                    ErrorCode.IDL_S001_UNDEFINED_ENTITY,
+                    f"Undefined entity '{inv.applies_to}'. Hint: Defined entities are: {', '.join(sorted(entity_names)) or 'none'}",
+                    SourceLocation(inv.line, inv.column),
+                )
+            # Validate field references in expressions
+            self._validate_expr_refs(inv.assert_expr, entity_names, entity_fields)
+            if inv.when_expr:
+                self._validate_expr_refs(inv.when_expr, entity_names, entity_fields)
+
+        # Validate SoD rules
+        for rule in doc.separation_of_duties:
+            if rule.on_entity and rule.on_entity not in entity_names:
+                raise IDLSemanticError(
+                    ErrorCode.IDL_S001_UNDEFINED_ENTITY,
+                    f"Undefined entity '{rule.on_entity}'. Hint: Defined entities are: {', '.join(sorted(entity_names)) or 'none'}",
+                    SourceLocation(rule.line, rule.column),
+                )
+            # Validate forbid expression
+            if rule.forbid and rule.forbid.when_expr:
+                self._validate_expr_refs(rule.forbid.when_expr, entity_names, entity_fields)
+
+        # Validate workflows
+        for wf in doc.workflows:
+            if wf.on_entity and wf.on_entity not in entity_names:
+                raise IDLSemanticError(
+                    ErrorCode.IDL_S001_UNDEFINED_ENTITY,
+                    f"Undefined entity '{wf.on_entity}'. Hint: Defined entities are: {', '.join(sorted(entity_names)) or 'none'}",
+                    SourceLocation(wf.line, wf.column),
+                )
+            # Validate roles in approvals
+            for trans in wf.transitions:
+                if trans.approvals:
+                    for role in trans.approvals.roles:
+                        if role not in actor_ids:
+                            raise IDLSemanticError(
+                                ErrorCode.IDL_S002_UNDEFINED_ACTOR,
+                                f"Undefined actor '{role}'. Hint: Defined actors are: {', '.join(sorted(actor_ids)) or 'none'}",
+                                SourceLocation(trans.line, trans.column),
+                            )
+                # Validate guard expression
+                if trans.guard:
+                    self._validate_expr_refs(trans.guard, entity_names, entity_fields)
+
+        # Validate operations
+        if doc.operations and doc.operations.api:
+            for ep in doc.operations.api.endpoints:
+                if ep.bind:
+                    # Validate entity reference
+                    if ep.bind.entity and ep.bind.entity not in entity_names:
+                        raise IDLSemanticError(
+                            ErrorCode.IDL_S001_UNDEFINED_ENTITY,
+                            f"Undefined entity '{ep.bind.entity}'. Hint: Defined entities are: {', '.join(sorted(entity_names)) or 'none'}",
+                            SourceLocation(ep.line, ep.column),
+                        )
+                    # Validate workflow reference
+                    if ep.bind.workflow and ep.bind.workflow not in workflow_names:
+                        raise IDLSemanticError(
+                            ErrorCode.IDL_S003_UNDEFINED_WORKFLOW,
+                            f"Undefined workflow '{ep.bind.workflow}'. Hint: Defined workflows are: {', '.join(sorted(workflow_names)) or 'none'}",
+                            SourceLocation(ep.line, ep.column),
+                        )
+                    # Validate transition reference
+                    if ep.bind.transition and ep.bind.workflow:
+                        wf_transitions = workflow_transitions.get(ep.bind.workflow, set())
+                        if ep.bind.transition not in wf_transitions:
+                            raise IDLSemanticError(
+                                ErrorCode.IDL_S004_UNDEFINED_TRANSITION,
+                                f"Undefined transition '{ep.bind.transition}' in workflow '{ep.bind.workflow}'. Hint: Defined transitions are: {', '.join(sorted(wf_transitions)) or 'none'}",
+                                SourceLocation(ep.line, ep.column),
+                            )
+
+    def _validate_expr_refs(
+        self,
+        expr: Optional[ExprNode],
+        entity_names: set[str],
+        entity_fields: dict[str, set[str]],
+    ) -> None:
+        """Validate entity and field references in expressions."""
+        if expr is None:
+            return
+
+        if isinstance(expr, RefPath):
+            # Parse reference path like "Entity.field"
+            parts = expr.path.split(".")
+            if len(parts) >= 2:
+                entity_name = parts[0]
+                # Only validate entity references (not actor.id or context.var)
+                if entity_name not in {"actor", "context"} and entity_name in entity_names:
+                    field_name = parts[1]
+                    if field_name not in entity_fields.get(entity_name, set()):
+                        raise IDLSemanticError(
+                            ErrorCode.IDL_S006_UNDEFINED_FIELD,
+                            f"Undefined field '{field_name}' in entity '{entity_name}'. Hint: Defined fields are: {', '.join(sorted(entity_fields.get(entity_name, set()))) or 'none'}",
+                            SourceLocation(expr.line, expr.column),
+                        )
+                elif entity_name not in {"actor", "context"} and entity_name not in entity_names:
+                    # Check if it looks like an entity reference
+                    if entity_name[0].isupper():
+                        raise IDLSemanticError(
+                            ErrorCode.IDL_S001_UNDEFINED_ENTITY,
+                            f"Undefined entity '{entity_name}'. Hint: Defined entities are: {', '.join(sorted(entity_names)) or 'none'}",
+                            SourceLocation(expr.line, expr.column),
+                        )
+
+        elif isinstance(expr, CompareExpr):
+            self._validate_expr_refs(expr.lhs, entity_names, entity_fields)
+            self._validate_expr_refs(expr.rhs, entity_names, entity_fields)
+
+        elif isinstance(expr, AndExpr):
+            for e in expr.exprs:
+                self._validate_expr_refs(e, entity_names, entity_fields)
+
+        elif isinstance(expr, OrExpr):
+            for e in expr.exprs:
+                self._validate_expr_refs(e, entity_names, entity_fields)
+
+        elif isinstance(expr, NotExpr):
+            self._validate_expr_refs(expr.expr, entity_names, entity_fields)
 
     def _at_end(self) -> bool:
         return self._peek().type == TokenType.EOF
@@ -304,7 +447,10 @@ class Parser:
             return TenancyMode.SINGLE
         if self._match(TokenType.MULTI):
             return TenancyMode.MULTI
-        raise self._error(ErrorCode.IDL_P025_INVALID_TENANCY, "Expected 'single' or 'multi'")
+        raise self._error(
+            ErrorCode.IDL_P025_INVALID_TENANCY,
+            f"Invalid tenancy mode. Hint: Valid values are: single, multi",
+        )
 
     # ============================================================
     # Actors Section
@@ -350,7 +496,7 @@ class Parser:
             return ActorKind.EXTERNAL
         raise self._error(
             ErrorCode.IDL_P017_INVALID_ACTOR_TYPE,
-            "Expected 'human', 'system', or 'external'",
+            f"Invalid actor type. Hint: Valid types are: human, system, external",
         )
 
     def _parse_actor_property(self, node: ActorNode) -> None:
@@ -387,7 +533,7 @@ class Parser:
             return AuthMethod.CERTIFICATE
         raise self._error(
             ErrorCode.IDL_P018_INVALID_AUTH_METHOD,
-            "Expected 'none', 'basic', 'token', 'oauth2', or 'certificate'",
+            f"Invalid authentication method. Hint: Valid values are: none, basic, token, oauth2, certificate",
         )
 
     def _parse_identifier_list(self) -> list[str]:
@@ -533,7 +679,7 @@ class Parser:
 
         raise self._error(
             ErrorCode.IDL_P016_EXPECTED_FIELD_TYPE,
-            f"Expected field type, got {token.type.name}",
+            f"Expected field type, got {token.type.name}. Hint: Valid types are: string, text, int, float, decimal, bool, datetime, uuid, or an entity name",
         )
 
     def _parse_field_modifier(self) -> FieldModifier:
@@ -712,7 +858,7 @@ class Parser:
             return Severity.CRITICAL
         raise self._error(
             ErrorCode.IDL_P019_INVALID_SEVERITY,
-            "Expected 'low', 'medium', 'high', or 'critical'",
+            f"Invalid severity level. Hint: Valid values are: low, medium, high, critical",
         )
 
     # ============================================================
@@ -1088,6 +1234,8 @@ class Parser:
             node.method = self._parse_http_method()
         elif token.type == TokenType.PATH:
             node.path = self._parse_string_value()
+            # CHANGE-5: Validate and extract path parameters
+            node.path_params = self._validate_path_template(node.path, token)
         elif token.type == TokenType.REQUEST:
             node.request_type = self._parse_type_ref()
         elif token.type == TokenType.RESPONSE:
@@ -1123,7 +1271,7 @@ class Parser:
             return HttpMethod.DELETE
         raise self._error(
             ErrorCode.IDL_P020_INVALID_HTTP_METHOD,
-            "Expected HTTP method (GET, POST, PUT, PATCH, DELETE)",
+            f"Invalid HTTP method. Hint: Valid values are: GET, POST, PUT, PATCH, DELETE",
         )
 
     def _parse_type_ref(self) -> str:
@@ -1151,7 +1299,7 @@ class Parser:
             return ScopeType.ALL
         raise self._error(
             ErrorCode.IDL_P021_INVALID_SCOPE,
-            "Expected 'own', 'tenant', 'department', or 'all'",
+            f"Invalid scope type. Hint: Valid values are: own, tenant, department, all",
         )
 
     def _parse_idempotency_mode(self) -> IdempotencyMode:
@@ -1165,7 +1313,7 @@ class Parser:
             return IdempotencyMode.NONE
         raise self._error(
             ErrorCode.IDL_P026_INVALID_IDEMPOTENCY,
-            "Expected 'required', 'optional', or 'none'",
+            f"Invalid idempotency mode. Hint: Valid values are: required, optional, none",
         )
 
     def _parse_error_list(self) -> list[int]:
@@ -1253,8 +1401,30 @@ class Parser:
             return BindKind.APPROVAL
         raise self._error(
             ErrorCode.IDL_P022_INVALID_BIND_KIND,
-            "Expected 'create', 'read', 'update', 'delete', 'transition', or 'approval'",
+            f"Invalid bind kind. Hint: Valid values are: create, read, update, delete, transition, approval",
         )
+
+    def _validate_path_template(self, path: str, token: Token) -> list[str]:
+        """Validate path template and extract path parameters.
+
+        CHANGE-5: Path parameters must match pattern {param_name} where
+        param_name is lowercase with underscores only.
+        """
+        import re
+        params = []
+        # Find all {param} patterns
+        pattern = r'\{([^}]+)\}'
+        for match in re.finditer(pattern, path):
+            param = match.group(1)
+            # Validate parameter name: must be lowercase with underscores only
+            if not re.match(r'^[a-z][a-z0-9_]*$', param):
+                raise self._error(
+                    ErrorCode.IDL_P029_INVALID_PATH_TEMPLATE,
+                    f"Invalid path parameter '{{{param}}}'. Hint: Path parameters must match pattern {{param_name}} where param_name is lowercase letters, digits, and underscores (starting with a letter)",
+                    token,
+                )
+            params.append(param)
+        return params
 
     # ============================================================
     # Expression Parsing (Predicate AST)
@@ -1411,7 +1581,7 @@ class Parser:
         if attr_token.value not in valid_attrs:
             raise self._error(
                 ErrorCode.IDL_P023_INVALID_HISTORY_ATTR,
-                f"Invalid history attribute: {attr_token.value}. Expected one of: {', '.join(valid_attrs)}",
+                f"Invalid history attribute: {attr_token.value}. Hint: Valid values are: actors, count, last_actor, last_at",
                 attr_token,
             )
 

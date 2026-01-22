@@ -14,47 +14,55 @@
         <thead>
             <tr>
                 <th>Asset ID</th>
-                <th>Type</th>
                 <th>Name</th>
                 <th>Status</th>
-                <th>Last Sync</th>
+                <th>Last Verified</th>
+                <th>Action</th>
             </tr>
         </thead>
         <tbody>
             {% for asset in assets %}
             <tr>
-                <td class="mono">{{ asset.asset_id[:12] }}...</td>
-                <td>{{ asset.type }}</td>
+                <td class="mono" style="font-size: 0.85rem;">{{ asset.asset_id[:12] }}...</td>
                 <td>{{ asset.name }}</td>
                 <td>
                     {% if asset.status == 'active' %}
                     <span class="badge badge-active">Active</span>
-                    {% elif asset.status == 'syncing' %}
-                    <span class="badge badge-safe-mode">Syncing</span>
+                    {% elif asset.status == 'drift_detected' %}
+                    <span class="badge badge-error">Drift</span>
+                    {% elif asset.status == 'missing' %}
+                    <span class="badge badge-safe-mode">Missing</span>
                     {% else %}
                     <span class="badge badge-unpinned">{{ asset.status }}</span>
                     {% endif %}
                 </td>
-                <td>{{ asset.last_sync or 'Never' }}</td>
+                <td>{{ asset.last_verified_at[:19] if asset.last_verified_at else 'Never' }}</td>
+                <td>
+                    <a href="/console/legacy/{{ asset.asset_id }}?institution_id={{ institution_id }}{% if dept_id %}&dept_id={{ dept_id }}{% endif %}"
+                       class="btn-link">View</a>
+                </td>
             </tr>
             {% endfor %}
         </tbody>
     </table>
+    <div style="margin-top: 0.5rem; color: var(--text-secondary);">
+        Showing {{ total_assets }} asset(s)
+    </div>
     {% else %}
     <div class="empty-state">
         <p>No legacy assets registered</p>
         <p style="font-size: 0.875rem; margin-top: 0.5rem;">
-            Legacy assets are registered via the Legacy Bridge API.
+            Legacy assets are registered via the Legacy Bridge CLI.
         </p>
     </div>
     {% endif %}
 </div>
 
 <!-- Legacy Bridge Status -->
-<div class="card">
+<div class="card" style="margin-top: 1rem;">
     <h3 class="card-title">Legacy Bridge Status</h3>
     <div class="info-row">
-        <span class="info-label">Bridge Available</span>
+        <span class="info-label">Bridge Available:</span>
         <span class="info-value">
             {% if bridge_available %}
             <span class="badge badge-active">Yes</span>
@@ -63,17 +71,13 @@
             {% endif %}
         </span>
     </div>
-    {% if bridge_config %}
     <div class="info-row">
-        <span class="info-label">Mode</span>
-        <span class="info-value">{{ bridge_config.mode or 'read-only' }}</span>
+        <span class="info-label">Mode:</span>
+        <span class="info-value">read-only</span>
     </div>
-    {% if bridge_config.last_sync %}
     <div class="info-row">
-        <span class="info-label">Last Sync</span>
-        <span class="info-value">{{ bridge_config.last_sync }}</span>
+        <span class="info-label">Total Assets:</span>
+        <span class="info-value">{{ total_assets }}</span>
     </div>
-    {% endif %}
-    {% endif %}
 </div>
 {% endblock %}

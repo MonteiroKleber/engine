@@ -1,0 +1,27 @@
+{
+  "mandate_schema_version": "1.0",
+  "mandates": [
+    {
+      "mandate_id": "expense-create-pre",
+      "endpoint_sig": "POST /finance/expenses",
+      "phase": "pre",
+      "allowed_roles": ["analyst", "admin"],
+      "limits": [
+        {
+          "rule_type": "numeric_max",
+          "field_path": "amount",
+          "value": 100000,
+          "message": "Amount exceeds pilot limit of 100000"
+        }
+      ],
+      "message": "Expense creation mandate for pilot"
+    },
+    {
+      "mandate_id": "approval-decide-post",
+      "endpoint_sig": "POST /approvals/{approval_id}/decide",
+      "phase": "post",
+      "allowed_roles": ["manager", "admin"],
+      "message": "Approval decision mandate for pilot"
+    }
+  ]
+}

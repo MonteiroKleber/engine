@@ -1,0 +1,318 @@
+system HRCore {
+  name: "HR Core"
+  description: "Human Resources governance for ACME People Operations"
+  version: 1.0.0
+  domain: "hr"
+  owner: "ACME People Operations"
+  contact: "hr@acmepeople.example"
+  tenancy: multi
+}
+
+actors {
+  human operator {
+    name: "Operator"
+    description: "Creates expenses and hire requests"
+    authentication: token
+    permissions: [
+      expense.create,
+      expense.read,
+      expense.submit,
+      hr.hire_request.create,
+      hr.hire_request.read,
+      hr.hire_request.submit,
+      hr.candidate.create,
+      hr.candidate.read,
+      hr.candidate.update
+    ]
+  }
+
+  human manager {
+    name: "Manager"
+    description: "Approves expenses and hire requests"
+    authentication: token
+    permissions: [
+      expense.approve,
+      expense.read,
+      expense.transition,
+      hr.hire_request.read,
+      hr.hire_request.approve,
+      hr.hire_request.transition,
+      hr.candidate.read,
+      hr.candidate.update,
+      approval.decide
+    ]
+  }
+
+  human controller {
+    name: "Controller"
+    description: "Controller with elevated permissions for auditing"
+    authentication: token
+    permissions: [
+      expense.approve,
+      expense.reject,
+      expense.read,
+      hr.hire_request.read,
+      hr.hire_request.approve,
+      hr.hire_request.reject,
+      hr.candidate.read,
+      approval.decide
+    ]
+  }
+
+  system runtime {
+    name: "Runtime"
+    authentication: token
+    permissions: [runtime.bundle.load, runtime.proof.snapshot, runtime.safe_mode.enter]
+  }
+
+  system hr_bot {
+    name: "HR Bot"
+    description: "AI agent for HR operations with limited permissions"
+    authentication: token
+    permissions: [
+      expense.create,
+      expense.read,
+      hr.hire_request.read,
+      hr.hire_request.create,
+      hr.candidate.read,
+      hr.candidate.create
+    ]
+  }
+}
+
+entities {
+  entity Candidate {
+    storage {
+      tenant_field: tenant_id
+      version_field: version
+    }
+
+    field id: uuid required unique
+    field tenant_id: uuid required indexed
+    field full_name: string required
+    field email: string required
+    field phone: string
+    field position_applied: string required
+    field dept_name: string required
+    field source: string default("direct")
+    field resume_url: text
+    field notes: text
+    field created_by: uuid required indexed
+    field created_at: datetime required
+    field state: string required indexed
+    field version: int required default(1)
+  }
+
+  entity HireRequest {
+    storage {
+      tenant_field: tenant_id
+      version_field: version
+    }
+
+    field id: uuid required unique
+    field tenant_id: uuid required indexed
+    field candidate_id: uuid required indexed
+    field position_title: string required
+    field dept_name: string required
+    field salary_proposed: decimal required min(0)
+    field currency: string required default("BRL")
+    field start_date: date required
+    field employment_type: string required default("full_time")
+    field justification: text required
+    field created_by: uuid required indexed
+    field created_at: datetime required
+    field state: string required indexed
+    field version: int required default(1)
+  }
+}
+
+policy_context {
+  field jurisdiction: string required
+  field risk_level: string default("low")
+  field salary_threshold: decimal default(15000)
+}
+
+invariants {
+  invariant HireRequestPositiveSalary {
+    applies_to: HireRequest
+    when: always
+    assert: HireRequest.salary_proposed > 0
+    severity: critical
+    message: "Proposed salary must be positive."
+  }
+
+  invariant HireRequestMustHaveJustification {
+    applies_to: HireRequest
+    when: always
+    assert: HireRequest.justification != ""
+    severity: high
+    message: "Hire request must include justification."
+  }
+
+  invariant HireRequestMustHaveDepartment {
+    applies_to: HireRequest
+    when: always
+    assert: HireRequest.dept_name != ""
+    severity: high
+    message: "Dept name must be specified."
+  }
+
+  invariant CandidateMustHaveEmail {
+    applies_to: Candidate
+    when: always
+    assert: Candidate.email != ""
+    severity: high
+    message: "Candidate email is required."
+  }
+}
+
+separation_of_duties {
+  rule NoSelfApprovalHireRequest {
+    on: HireRequest
+    forbid: Approve when actor.id == HireRequest.created_by
+    severity: critical
+    message: "Creator cannot approve their own hire request."
+  }
+}
+
+workflows {
+  workflow HireRequestFlow on HireRequest {
+    state Draft { initial: true }
+    state PendingApproval
+    state Approved { terminal: true }
+    state Rejected { terminal: true }
+
+    transition Submit: Draft -> PendingApproval {
+      guard: HireRequest.salary_proposed > 0
+      effects: [set_state("PendingApproval"), bump_version(1)]
+    }
+
+    transition Approve: PendingApproval -> Approved {
+      approvals: {
+        quorum: 1
+        roles: [manager, controller]
+        distinct_actors: true
+        expires_in: 72h
+      }
+      effects: [set_state("Approved"), bump_version(1)]
+    }
+
+    transition Reject: PendingApproval -> Rejected {
+      approvals: {
+        quorum: 1
+        roles: [manager, controller]
+        distinct_actors: true
+        expires_in: 72h
+      }
+      effects: [set_state("Rejected"), bump_version(1)]
+    }
+  }
+
+  workflow CandidateFlow on Candidate {
+    state Active { initial: true }
+    state Hired { terminal: true }
+    state Rejected { terminal: true }
+    state Withdrawn { terminal: true }
+
+    transition MarkHired: Active -> Hired {
+      guard: Candidate.state == "Active"
+      effects: [set_state("Hired"), bump_version(1)]
+    }
+
+    transition MarkRejected: Active -> Rejected {
+      guard: Candidate.state == "Active"
+      effects: [set_state("Rejected"), bump_version(1)]
+    }
+
+    transition MarkWithdrawn: Active -> Withdrawn {
+      guard: Candidate.state == "Active"
+      effects: [set_state("Withdrawn"), bump_version(1)]
+    }
+  }
+}
+
+operations {
+  api {
+    endpoint hire_request_create {
+      method: POST
+      path: "/hr/hire_requests"
+      request: HireRequest
+      response: HireRequest
+      permission: hr.hire_request.create
+      scope: tenant
+      idempotency: required
+      errors: [400, 401, 403]
+      bind: { entity: HireRequest, kind: create }
+    }
+
+    endpoint hire_request_get {
+      method: GET
+      path: "/hr/hire_requests/{id}"
+      request: void
+      response: HireRequest
+      permission: hr.hire_request.read
+      scope: tenant
+      errors: [401, 403, 404]
+      bind: { entity: HireRequest, kind: read }
+    }
+
+    endpoint hire_request_submit {
+      method: POST
+      path: "/hr/hire_requests/{id}/submit"
+      request: void
+      response: HireRequest
+      permission: hr.hire_request.submit
+      scope: tenant
+      idempotency: required
+      errors: [400, 401, 403, 409]
+      bind: { entity: HireRequest, kind: transition, workflow: HireRequestFlow, transition: Submit }
+    }
+
+    endpoint hire_request_approve {
+      method: POST
+      path: "/hr/hire_requests/{id}/approve"
+      request: void
+      response: HireRequest
+      permission: hr.hire_request.approve
+      scope: tenant
+      idempotency: required
+      errors: [400, 401, 403, 409]
+      bind: { entity: HireRequest, kind: approval, workflow: HireRequestFlow, transition: Approve, decision: "approve" }
+    }
+
+    endpoint hire_request_reject {
+      method: POST
+      path: "/hr/hire_requests/{id}/reject"
+      request: void
+      response: HireRequest
+      permission: hr.hire_request.reject
+      scope: tenant
+      idempotency: required
+      errors: [400, 401, 403, 409]
+      bind: { entity: HireRequest, kind: approval, workflow: HireRequestFlow, transition: Reject, decision: "reject" }
+    }
+
+    endpoint candidate_create {
+      method: POST
+      path: "/hr/candidates"
+      request: Candidate
+      response: Candidate
+      permission: hr.candidate.create
+      scope: tenant
+      idempotency: required
+      errors: [400, 401, 403]
+      bind: { entity: Candidate, kind: create }
+    }
+
+    endpoint candidate_get {
+      method: GET
+      path: "/hr/candidates/{id}"
+      request: void
+      response: Candidate
+      permission: hr.candidate.read
+      scope: tenant
+      errors: [401, 403, 404]
+      bind: { entity: Candidate, kind: read }
+    }
+  }
+}

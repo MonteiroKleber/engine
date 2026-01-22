@@ -1,0 +1,20 @@
+{
+  "account": {
+    "currency": {
+      "max_len": 280,
+      "required": true
+    }
+  },
+  "expense": {
+    "currency": {
+      "max_len": 280,
+      "required": true
+    },
+    "state": {
+      "max_len": 280,
+      "required": true
+    }
+  },
+  "name": "invariants",
+  "version": "1.0"
+}

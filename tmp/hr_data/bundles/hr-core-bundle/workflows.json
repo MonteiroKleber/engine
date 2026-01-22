@@ -1,0 +1,90 @@
+{
+  "name": "workflows",
+  "version": "1.0",
+  "workflows": [
+    {
+      "name": "candidate_create",
+      "steps": [
+        {
+          "action": "create: post /hr/candidates",
+          "actor_ref": "actor-operator",
+          "entity_ref": "entity-candidate",
+          "step_key": "step-000"
+        }
+      ],
+      "workflow_key": "workflow-candidate_create"
+    },
+    {
+      "name": "candidate_get",
+      "steps": [
+        {
+          "action": "read: get /hr/candidates/{id}",
+          "actor_ref": "actor-operator",
+          "entity_ref": "entity-candidate",
+          "step_key": "step-000"
+        }
+      ],
+      "workflow_key": "workflow-candidate_get"
+    },
+    {
+      "name": "hire_request_approve",
+      "steps": [
+        {
+          "action": "approval: post /hr/hire_requests/{id}/approve",
+          "actor_ref": "actor-manager",
+          "entity_ref": "entity-candidate",
+          "step_key": "step-000"
+        }
+      ],
+      "workflow_key": "workflow-hire_request_approve"
+    },
+    {
+      "name": "hire_request_create",
+      "steps": [
+        {
+          "action": "create: post /hr/hire_requests",
+          "actor_ref": "actor-operator",
+          "entity_ref": "entity-candidate",
+          "step_key": "step-000"
+        }
+      ],
+      "workflow_key": "workflow-hire_request_create"
+    },
+    {
+      "name": "hire_request_get",
+      "steps": [
+        {
+          "action": "read: get /hr/hire_requests/{id}",
+          "actor_ref": "actor-operator",
+          "entity_ref": "entity-candidate",
+          "step_key": "step-000"
+        }
+      ],
+      "workflow_key": "workflow-hire_request_get"
+    },
+    {
+      "name": "hire_request_reject",
+      "steps": [
+        {
+          "action": "approval: post /hr/hire_requests/{id}/reject",
+          "actor_ref": "actor-user",
+          "entity_ref": "entity-candidate",
+          "step_key": "step-000"
+        }
+      ],
+      "workflow_key": "workflow-hire_request_reject"
+    },
+    {
+      "name": "hire_request_submit",
+      "steps": [
+        {
+          "action": "transition: post /hr/hire_requests/{id}/submit",
+          "actor_ref": "actor-operator",
+          "entity_ref": "entity-candidate",
+          "step_key": "step-000"
+        }
+      ],
+      "workflow_key": "workflow-hire_request_submit"
+    }
+  ]
+}

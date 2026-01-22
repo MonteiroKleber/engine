@@ -376,6 +376,7 @@ def evaluate_policies(
     dept_id: Optional[str],
     endpoint_sig: str,
     payload: Dict[str, Any],
+    institution_id: Optional[str] = None,
 ) -> PolicyEvalResult:
     """Evaluate all applicable policies for a request.
 
@@ -386,11 +387,17 @@ def evaluate_policies(
         dept_id: Department ID (None for single mode).
         endpoint_sig: Canonical endpoint signature e.g. "POST /finance/expenses".
         payload: The request payload.
+        institution_id: Optional institution ID for governed policies lookup.
 
     Returns:
         PolicyEvalResult with allow status and any violations.
     """
-    policy_def = get_policies(dept_id)
+    # If institution_id is provided, use governed policies (override + bundle)
+    if institution_id:
+        from engine.core.governed_policies import get_effective_policies
+        policy_def = get_effective_policies(institution_id, dept_id)
+    else:
+        policy_def = get_policies(dept_id)
 
     if policy_def is None:
         # No policies defined - allow by default

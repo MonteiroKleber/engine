@@ -1,0 +1,96 @@
+{% extends "base.html" %}
+
+{% block title %}AXIOM Console - Release Trace{% endblock %}
+
+{% block content %}
+<div class="card">
+    <h3 class="card-title">Release Trace: {{ release_id }}</h3>
+
+    <div style="margin-bottom: 1rem;">
+        <a href="/console/ege/releases?institution_id={{ institution_id }}" class="btn-link">&larr; Back to Releases</a>
+    </div>
+
+    <div class="info-row">
+        <span class="info-label">Release ID:</span>
+        <span class="info-value mono">{{ release_id }}</span>
+    </div>
+    {% if bundle_name %}
+    <div class="info-row">
+        <span class="info-label">Bundle:</span>
+        <span class="info-value mono">{{ bundle_name }}</span>
+    </div>
+    {% endif %}
+</div>
+
+{% if has_trace %}
+<div class="card" style="margin-top: 1rem;">
+    <h4 style="margin-bottom: 1rem;">Trace Data</h4>
+
+    <div class="info-row">
+        <span class="info-label">Run ID:</span>
+        <span class="info-value mono">{{ trace.run_id }}</span>
+    </div>
+    <div class="info-row">
+        <span class="info-label">Mode:</span>
+        <span class="info-value">{{ trace.mode }}</span>
+    </div>
+    {% if trace.policy_count is not none %}
+    <div class="info-row">
+        <span class="info-label">Policy Count:</span>
+        <span class="info-value">{{ trace.policy_count }}</span>
+    </div>
+    {% endif %}
+    {% if trace.policy_gap_count is not none %}
+    <div class="info-row">
+        <span class="info-label">Policy Gaps:</span>
+        <span class="info-value">{{ trace.policy_gap_count }}</span>
+    </div>
+    {% endif %}
+</div>
+
+<div class="card" style="margin-top: 1rem;">
+    <h4 style="margin-bottom: 1rem;">Hashes</h4>
+
+    <table>
+        <thead>
+            <tr>
+                <th>Artifact</th>
+                <th>SHA256</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td>SIR</td>
+                <td class="mono" style="font-size: 0.75rem;">{{ trace.sir_sha256 }}</td>
+            </tr>
+            <tr>
+                <td>Draft IDL</td>
+                <td class="mono" style="font-size: 0.75rem;">{{ trace.draft_sha256 }}</td>
+            </tr>
+            <tr>
+                <td>Final IDL</td>
+                <td class="mono" style="font-size: 0.75rem;">{{ trace.final_idl_sha256 }}</td>
+            </tr>
+            <tr>
+                <td>Bundle Manifest</td>
+                <td class="mono" style="font-size: 0.75rem;">{{ trace.bundle_manifest_sha256 }}</td>
+            </tr>
+            <tr>
+                <td>Contract Ledger</td>
+                <td class="mono" style="font-size: 0.75rem;">{{ trace.contract_ledger_sha256 }}</td>
+            </tr>
+        </tbody>
+    </table>
+</div>
+{% else %}
+<div class="card" style="margin-top: 1rem; background: var(--bg-secondary, #f5f5f5);">
+    <h4 style="margin-bottom: 0.5rem;">Trace Unavailable</h4>
+    <p style="color: var(--text-secondary); margin: 0;">
+        {{ trace_unavailable_reason or 'Trace data is not available for this release.' }}
+    </p>
+    <p style="color: var(--text-secondary); margin-top: 0.5rem; font-size: 0.85rem;">
+        Note: Deploy traces are only persisted for builds via the pipeline. Production deploys may not have trace data.
+    </p>
+</div>
+{% endif %}
+{% endblock %}

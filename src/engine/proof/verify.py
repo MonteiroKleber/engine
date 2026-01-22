@@ -288,18 +288,21 @@ def verify_bundle_offline(bundle_path: Path) -> ProofResult:
     # ================================================================
     # Step 4: Verify manifest_hash in ledger
     # ================================================================
-    ledger_manifest_hash = ledger.get("manifest_hash")
+    ledger_manifest_hash_raw = ledger.get("manifest_hash")
 
-    if not ledger_manifest_hash:
+    if not ledger_manifest_hash_raw:
         return _fail(
             PROOF_LEDGER_INVALID_SCHEMA,
             "contract_ledger.json missing 'manifest_hash'",
         )
 
+    # Normalize to remove SHA256: prefix if present
+    ledger_manifest_hash = normalize_hash(ledger_manifest_hash_raw)
+
     if not is_valid_sha256_hex(ledger_manifest_hash):
         return _fail(
             PROOF_LEDGER_MANIFEST_HASH_INVALID,
-            f"Invalid manifest_hash format in ledger: {ledger_manifest_hash}",
+            f"Invalid manifest_hash format in ledger: {ledger_manifest_hash_raw}",
         )
 
     if ledger_manifest_hash.lower() != manifest_hash.lower():

@@ -1,0 +1,55 @@
+{
+  "name": "rbac",
+  "roles": [
+    {
+      "name": "controller",
+      "permissions": [
+        "finance.expense.approve",
+        "finance.expense.read",
+        "finance.expense.reject",
+        "ops.goods_received.confirm",
+        "ops.goods_received.read",
+        "procurement.purchase_request.approve",
+        "procurement.purchase_request.read"
+      ]
+    },
+    {
+      "name": "finance_bot",
+      "permissions": [
+        "finance.expense.create",
+        "finance.expense.read"
+      ]
+    },
+    {
+      "name": "manager",
+      "permissions": [
+        "finance.expense.approve",
+        "finance.expense.read",
+        "finance.expense.transition",
+        "procurement.purchase_request.approve",
+        "procurement.purchase_request.read"
+      ]
+    },
+    {
+      "name": "operator",
+      "permissions": [
+        "finance.expense.create",
+        "finance.expense.read",
+        "finance.expense.submit",
+        "ops.goods_received.create",
+        "ops.goods_received.read",
+        "procurement.purchase_request.create",
+        "procurement.purchase_request.read"
+      ]
+    },
+    {
+      "name": "runtime",
+      "permissions": [
+        "runtime.bundle.load",
+        "runtime.proof.snapshot",
+        "runtime.safe_mode.enter"
+      ]
+    }
+  ],
+  "version": "1.0"
+}

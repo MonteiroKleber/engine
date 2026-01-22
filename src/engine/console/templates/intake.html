@@ -1,0 +1,98 @@
+{% extends "base.html" %}
+
+{% block title %}AXIOM Console - Intake Assistido{% endblock %}
+
+{% block content %}
+<div class="card">
+    <h3 class="card-title">Intake Assistido</h3>
+    <p style="color: var(--text-secondary); margin-bottom: 1rem;">
+        Crie ou edite rascunhos de definicao institucional de forma assistida.
+        O resultado pode ser exportado para revisao humana.
+    </p>
+
+    <!-- Mode Toggle -->
+    <div style="margin-bottom: 1rem;">
+        <a href="/console/intake?institution_id={{ institution_id }}{% if dept_id %}&dept_id={{ dept_id }}{% endif %}&mode=nl"
+           class="btn-link" style="{% if mode != 'dsl' %}font-weight: bold; text-decoration: underline;{% endif %}">
+            Modo NL (Linguagem Natural)
+        </a>
+        &nbsp;|&nbsp;
+        <a href="/console/intake?institution_id={{ institution_id }}{% if dept_id %}&dept_id={{ dept_id }}{% endif %}&mode=dsl"
+           class="btn-link" style="{% if mode == 'dsl' %}font-weight: bold; text-decoration: underline;{% endif %}">
+            Modo DSL (Manual)
+        </a>
+    </div>
+
+    <form action="/console/intake" method="POST">
+        <input type="hidden" name="institution_id" value="{{ institution_id }}">
+        {% if dept_id %}
+        <input type="hidden" name="dept_id" value="{{ dept_id }}">
+        {% endif %}
+        <input type="hidden" name="mode" value="{{ mode }}">
+        {% if csrf_token %}<input type="hidden" name="_csrf_token" value="{{ csrf_token }}">{% endif %}
+
+        <div style="margin-bottom: 1rem;">
+            {% if mode == 'dsl' %}
+            <label for="input_text" style="display: block; margin-bottom: 0.5rem; font-weight: bold;">
+                Cole o DSL (IDL v1.2.2):
+            </label>
+            <textarea
+                id="input_text"
+                name="input_text"
+                rows="15"
+                style="width: 100%; font-family: monospace; font-size: 0.875rem; padding: 0.5rem; border: 1px solid var(--border-color); border-radius: 4px; background: var(--bg-secondary);"
+                placeholder="system MySystem {
+    name = &quot;My System&quot;
+    domain = &quot;finance&quot;
+}
+
+actor Employee {
+    auth = header
+    permissions = [&quot;expense.create&quot;]
+}
+..."></textarea>
+            {% else %}
+            <label for="input_text" style="display: block; margin-bottom: 0.5rem; font-weight: bold;">
+                Descreva a politica em linguagem natural:
+            </label>
+            <textarea
+                id="input_text"
+                name="input_text"
+                rows="8"
+                style="width: 100%; padding: 0.5rem; border: 1px solid var(--border-color); border-radius: 4px;"
+                placeholder="Exemplo: Funcionarios podem criar despesas ate R$ 5.000. Despesas acima de R$ 1.000 precisam de aprovacao do gerente. Nao e permitido auto-aprovar despesas."></textarea>
+            {% endif %}
+        </div>
+
+        <button type="submit" class="btn-link" style="background: var(--primary-color, #0066cc); color: white; padding: 0.5rem 1rem; text-decoration: none; border-radius: 4px; border: none; cursor: pointer;">
+            {% if mode == 'dsl' %}
+            Validar e Gerar IR
+            {% else %}
+            Gerar Rascunho
+            {% endif %}
+        </button>
+    </form>
+</div>
+
+<!-- Help Section -->
+<div class="card" style="margin-top: 1rem;">
+    <h4 style="margin-bottom: 0.5rem;">Como Funciona</h4>
+    {% if mode == 'dsl' %}
+    <ol style="color: var(--text-secondary); margin: 0; padding-left: 1.5rem;">
+        <li>Cole o codigo DSL (IDL v1.2.2) no campo acima</li>
+        <li>O sistema valida a sintaxe e gera o IR (IRCS v1)</li>
+        <li>Se valido, voce pode exportar o resultado para revisao</li>
+    </ol>
+    {% else %}
+    <ol style="color: var(--text-secondary); margin: 0; padding-left: 1.5rem;">
+        <li>Descreva a politica desejada em linguagem natural</li>
+        <li>O sistema gera um rascunho e identifica lacunas (gaps)</li>
+        <li>Responda as perguntas para completar a definicao</li>
+        <li>Finalize e exporte o resultado para revisao humana</li>
+    </ol>
+    {% endif %}
+    <p style="color: var(--text-secondary); margin-top: 0.5rem; font-size: 0.875rem;">
+        <strong>Nota:</strong> Este e um fluxo assistido. Nenhuma mudanca e aplicada automaticamente.
+    </p>
+</div>
+{% endblock %}

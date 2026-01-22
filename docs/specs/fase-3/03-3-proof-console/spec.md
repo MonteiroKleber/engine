@@ -1,7 +1,7 @@
 # Fase 3 — Etapa 3.3: Prova Offline no Console (UX + Export)
 
-**Data:** 2026-01-18  
-**Status:** DRAFT (autoridade da etapa)  
+**Data:** 2026-01-19
+**Status:** IMPLEMENTADO (PROMPT 3.3.2)
 **Origem:** `docs/specs/fase-3/00-plano.md` (Etapa 3.3)
 
 ## Objetivo

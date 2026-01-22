@@ -1,0 +1,16 @@
+{
+  "name": "approvals",
+  "rules": [
+    {
+      "approver_roles": [
+        "manager"
+      ],
+      "quorum": 1,
+      "rule_name": "expense.create",
+      "trigger": {
+        "api": "POST /finance/expenses"
+      }
+    }
+  ],
+  "version": "1.0"
+}

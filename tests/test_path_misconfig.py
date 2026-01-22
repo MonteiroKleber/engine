@@ -196,6 +196,8 @@ class TestRunPreflightChecks:
         """Passes when no institution requires multi-tenant mode."""
         # Set absolute paths (would fail in multi-tenant mode)
         monkeypatch.setenv("ENGINE_LEDGER_PATH", "/var/log/audit.jsonl")
+        # Session secret required for preflight
+        monkeypatch.setenv("ENGINE_CONSOLE_SESSION_SECRET", "a" * 32)
 
         result = run_preflight_checks()
         assert result.ok is True
@@ -337,6 +339,8 @@ class TestBackwardCompatibility:
         # Set absolute paths
         monkeypatch.setenv("ENGINE_LEDGER_PATH", "/var/log/audit.jsonl")
         monkeypatch.setenv("ENGINE_STATE_STORE_DIR", "/data/state")
+        # Session secret required for preflight
+        monkeypatch.setenv("ENGINE_CONSOLE_SESSION_SECRET", "a" * 32)
 
         # Preflight should pass
         result = run_preflight_checks()

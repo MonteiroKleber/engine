@@ -1,0 +1,54 @@
+{
+  "name": "workflows",
+  "version": "1.0",
+  "workflows": [
+    {
+      "name": "expense_approve",
+      "steps": [
+        {
+          "action": "approval: post /finance/expenses/{id}/approvals/approve",
+          "actor_ref": "actor-manager",
+          "entity_ref": "entity-account",
+          "step_key": "step-000"
+        }
+      ],
+      "workflow_key": "workflow-expense_approve"
+    },
+    {
+      "name": "expense_create",
+      "steps": [
+        {
+          "action": "create: post /finance/expenses",
+          "actor_ref": "actor-operator",
+          "entity_ref": "entity-account",
+          "step_key": "step-000"
+        }
+      ],
+      "workflow_key": "workflow-expense_create"
+    },
+    {
+      "name": "expense_get",
+      "steps": [
+        {
+          "action": "read: get /finance/expenses/{id}",
+          "actor_ref": "actor-operator",
+          "entity_ref": "entity-account",
+          "step_key": "step-000"
+        }
+      ],
+      "workflow_key": "workflow-expense_get"
+    },
+    {
+      "name": "expense_submit",
+      "steps": [
+        {
+          "action": "transition: post /finance/expenses/{id}/transitions/submit",
+          "actor_ref": "actor-operator",
+          "entity_ref": "entity-account",
+          "step_key": "step-000"
+        }
+      ],
+      "workflow_key": "workflow-expense_submit"
+    }
+  ]
+}

@@ -42,18 +42,78 @@
         <span class="info-label">Error Message</span>
         <span class="info-value">{{ result.error_message }}</span>
     </div>
-    {% if result.details %}
-    <details style="margin-top: 1rem;">
-        <summary style="cursor: pointer; color: var(--accent);">View Details</summary>
-        <pre class="code-block">{{ result.details | tojson(indent=2) }}</pre>
-    </details>
+    {% if result.details and result.details.file %}
+    <div class="info-row">
+        <span class="info-label">Affected File</span>
+        <span class="info-value">
+            <a href="/console/contracts/{{ result.details.file }}?institution_id={{ institution_id }}{% if dept_id %}&dept_id={{ dept_id }}{% endif %}"
+               class="btn-link" style="color: var(--accent);">
+                {{ result.details.file }}
+            </a>
+        </span>
+    </div>
+    {% endif %}
+    {% if result.details and result.details.expected and result.details.actual %}
+    <div class="info-row">
+        <span class="info-label">Expected Hash</span>
+        <span class="info-value mono hash" style="font-size: 0.75rem;">{{ result.details.expected }}</span>
+    </div>
+    <div class="info-row">
+        <span class="info-label">Actual Hash</span>
+        <span class="info-value mono hash" style="font-size: 0.75rem; color: var(--error);">{{ result.details.actual }}</span>
+    </div>
     {% endif %}
     {% endif %}
 </div>
 
-<!-- Hashes -->
+<!-- Verification Checks -->
+{% if checks %}
+<div class="card">
+    <h3 class="card-title">Verification Checks</h3>
+    <table>
+        <thead>
+            <tr>
+                <th>Check</th>
+                <th>Status</th>
+                <th>Detail</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for check in checks %}
+            <tr>
+                <td>{{ check.name }}</td>
+                <td>
+                    {% if check.status == 'pass' %}
+                    <span class="badge badge-active">PASS</span>
+                    {% elif check.status == 'fail' %}
+                    <span class="badge badge-error">FAIL</span>
+                    {% else %}
+                    <span class="badge badge-unpinned">SKIP</span>
+                    {% endif %}
+                </td>
+                <td class="mono" style="font-size: 0.8rem;">
+                    {% if check.detail %}
+                    {{ check.detail }}
+                    {% else %}
+                    -
+                    {% endif %}
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endif %}
+
+<!-- Cryptographic Anchors -->
 <div class="card">
     <h3 class="card-title">Cryptographic Anchors</h3>
+    {% if pinned_release_id %}
+    <div class="info-row">
+        <span class="info-label">Pinned Release ID</span>
+        <span class="info-value mono">{{ pinned_release_id }}</span>
+    </div>
+    {% endif %}
     {% if result.manifest_hash %}
     <div class="info-row">
         <span class="info-label">Manifest SHA256</span>
@@ -74,16 +134,24 @@
     {% endif %}
 </div>
 
-<!-- JSON Toggle -->
+<!-- Export & Raw Result -->
 <div class="card">
-    <h3 class="card-title">Raw Result</h3>
+    <h3 class="card-title">Export</h3>
+    <div style="display: flex; gap: 1rem; align-items: center; flex-wrap: wrap;">
+        <a href="/console/proof.json?institution_id={{ institution_id }}{% if dept_id %}&dept_id={{ dept_id }}{% endif %}"
+           class="btn-link" style="padding: 0.5rem 1rem;">
+            Download JSON Report
+        </a>
+        {% if show_json %}
+        <a href="/console/proof?institution_id={{ institution_id }}{% if dept_id %}&dept_id={{ dept_id }}{% endif %}"
+           style="color: var(--accent);">Hide JSON</a>
+        {% else %}
+        <a href="/console/proof?institution_id={{ institution_id }}{% if dept_id %}&dept_id={{ dept_id }}{% endif %}&show_json=true"
+           style="color: var(--accent);">Show JSON Result</a>
+        {% endif %}
+    </div>
     {% if show_json %}
-    <pre class="code-block">{{ result_json }}</pre>
-    <a href="/console/proof?institution_id={{ institution_id }}{% if dept_id %}&dept_id={{ dept_id }}{% endif %}"
-       style="color: var(--accent);">Hide JSON</a>
-    {% else %}
-    <a href="/console/proof?institution_id={{ institution_id }}{% if dept_id %}&dept_id={{ dept_id }}{% endif %}&show_json=true"
-       style="color: var(--accent);">Show JSON Result</a>
+    <pre class="code-block" style="margin-top: 1rem;">{{ result_json }}</pre>
     {% endif %}
 </div>
 

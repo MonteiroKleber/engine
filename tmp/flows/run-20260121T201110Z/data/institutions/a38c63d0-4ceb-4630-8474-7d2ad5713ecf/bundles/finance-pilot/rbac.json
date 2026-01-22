@@ -1,0 +1,23 @@
+{
+  "version": "1.0.0",
+  "name": "rbac",
+  "description": "Role-Based Access Control for finance-pilot",
+  "roles": [
+    {
+      "name": "admin",
+      "permissions": ["expense.create", "expense.read", "expense.delete", "expense.approve", "approval.decide"]
+    },
+    {
+      "name": "manager",
+      "permissions": ["expense.read", "expense.approve", "approval.decide"]
+    },
+    {
+      "name": "analyst",
+      "permissions": ["expense.create", "expense.read"]
+    },
+    {
+      "name": "viewer",
+      "permissions": ["expense.read"]
+    }
+  ]
+}

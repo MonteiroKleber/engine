@@ -305,6 +305,12 @@ class TestParser:
     def test_parse_sod_section(self):
         """Separation of duties section is parsed correctly."""
         source = """
+        entities {
+            entity Expense {
+                field id: uuid required
+                field created_by: uuid required
+            }
+        }
         separation_of_duties {
             rule NoSelfApproval {
                 on: Expense
@@ -326,6 +332,9 @@ class TestParser:
     def test_parse_sod_with_history(self):
         """SoD with history() function is parsed correctly."""
         source = """
+        entities {
+            entity Expense { field id: uuid required }
+        }
         separation_of_duties {
             rule NoSubmitterApproval {
                 on: Expense
@@ -351,6 +360,16 @@ class TestParser:
     def test_parse_workflows_section(self):
         """Workflows section is parsed correctly."""
         source = """
+        actors {
+            human admin { name: "Admin" authentication: oauth2 permissions: [] }
+            human manager { name: "Manager" authentication: oauth2 permissions: [] }
+        }
+        entities {
+            entity Item {
+                field id: uuid required
+                field name: string required
+            }
+        }
         workflows {
             workflow TestFlow on Item {
                 state Draft { initial: true }
@@ -401,6 +420,9 @@ class TestParser:
     def test_parse_operations_section(self):
         """Operations section is parsed correctly."""
         source = """
+        entities {
+            entity Item { field id: uuid required }
+        }
         operations {
             api {
                 endpoint item_create {
@@ -434,6 +456,13 @@ class TestParser:
     def test_parse_expression_and_or_not(self):
         """Logical operators in expressions are parsed."""
         source = """
+        entities {
+            entity Item {
+                field a: int required
+                field b: int required
+                field c: bool required
+            }
+        }
         invariants {
             invariant Test {
                 applies_to: Item
@@ -492,6 +521,9 @@ class TestIRCSEmitter:
     def test_emit_typed_expression(self):
         """Expressions are emitted as typed AST."""
         source = """
+        entities {
+            entity Item { field value: int required }
+        }
         invariants {
             invariant Test {
                 applies_to: Item
@@ -513,6 +545,9 @@ class TestIRCSEmitter:
     def test_emit_history_ref(self):
         """history() references are emitted correctly."""
         source = """
+        entities {
+            entity Item { field id: uuid required }
+        }
         separation_of_duties {
             rule Test {
                 on: Item
@@ -692,3 +727,590 @@ class TestErrorCodes:
         assert e1 is not None and e2 is not None
         assert e1.code == e2.code
         assert e1.message == e2.message
+
+
+# ============================================================
+# CHANGE-1 Tests: Semantic Validation
+# ============================================================
+
+
+class TestSemanticValidation:
+    """Tests for semantic validation of references (CHANGE-1)."""
+
+    def test_semantic_undefined_entity_in_invariant(self):
+        """Undefined entity in invariant raises semantic error."""
+        source = """
+        invariants {
+            invariant Test {
+                applies_to: NonExistentEntity
+                when: always
+                assert: NonExistentEntity.field > 0
+                severity: high
+                message: "Error"
+            }
+        }
+        """
+        with pytest.raises(IDLSemanticError) as exc:
+            parse_dsl(source)
+
+        assert "IDL_S001" in str(exc.value)
+        assert "NonExistentEntity" in str(exc.value)
+        assert "Hint" in str(exc.value)
+
+    def test_semantic_undefined_entity_in_sod(self):
+        """Undefined entity in SoD rule raises semantic error."""
+        source = """
+        separation_of_duties {
+            rule Test {
+                on: NonExistentEntity
+                forbid: Approve when actor.id == NonExistentEntity.created_by
+                severity: critical
+                message: "Error"
+            }
+        }
+        """
+        with pytest.raises(IDLSemanticError) as exc:
+            parse_dsl(source)
+
+        assert "IDL_S001" in str(exc.value)
+        assert "NonExistentEntity" in str(exc.value)
+
+    def test_semantic_undefined_entity_in_workflow(self):
+        """Undefined entity in workflow raises semantic error."""
+        source = """
+        workflows {
+            workflow TestFlow on NonExistentEntity {
+                state Draft { initial: true }
+                state Done { terminal: true }
+                transition Finish: Draft -> Done {
+                    effects: [set_state("Done")]
+                }
+            }
+        }
+        """
+        with pytest.raises(IDLSemanticError) as exc:
+            parse_dsl(source)
+
+        assert "IDL_S001" in str(exc.value)
+        assert "NonExistentEntity" in str(exc.value)
+
+    def test_semantic_undefined_actor_in_roles(self):
+        """Undefined actor in workflow roles raises semantic error."""
+        source = """
+        actors {
+            human manager { name: "Manager" authentication: oauth2 permissions: [] }
+        }
+        entities {
+            entity Item { field id: uuid required }
+        }
+        workflows {
+            workflow TestFlow on Item {
+                state Draft { initial: true }
+                state Done { terminal: true }
+                transition Finish: Draft -> Done {
+                    approvals: {
+                        quorum: 1
+                        roles: [nonexistent_actor]
+                        distinct_actors: true
+                    }
+                    effects: [set_state("Done")]
+                }
+            }
+        }
+        """
+        with pytest.raises(IDLSemanticError) as exc:
+            parse_dsl(source)
+
+        assert "IDL_S002" in str(exc.value)
+        assert "nonexistent_actor" in str(exc.value)
+
+    def test_semantic_undefined_workflow_in_bind(self):
+        """Undefined workflow in endpoint bind raises semantic error."""
+        source = """
+        entities {
+            entity Item { field id: uuid required }
+        }
+        operations {
+            api {
+                endpoint item_submit {
+                    method: POST
+                    path: "/items/{id}/submit"
+                    request: void
+                    response: Item
+                    permission: items.submit
+                    scope: tenant
+                    idempotency: required
+                    errors: [400]
+                    bind: { entity: Item, kind: transition, workflow: NonExistentWorkflow, transition: Submit }
+                }
+            }
+        }
+        """
+        with pytest.raises(IDLSemanticError) as exc:
+            parse_dsl(source)
+
+        assert "IDL_S003" in str(exc.value)
+        assert "NonExistentWorkflow" in str(exc.value)
+
+    def test_semantic_undefined_transition_in_bind(self):
+        """Undefined transition in endpoint bind raises semantic error."""
+        source = """
+        entities {
+            entity Item { field id: uuid required }
+        }
+        workflows {
+            workflow ItemFlow on Item {
+                state Draft { initial: true }
+                state Done { terminal: true }
+                transition Finish: Draft -> Done {
+                    effects: [set_state("Done")]
+                }
+            }
+        }
+        operations {
+            api {
+                endpoint item_submit {
+                    method: POST
+                    path: "/items/{id}/submit"
+                    request: void
+                    response: Item
+                    permission: items.submit
+                    scope: tenant
+                    idempotency: required
+                    errors: [400]
+                    bind: { entity: Item, kind: transition, workflow: ItemFlow, transition: NonExistentTransition }
+                }
+            }
+        }
+        """
+        with pytest.raises(IDLSemanticError) as exc:
+            parse_dsl(source)
+
+        assert "IDL_S004" in str(exc.value)
+        assert "NonExistentTransition" in str(exc.value)
+
+    def test_semantic_undefined_field_in_expression(self):
+        """Undefined field in expression raises semantic error."""
+        source = """
+        entities {
+            entity Item { field id: uuid required }
+        }
+        invariants {
+            invariant Test {
+                applies_to: Item
+                when: always
+                assert: Item.nonexistent_field > 0
+                severity: high
+                message: "Error"
+            }
+        }
+        """
+        with pytest.raises(IDLSemanticError) as exc:
+            parse_dsl(source)
+
+        assert "IDL_S006" in str(exc.value)
+        assert "nonexistent_field" in str(exc.value)
+
+    def test_semantic_valid_references(self):
+        """Valid references pass semantic validation."""
+        source = """
+        actors {
+            human manager { name: "Manager" authentication: oauth2 permissions: [] }
+        }
+        entities {
+            entity Item {
+                field id: uuid required
+                field name: string required
+            }
+        }
+        invariants {
+            invariant NameNotEmpty {
+                applies_to: Item
+                when: always
+                assert: Item.name != ""
+                severity: high
+                message: "Name required"
+            }
+        }
+        workflows {
+            workflow ItemFlow on Item {
+                state Draft { initial: true }
+                state Done { terminal: true }
+                transition Finish: Draft -> Done {
+                    approvals: {
+                        quorum: 1
+                        roles: [manager]
+                        distinct_actors: true
+                    }
+                    effects: [set_state("Done")]
+                }
+            }
+        }
+        operations {
+            api {
+                endpoint item_finish {
+                    method: POST
+                    path: "/items/{id}/finish"
+                    request: void
+                    response: Item
+                    permission: items.finish
+                    scope: tenant
+                    idempotency: required
+                    errors: [400]
+                    bind: { entity: Item, kind: transition, workflow: ItemFlow, transition: Finish }
+                }
+            }
+        }
+        """
+        # Should not raise any error
+        ir = parse_dsl(source)
+        assert ir["ir_version"] == "ircs.v1"
+
+
+# ============================================================
+# CHANGE-2 Tests: Guard Null -> Always
+# ============================================================
+
+
+class TestGuardAlwaysExplicit:
+    """Tests for explicit guard: {kind: 'always'} (CHANGE-2)."""
+
+    def test_transition_guard_default_always(self):
+        """Transition without guard emits {kind: 'always'}."""
+        source = """
+        entities {
+            entity Item { field id: uuid required }
+        }
+        workflows {
+            workflow TestFlow on Item {
+                state Draft { initial: true }
+                state Done { terminal: true }
+                transition Finish: Draft -> Done {
+                    effects: [set_state("Done")]
+                }
+            }
+        }
+        """
+        ir = parse_dsl(source)
+
+        transition = ir["workflows"][0]["transitions"][0]
+        assert transition["guard"] == {"kind": "always"}
+        assert transition["guard"] is not None
+
+    def test_transition_with_explicit_guard(self):
+        """Transition with guard still emits the guard expression."""
+        source = """
+        entities {
+            entity Item {
+                field id: uuid required
+                field active: bool required
+            }
+        }
+        workflows {
+            workflow TestFlow on Item {
+                state Draft { initial: true }
+                state Done { terminal: true }
+                transition Finish: Draft -> Done {
+                    guard: Item.active == true
+                    effects: [set_state("Done")]
+                }
+            }
+        }
+        """
+        ir = parse_dsl(source)
+
+        transition = ir["workflows"][0]["transitions"][0]
+        assert transition["guard"]["kind"] == "compare"
+        assert transition["guard"]["op"] == "=="
+
+
+# ============================================================
+# CHANGE-3 Tests: Required False Explicit
+# ============================================================
+
+
+class TestRequiredFalseExplicit:
+    """Tests for explicit required: false (CHANGE-3)."""
+
+    def test_field_required_explicit_true(self):
+        """Field with 'required' modifier has required: true."""
+        source = """
+        entities {
+            entity Item {
+                field id: uuid required
+            }
+        }
+        """
+        ir = parse_dsl(source)
+
+        field = ir["entities"][0]["fields"][0]
+        assert field["required"] is True
+
+    def test_field_required_explicit_false(self):
+        """Field without 'required' modifier has required: false."""
+        source = """
+        entities {
+            entity Item {
+                field notes: text
+            }
+        }
+        """
+        ir = parse_dsl(source)
+
+        field = ir["entities"][0]["fields"][0]
+        assert "required" in field
+        assert field["required"] is False
+
+    def test_context_field_required_explicit(self):
+        """Policy context fields have explicit required."""
+        source = """
+        policy_context {
+            field jurisdiction: string required
+            field risk_level: string
+        }
+        """
+        ir = parse_dsl(source)
+
+        fields = ir["policy_context"]["schema"]
+        assert fields[0]["required"] is True
+        assert "required" in fields[1]
+        assert fields[1]["required"] is False
+
+
+# ============================================================
+# CHANGE-4 Tests: Error Hints
+# ============================================================
+
+
+class TestErrorHints:
+    """Tests for error messages with hints (CHANGE-4)."""
+
+    def test_error_hint_severity(self):
+        """Invalid severity error includes hint."""
+        source = """
+        invariants {
+            invariant Test {
+                applies_to: Item
+                when: always
+                assert: Item.value > 0
+                severity: warning
+                message: "Error"
+            }
+        }
+        """
+        with pytest.raises(IDLSyntaxError) as exc:
+            parse_dsl(source)
+
+        assert "IDL_P019" in str(exc.value)
+        assert "Hint" in str(exc.value)
+        assert "low" in str(exc.value)
+        assert "high" in str(exc.value)
+        assert "critical" in str(exc.value)
+
+    def test_error_hint_auth_method(self):
+        """Invalid auth method error includes hint."""
+        source = """
+        actors {
+            human user { name: "User" authentication: jwt permissions: [] }
+        }
+        """
+        with pytest.raises(IDLSyntaxError) as exc:
+            parse_dsl(source)
+
+        assert "IDL_P018" in str(exc.value)
+        assert "Hint" in str(exc.value)
+        assert "oauth2" in str(exc.value)
+        assert "token" in str(exc.value)
+
+    def test_error_hint_http_method(self):
+        """Invalid HTTP method error includes hint."""
+        source = """
+        operations {
+            api {
+                endpoint test {
+                    method: OPTIONS
+                    path: "/test"
+                    request: void
+                    response: void
+                    permission: test
+                    scope: tenant
+                    idempotency: none
+                    errors: []
+                }
+            }
+        }
+        """
+        with pytest.raises(IDLSyntaxError) as exc:
+            parse_dsl(source)
+
+        assert "IDL_P020" in str(exc.value)
+        assert "Hint" in str(exc.value)
+        assert "GET" in str(exc.value)
+        assert "POST" in str(exc.value)
+
+    def test_error_hint_bind_kind(self):
+        """Invalid bind kind error includes hint."""
+        source = """
+        operations {
+            api {
+                endpoint test {
+                    method: GET
+                    path: "/test"
+                    request: void
+                    response: void
+                    permission: test
+                    scope: tenant
+                    idempotency: none
+                    errors: []
+                    bind: { entity: Item, kind: query }
+                }
+            }
+        }
+        """
+        with pytest.raises(IDLSyntaxError) as exc:
+            parse_dsl(source)
+
+        assert "IDL_P022" in str(exc.value)
+        assert "Hint" in str(exc.value)
+        assert "create" in str(exc.value)
+        assert "read" in str(exc.value)
+
+
+# ============================================================
+# CHANGE-5 Tests: Path Template Validation
+# ============================================================
+
+
+class TestPathTemplateValidation:
+    """Tests for path template validation (CHANGE-5)."""
+
+    def test_path_template_valid(self):
+        """Valid path template is accepted."""
+        source = """
+        entities {
+            entity Item { field id: uuid required }
+        }
+        operations {
+            api {
+                endpoint item_get {
+                    method: GET
+                    path: "/items/{id}"
+                    request: void
+                    response: Item
+                    permission: items.read
+                    scope: tenant
+                    idempotency: none
+                    errors: [404]
+                    bind: { entity: Item, kind: read }
+                }
+            }
+        }
+        """
+        ir = parse_dsl(source)
+
+        endpoint = ir["operations"]["api"][0]
+        assert endpoint["path"] == "/items/{id}"
+        assert endpoint["path_params"] == ["id"]
+
+    def test_path_params_extraction(self):
+        """Multiple path params are extracted."""
+        source = """
+        entities {
+            entity Item { field id: uuid required }
+        }
+        operations {
+            api {
+                endpoint item_action {
+                    method: POST
+                    path: "/tenants/{tenant_id}/items/{item_id}/actions/{action_name}"
+                    request: void
+                    response: Item
+                    permission: items.action
+                    scope: tenant
+                    idempotency: required
+                    errors: [400]
+                    bind: { entity: Item, kind: update }
+                }
+            }
+        }
+        """
+        ir = parse_dsl(source)
+
+        endpoint = ir["operations"]["api"][0]
+        assert endpoint["path_params"] == ["tenant_id", "item_id", "action_name"]
+
+    def test_path_template_no_params(self):
+        """Path without params has empty path_params list."""
+        source = """
+        entities {
+            entity Item { field id: uuid required }
+        }
+        operations {
+            api {
+                endpoint item_list {
+                    method: GET
+                    path: "/items"
+                    request: void
+                    response: Item
+                    permission: items.read
+                    scope: tenant
+                    idempotency: none
+                    errors: []
+                    bind: { entity: Item, kind: read }
+                }
+            }
+        }
+        """
+        ir = parse_dsl(source)
+
+        endpoint = ir["operations"]["api"][0]
+        assert endpoint["path_params"] == []
+
+    def test_path_template_invalid_uppercase(self):
+        """Invalid path param with uppercase raises error."""
+        source = """
+        operations {
+            api {
+                endpoint test {
+                    method: GET
+                    path: "/items/{ItemId}"
+                    request: void
+                    response: void
+                    permission: test
+                    scope: tenant
+                    idempotency: none
+                    errors: []
+                }
+            }
+        }
+        """
+        with pytest.raises(IDLSyntaxError) as exc:
+            parse_dsl(source)
+
+        assert "IDL_P029" in str(exc.value)
+        assert "ItemId" in str(exc.value)
+        assert "Hint" in str(exc.value)
+
+    def test_path_template_invalid_hyphen(self):
+        """Invalid path param with hyphen raises error."""
+        source = """
+        operations {
+            api {
+                endpoint test {
+                    method: GET
+                    path: "/items/{item-id}"
+                    request: void
+                    response: void
+                    permission: test
+                    scope: tenant
+                    idempotency: none
+                    errors: []
+                }
+            }
+        }
+        """
+        with pytest.raises(IDLSyntaxError) as exc:
+            parse_dsl(source)
+
+        assert "IDL_P029" in str(exc.value)
+        assert "item-id" in str(exc.value)

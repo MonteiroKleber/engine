@@ -45,6 +45,12 @@ from engine.core.autonomy import (
     load_autonomy_from_file,
     AutonomySchemaError,
 )
+from engine.core.operations import (
+    set_operations,
+    reset_all_operations,
+    load_operations_from_file,
+    OperationsSchemaError,
+)
 from .safe_mode import enter_safe_mode
 from .verify_hashes import verify_contract_hash, compute_sha256
 
@@ -618,6 +624,67 @@ def _load_autonomy_multi_mode(bundle_path: Path, bundle_ctx: BundleContext) -> b
     return True
 
 
+def _load_operations_single_mode(bundle_path: Path) -> bool:
+    """Load operations for single-department mode (from root).
+
+    Operations are optional - bundles without operations.json continue to work
+    in legacy mode (no OperationRegistry).
+
+    Args:
+        bundle_path: Path to the bundle directory.
+
+    Returns:
+        True if successful (or no operations file), False if SAFE_MODE entered.
+    """
+    operations_path = bundle_path / "operations.json"
+    if operations_path.exists():
+        try:
+            ops_def = load_operations_from_file(operations_path)
+            set_operations(None, ops_def)  # None = single mode key
+        except OperationsSchemaError as e:
+            # Invalid JSON or schema - enter safe mode
+            enter_safe_mode(
+                "OPERATIONS_INVALID",
+                [f"Invalid operations.json: {e.message}"],
+            )
+            return False
+    else:
+        # No operations.json - legacy mode (no registry)
+        set_operations(None, None)
+    return True
+
+
+def _load_operations_multi_mode(bundle_path: Path, bundle_ctx: BundleContext) -> bool:
+    """Load operations for multi-department mode (per department).
+
+    Operations are optional per dept - depts without operations.json work in legacy mode.
+
+    Args:
+        bundle_path: Path to the bundle directory.
+        bundle_ctx: The loaded bundle context with departments.
+
+    Returns:
+        True if successful, False if SAFE_MODE entered.
+    """
+    for dept_id, dept_contracts in bundle_ctx.departments.items():
+        operations_path = dept_contracts.path / "operations.json"
+        if operations_path.exists():
+            try:
+                ops_def = load_operations_from_file(operations_path)
+                set_operations(dept_id, ops_def)
+            except OperationsSchemaError as e:
+                # Invalid JSON or schema - enter safe mode
+                enter_safe_mode(
+                    "OPERATIONS_INVALID",
+                    [f"Invalid operations.json for department '{dept_id}': {e.message}"],
+                )
+                return False
+        else:
+            # No operations.json for this dept - legacy mode
+            set_operations(dept_id, None)
+    return True
+
+
 def _load_rbac_multi_mode(bundle_path: Path, bundle_ctx: BundleContext) -> bool:
     """Load RBAC for multi-department mode (per department).
 
@@ -882,10 +949,19 @@ def load_bundle(bundle_path: Optional[Path] = None) -> Optional[Dict[str, Any]]:
         if not _load_autonomy_multi_mode(bundle_path, bundle_ctx):
             return None  # SAFE_MODE entered
 
-    # 7. Initialize state store
+    # 7. Load operations registry (optional - bundles without operations.json work in legacy mode)
+    reset_all_operations()  # Clear any previously loaded operations
+    if bundle_ctx.mode == "single":
+        if not _load_operations_single_mode(bundle_path):
+            return None  # SAFE_MODE entered
+    else:
+        if not _load_operations_multi_mode(bundle_path, bundle_ctx):
+            return None  # SAFE_MODE entered
+
+    # 8. Initialize state store
     init_state_store()
 
-    # 8. Initialize ledger and set bundle hashes
+    # 9. Initialize ledger and set bundle hashes
     ledger = init_ledger()
 
     # Compute bundle hashes for ledger events

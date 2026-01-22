@@ -1,0 +1,30 @@
+{
+  "name": "workflows",
+  "version": "1.0",
+  "workflows": [
+    {
+      "name": "approval_decide",
+      "steps": [
+        {
+          "action": "read: post /approvals/{approval_id}/decide",
+          "actor_ref": "actor-user",
+          "entity_ref": "entity-expense",
+          "step_key": "step-000"
+        }
+      ],
+      "workflow_key": "workflow-approval_decide"
+    },
+    {
+      "name": "expense_create",
+      "steps": [
+        {
+          "action": "create: post /finance/expenses",
+          "actor_ref": "actor-operator",
+          "entity_ref": "entity-expense",
+          "step_key": "step-000"
+        }
+      ],
+      "workflow_key": "workflow-expense_create"
+    }
+  ]
+}

@@ -1,0 +1,209 @@
+components:
+  schemas:
+    Candidate:
+      properties:
+        created_at:
+          type: string
+        created_by:
+          type: string
+        dept_name:
+          type: string
+        email:
+          type: string
+        full_name:
+          type: string
+        id:
+          type: string
+        notes:
+          type: string
+        phone:
+          type: string
+        position_applied:
+          type: string
+        resume_url:
+          type: string
+        source:
+          type: string
+        state:
+          type: string
+        tenant_id:
+          type: string
+        version:
+          type: string
+      required:
+      - id
+      - tenant_id
+      - full_name
+      - email
+      - position_applied
+      - dept_name
+      - created_by
+      - created_at
+      - state
+      - version
+      type: object
+    HireRequest:
+      properties:
+        candidate_id:
+          type: string
+        created_at:
+          type: string
+        created_by:
+          type: string
+        currency:
+          type: string
+        dept_name:
+          type: string
+        employment_type:
+          type: string
+        id:
+          type: string
+        justification:
+          type: string
+        position_title:
+          type: string
+        salary_proposed:
+          type: string
+        start_date:
+          type: string
+        state:
+          type: string
+        tenant_id:
+          type: string
+        version:
+          type: string
+      required:
+      - id
+      - tenant_id
+      - candidate_id
+      - position_title
+      - dept_name
+      - salary_proposed
+      - currency
+      - start_date
+      - employment_type
+      - justification
+      - created_by
+      - created_at
+      - state
+      - version
+      type: object
+  securitySchemes:
+    ActorHeader:
+      in: header
+      name: X-Actor-Id
+      type: apiKey
+info:
+  title: HR Core API
+  version: idl.v1.2.2
+openapi: 3.0.3
+paths:
+  /approvals/{id}/decide:
+    post:
+      operationId: decide_approval
+      parameters:
+      - in: path
+        name: id
+        required: true
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              properties:
+                decision:
+                  enum:
+                  - approve
+                  - reject
+                  type: string
+              required:
+              - decision
+              type: object
+        required: true
+      responses:
+        '200':
+          description: Decision recorded
+        '403':
+          description: Forbidden
+        '404':
+          description: Not found
+        '409':
+          description: SoD violation
+      summary: Decide on approval
+      tags:
+      - approvals
+  /finance/candidates:
+    post:
+      operationId: create_candidate
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Candidate'
+        required: true
+      responses:
+        '202':
+          content:
+            application/json:
+              schema:
+                properties:
+                  approval_id:
+                    type: string
+                  candidate_id:
+                    type: string
+                  status:
+                    type: string
+                type: object
+          description: Created (pending approval)
+        '422':
+          description: Validation error
+      summary: Create Candidate
+      tags:
+      - finance
+  /finance/hirerequests:
+    post:
+      operationId: create_hirerequest
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/HireRequest'
+        required: true
+      responses:
+        '202':
+          content:
+            application/json:
+              schema:
+                properties:
+                  approval_id:
+                    type: string
+                  hirerequest_id:
+                    type: string
+                  status:
+                    type: string
+                type: object
+          description: Created (pending approval)
+        '422':
+          description: Validation error
+      summary: Create HireRequest
+      tags:
+      - finance
+  /health:
+    get:
+      operationId: health_check
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                properties:
+                  mode:
+                    type: string
+                  status:
+                    type: string
+                type: object
+          description: Healthy
+      summary: Health check
+      tags:
+      - system

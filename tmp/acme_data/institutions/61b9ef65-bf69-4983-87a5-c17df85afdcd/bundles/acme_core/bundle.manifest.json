@@ -1,0 +1,60 @@
+{
+  "_metadata": {
+    "bundle_hash": "a38bbf120573db437678623732fe4dda957a10f28bda36c3a6e07d5cf865d8c0",
+    "created_at": "2026-01-21T14:24:39.234120+00:00",
+    "manifest_version": "1.0",
+    "mode": "single",
+    "system_name": "Acme Core"
+  },
+  "contracts": [
+    {
+      "file": "approvals.json",
+      "required": true,
+      "sha256": "a7a95b5ac94dd5ac3c2ab949d168b75d38b3af8879b63e78190d7e316bcf74d2"
+    },
+    {
+      "file": "autonomy.json",
+      "required": true,
+      "sha256": "96e450576462f7c25acf42e8526e43d49f7b228e2c5555006337497000af66e8"
+    },
+    {
+      "file": "invariants.json",
+      "required": true,
+      "sha256": "6c45ceec235cc1e162dfe0becfa2c7dd5c56711f1bfd2f02489d9eba684fe26d"
+    },
+    {
+      "file": "mandates.json",
+      "required": true,
+      "sha256": "ecabc29dce094fe6beca212b17a7005b819faf59449936b2a310f75cce90e345"
+    },
+    {
+      "file": "openapi.yaml",
+      "required": false,
+      "sha256": "b904161598e0231c170ef675430605829b0539542fd34349777d66ade37cc95d"
+    },
+    {
+      "file": "policies.json",
+      "required": true,
+      "sha256": "d6c07203f38893484deae5e433ad25e5d880ef478460a957fbe810b6ea402654"
+    },
+    {
+      "file": "rbac.json",
+      "required": true,
+      "sha256": "ac2fee5922ff6797bbcaa59726e6fc5e6d960a5965e1dd0f2e53c52cbe248355"
+    },
+    {
+      "file": "sod.json",
+      "required": true,
+      "sha256": "33dcbc8e7c8e3f83934ba56337d30575497c9beeda56dc4abfb116a1de3f0dae"
+    },
+    {
+      "file": "workflows.json",
+      "required": true,
+      "sha256": "6fcefab69c7aae576bc7929c38c4be421425d785f5affdf76856957f7165e30f"
+    }
+  ],
+  "description": "Acme Core bundle",
+  "name": "acme_core",
+  "version": "idl.v1.2.2",
+  "manifest_hash": "360de3818fe2967902b8231d4c39b0d0e80be9ed4a9d842174b9826f9801abf1"
+}

@@ -39,6 +39,7 @@ from engine.core.errors import (
     EGE_PROPOSAL_ALREADY_DECIDED,
 )
 from engine.ise.release import get_bundles_root_for_institution
+from engine.core.runtime_reload import reload_active_runtime
 
 
 # Proposal type for PIN_UPDATE
@@ -545,6 +546,14 @@ def accept_pin_update_proposal(
             "pinned_after": pinned_after,
             "actor_id": actor_id,
         },
+    )
+
+    # Trigger runtime hot-swap (Etapa 6.6)
+    # After pin acceptance, reload the runtime to reflect the new bundle version.
+    # This updates the ActiveRuntimeSnapshot, operations registry, and invalidates OpenAPI cache.
+    reload_active_runtime(
+        institution_id=institution_id,
+        reason="pin_applied",
     )
 
     return {

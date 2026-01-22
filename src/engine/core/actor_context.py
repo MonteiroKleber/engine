@@ -1,30 +1,78 @@
-"""Actor Context - deterministic context derived from request headers."""
+"""Actor Context - deterministic context derived from request headers.
 
+Supports two authentication modes via ENGINE_AUTH_MODE:
+- dev: Accept X-Actor-Id and X-Actor-Roles headers (legacy, for development)
+- strict: Require X-Actor-Token, resolve actor/roles from registry (production)
+
+GAP 4: Adds on_behalf_of delegation chain and is_agent flag for governed agents.
+"""
+
+import os
 import uuid
 from dataclasses import dataclass, field
+from enum import Enum
 from typing import List, Optional
 
 
 DEFAULT_TENANT_ID = "00000000-0000-0000-0000-000000000000"
 
 
+class AuthMode(Enum):
+    """Authentication mode for actor identity."""
+
+    DEV = "dev"  # Accept headers (legacy, development)
+    STRICT = "strict"  # Require token (production)
+
+
+def get_auth_mode() -> AuthMode:
+    """Get authentication mode from ENGINE_AUTH_MODE env var.
+
+    Returns:
+        AuthMode.DEV if not set or "dev", AuthMode.STRICT if "strict".
+    """
+    mode = os.environ.get("ENGINE_AUTH_MODE", "dev").lower()
+    if mode == "strict":
+        return AuthMode.STRICT
+    return AuthMode.DEV
+
+
 @dataclass
 class ActorContext:
     """Actor context for a request.
 
-    Derived deterministically from headers:
+    In dev mode, derived from headers:
     - X-Actor-Id: <uuid> (required)
     - X-Actor-Roles: role1,role2 (optional)
     - X-Tenant-Id: <uuid> (optional, defaults to DEFAULT_TENANT_ID)
+    - X-On-Behalf-Of: <uuid> (optional, only for agents)
+
+    In strict mode, derived from token:
+    - X-Actor-Token: <token> (required, resolves actor_id and roles from registry)
+    - X-Tenant-Id: <uuid> (optional)
+    - X-On-Behalf-Of: <uuid> (optional, only for agents)
+
+    GAP 4: Adds delegation chain (on_behalf_of) and agent identification (is_agent).
     """
 
     actor_id: str
     roles: List[str] = field(default_factory=list)
     tenant_id: str = DEFAULT_TENANT_ID
+    identity_verified: bool = False  # True if resolved from token registry
+    is_agent: bool = False  # True if actor is registered as an agent (GAP 4)
+    on_behalf_of: Optional[str] = None  # Delegation chain: actor this agent acts for (GAP 4)
 
     def has_role(self, role: str) -> bool:
         """Check if actor has a specific role."""
         return role in self.roles
+
+    def can_delegate(self) -> bool:
+        """Check if this actor can use on_behalf_of delegation.
+
+        GAP 4: Only verified agents can delegate.
+        In strict mode: requires is_agent=True from registry.
+        In dev mode: allows delegation but marks as unverified.
+        """
+        return self.is_agent
 
 
 def is_valid_uuid(value: str) -> bool:

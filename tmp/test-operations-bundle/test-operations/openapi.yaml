@@ -1,0 +1,65 @@
+components:
+  schemas:
+    Expense:
+      properties:
+        id:
+          type: string
+      required:
+      - id
+      type: object
+  securitySchemes:
+    ActorHeader:
+      in: header
+      name: X-Actor-Id
+      type: apiKey
+info:
+  title: Finance Test API
+  version: 1.0.0
+openapi: 3.0.3
+paths:
+  /finance/expenses:
+    post:
+      operationId: create_expense
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Expense'
+        required: true
+      responses:
+        '202':
+          content:
+            application/json:
+              schema:
+                properties:
+                  approval_id:
+                    type: string
+                  expense_id:
+                    type: string
+                  status:
+                    type: string
+                type: object
+          description: Created (pending approval)
+        '422':
+          description: Validation error
+      summary: Create Expense
+      tags:
+      - finance
+  /health:
+    get:
+      operationId: health_check
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                properties:
+                  mode:
+                    type: string
+                  status:
+                    type: string
+                type: object
+          description: Healthy
+      summary: Health check
+      tags:
+      - system

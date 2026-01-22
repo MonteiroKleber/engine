@@ -7,7 +7,7 @@ from typing import AsyncIterator
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, RedirectResponse
 
 from engine.core.runtime_state import runtime_state, RuntimeMode
 from engine.core.logging import setup_logging, log_request, get_logger
@@ -34,16 +34,19 @@ from engine.core.dept_context import (
 )
 from engine.core.errors import (
     DEPT_MODE_REQUIRED,
+    DEPT_NOT_ACTIVE,
     INSTITUTION_HEADER_REQUIRED,
     INSTITUTION_FROZEN,
     INSTITUTION_EMERGENCY_STOPPED,
     EGE_DRIFT_BLOCKED,
 )
+from engine.core.active_depts import is_dept_active
 from engine.core.ledger import get_ledger
 from engine.core.institution_context import (
     resolve_institution_id,
     validate_institution_exists,
     set_request_institution_id,
+    get_request_institution_id,
     DEFAULT_INSTITUTION_ID,
 )
 from engine.loader.load_bundle import get_bundle_context
@@ -61,13 +64,28 @@ from engine.api.admin_institution_config import router as admin_institution_conf
 from engine.api.admin_keys import router as admin_keys_router
 from engine.api.admin_ege import router as admin_ege_router
 from engine.api.admin_mandates import router as admin_mandates_router
-from engine.console.routes import router as console_router
+from engine.api.admin_policies import router as admin_policies_router
+from engine.api.admin_autonomy import router as admin_autonomy_router
+from engine.api.admin_depts import router as admin_depts_router
+from engine.api.admin_actors import router as admin_actors_router
+from engine.console.routes import router as console_router, RedirectException
 from engine.core.institution_config import (
     get_cached_config,
     reset_config_cache,
 )
 from engine.core.ege import load_drift_state
 from engine.core.preflight import run_preflight_checks
+from engine.core.idl_router import (
+    register_idl_routes,
+    get_api_mode,
+    API_MODE_LEGACY,
+    API_MODE_IDL,
+    API_MODE_BOTH,
+)
+from engine.core.openapi_overlay import setup_custom_openapi, create_openapi_schema
+from engine.core.active_depts import get_active_depts, is_dept_active
+from engine.core.runtime_reload import reload_on_boot
+from engine.core.migration_check import run_migration_checks
 
 
 # Paths subject to rate limiting
@@ -179,6 +197,27 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     load_bundle()
     logger.info("Bundle loaded, engine ready")
 
+    # Initialize ActiveRuntimeSnapshot on boot (Etapa 6.6)
+    # This fills the snapshot from the current bundle, enabling hot-swap observability
+    boot_ok, boot_error_code, boot_error_msg = reload_on_boot()
+    if boot_ok:
+        logger.info(
+            "RUNTIME_SNAPSHOT_INITIALIZED",
+            extra={
+                "event": "RUNTIME_SNAPSHOT_INITIALIZED",
+            },
+        )
+    else:
+        # Log warning but don't fail startup - snapshot is not critical for boot
+        logger.warning(
+            "RUNTIME_SNAPSHOT_INIT_FAILED",
+            extra={
+                "event": "RUNTIME_SNAPSHOT_INIT_FAILED",
+                "error_code": boot_error_code,
+                "error_message": boot_error_msg,
+            },
+        )
+
     # Run preflight checks for multi-tenant path isolation
     # This MUST run AFTER bundle load so institutions registry is available
     preflight_result = run_preflight_checks()
@@ -188,7 +227,7 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
             extra={
                 "event": "PREFLIGHT_CHECK_FAILED",
                 "code": preflight_result.code,
-                "message": preflight_result.message,
+                "preflight_message": preflight_result.message,
                 "details": preflight_result.details,
             },
         )
@@ -198,6 +237,107 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
         )
     else:
         logger.info("Preflight checks passed")
+
+    # Run migration checks if ENGINE_API_MODE is not "legacy" (Etapa 6.7)
+    # This MUST run AFTER bundle load and BEFORE register_idl_routes
+    api_mode = get_api_mode()
+    bundle_ctx = get_bundle_context()
+    departments = None
+    if bundle_ctx and bundle_ctx.mode == "multi":
+        departments = list(bundle_ctx.departments.keys())
+
+    if api_mode != API_MODE_LEGACY:
+        migration_result = run_migration_checks(departments)
+
+        if api_mode == API_MODE_IDL:
+            # idl mode: fail deterministically if migration incomplete
+            if not migration_result.ok:
+                logger.error(
+                    "MIGRATION_CHECK_FAILED",
+                    extra={
+                        "event": "MIGRATION_CHECK_FAILED",
+                        "api_mode": api_mode,
+                        "code": migration_result.code,
+                        "message": migration_result.message,
+                        "depts_not_migrated": migration_result.depts_not_migrated,
+                        "unsupported_binds": [
+                            {
+                                "dept_id": ub.dept_id,
+                                "operation_id": ub.operation_id,
+                                "bind_kind": ub.bind_kind,
+                            }
+                            for ub in migration_result.unsupported_binds
+                        ],
+                    },
+                )
+                raise RuntimeError(
+                    f"Migration check failed: [{migration_result.code}] {migration_result.message}. "
+                    f"Depts not migrated: {migration_result.depts_not_migrated}"
+                )
+            else:
+                logger.info(
+                    "MIGRATION_CHECK_PASSED",
+                    extra={
+                        "event": "MIGRATION_CHECK_PASSED",
+                        "api_mode": api_mode,
+                        "depts_migrated": migration_result.depts_migrated,
+                    },
+                )
+        else:
+            # both mode: log warnings but don't fail
+            if not migration_result.ok:
+                for warning in migration_result.warnings:
+                    logger.warning(
+                        "MIGRATION_CHECK_WARNING",
+                        extra={
+                            "event": "MIGRATION_CHECK_WARNING",
+                            "api_mode": api_mode,
+                            "warning": warning,
+                        },
+                    )
+                logger.info(
+                    "MIGRATION_CHECK_WARNINGS_LOGGED",
+                    extra={
+                        "event": "MIGRATION_CHECK_WARNINGS_LOGGED",
+                        "api_mode": api_mode,
+                        "warning_count": len(migration_result.warnings),
+                        "depts_migrated": migration_result.depts_migrated,
+                        "depts_not_migrated": migration_result.depts_not_migrated,
+                    },
+                )
+            else:
+                logger.info(
+                    "MIGRATION_CHECK_PASSED",
+                    extra={
+                        "event": "MIGRATION_CHECK_PASSED",
+                        "api_mode": api_mode,
+                        "depts_migrated": migration_result.depts_migrated,
+                    },
+                )
+
+    # Register IDL routes if ENGINE_API_MODE is not "legacy"
+    # This must run AFTER bundle load and migration checks so OperationRegistry is available
+    if api_mode != API_MODE_LEGACY:
+        try:
+            routes_count = register_idl_routes(app, departments=departments)
+            logger.info(
+                "IDL_ROUTES_REGISTERED",
+                extra={
+                    "event": "IDL_ROUTES_REGISTERED",
+                    "api_mode": api_mode,
+                    "routes_count": routes_count,
+                },
+            )
+        except RuntimeError as e:
+            # Collision in idl mode - fail startup
+            logger.error(
+                "IDL_ROUTES_REGISTRATION_FAILED",
+                extra={
+                    "event": "IDL_ROUTES_REGISTRATION_FAILED",
+                    "error": str(e),
+                },
+            )
+            raise
 
     # Cleanup dev-runs on boot if enabled
     if should_cleanup_on_boot():
@@ -264,7 +404,65 @@ app.include_router(admin_institution_config_router)
 app.include_router(admin_keys_router)
 app.include_router(admin_ege_router)
 app.include_router(admin_mandates_router)
+app.include_router(admin_policies_router)
+app.include_router(admin_autonomy_router)
+app.include_router(admin_depts_router)
+app.include_router(admin_actors_router)
 app.include_router(console_router)
+
+# Setup custom OpenAPI with registry overlay
+setup_custom_openapi(app)
+
+
+# Endpoint for dept-specific OpenAPI schema
+@app.get("/d/{dept_id}/openapi.json", include_in_schema=False)
+async def get_dept_openapi(dept_id: str, request: Request) -> JSONResponse:
+    """Get OpenAPI schema filtered for a specific department.
+
+    Args:
+        dept_id: Department ID to filter for.
+        request: FastAPI request object.
+
+    Returns:
+        JSONResponse with OpenAPI schema.
+
+    Raises:
+        HTTPException: 400 if dept_id is invalid.
+        HTTPException: 404 if dept is not active/installed.
+    """
+    # Get institution_id from request
+    institution_id = request.headers.get("X-Institution-Id")
+    if not institution_id:
+        institution_id = DEFAULT_INSTITUTION_ID
+
+    # Validate dept_id is active
+    bundle_ctx = get_bundle_context()
+    if bundle_ctx and bundle_ctx.mode == "multi":
+        # Check if dept exists and is active
+        active_depts = get_active_depts(institution_id)
+        if dept_id not in active_depts:
+            # Check if it's installed but not active vs not installed at all
+            if bundle_ctx.departments and dept_id not in bundle_ctx.departments:
+                raise HTTPException(
+                    status_code=404,
+                    detail={
+                        "code": "DEPT_NOT_FOUND",
+                        "message": f"Department '{dept_id}' is not installed",
+                    },
+                )
+            else:
+                raise HTTPException(
+                    status_code=404,
+                    detail={
+                        "code": "DEPT_NOT_ACTIVE",
+                        "message": f"Department '{dept_id}' is not active",
+                    },
+                )
+
+    # Generate OpenAPI schema filtered for dept
+    schema = create_openapi_schema(app, dept_id=dept_id, filter_by_dept=True)
+    return JSONResponse(content=schema)
+
 
 # Setup CORS if ENGINE_CORS_ORIGINS is set
 cors_origins = parse_cors_origins()
@@ -274,7 +472,7 @@ if cors_origins:
         allow_origins=cors_origins,
         allow_credentials=False,
         allow_methods=["GET", "POST"],
-        allow_headers=["Content-Type", "X-Actor-Id", "X-Actor-Roles", "X-Tenant-Id", "X-Institution-Id", "X-Request-Id"],
+        allow_headers=["Content-Type", "X-Actor-Id", "X-Actor-Roles", "X-Tenant-Id", "X-Institution-Id", "X-Request-Id", "X-Actor-Token"],
     )
 
 
@@ -334,6 +532,12 @@ async def validation_exception_handler(request: Request, exc: RequestValidationE
     )
 
 
+@app.exception_handler(RedirectException)
+async def redirect_exception_handler(request: Request, exc: RedirectException):
+    """Handle RedirectException with proper redirect response."""
+    return RedirectResponse(url=exc.url, status_code=exc.status_code)
+
+
 def _is_valid_uuid(value: str) -> bool:
     """Check if string is a valid UUID."""
     try:
@@ -347,7 +551,7 @@ def _is_valid_uuid(value: str) -> bool:
 async def security_headers_middleware(request: Request, call_next):
     """Add security headers to all responses."""
     response = await call_next(request)
-    apply_security_headers(response)
+    apply_security_headers(response, request=request)
     return response
 
 
@@ -386,7 +590,7 @@ async def body_size_middleware(request: Request, call_next):
                             "message": "Request body too large"
                         }
                     )
-                    apply_security_headers(response)
+                    apply_security_headers(response, request=request)
                     return response
             except (ValueError, TypeError):
                 pass
@@ -425,7 +629,7 @@ async def rate_limit_middleware(request: Request, call_next):
                     "message": "Rate limit exceeded"
                 }
             )
-            apply_security_headers(response)
+            apply_security_headers(response, request=request)
             return response
 
     return await call_next(request)
@@ -468,7 +672,7 @@ async def legacy_routes_middleware(request: Request, call_next):
                 "message": "Legacy routes are disabled; use department-specific routes",
             },
         )
-        apply_security_headers(response)
+        apply_security_headers(response, request=request)
         return response
 
     return await call_next(request)
@@ -535,7 +739,7 @@ async def freeze_emergency_stop_middleware(request: Request, call_next):
                     "message": "Endpoint blocked by emergency stop",
                 },
             )
-            apply_security_headers(response)
+            apply_security_headers(response, request=request)
             return response
 
     # Freeze mode check (second) - blocks POST/PUT/PATCH/DELETE
@@ -567,7 +771,7 @@ async def freeze_emergency_stop_middleware(request: Request, call_next):
                 "message": "Institution is frozen; mutating operations are blocked",
             },
         )
-        apply_security_headers(response)
+        apply_security_headers(response, request=request)
         return response
 
     return await call_next(request)
@@ -647,7 +851,7 @@ async def ege_drift_middleware(request: Request, call_next):
             "message": "Institution drift is active; mutating operations are blocked until resolved",
         },
     )
-    apply_security_headers(response)
+    apply_security_headers(response, request=request)
     return response
 
 
@@ -672,7 +876,7 @@ async def dept_routing_middleware(request: Request, call_next):
                     "message": "Department routing requires multi-department bundle",
                 },
             )
-            apply_security_headers(response)
+            apply_security_headers(response, request=request)
             return response
 
         if dept not in bundle_ctx.departments:
@@ -684,7 +888,20 @@ async def dept_routing_middleware(request: Request, call_next):
                     "message": f"Unknown department: {dept}",
                 },
             )
-            apply_security_headers(response)
+            apply_security_headers(response, request=request)
+            return response
+
+        # Check if dept is active for this institution
+        institution_id = get_request_institution_id(request)
+        if institution_id is not None and not is_dept_active(institution_id, dept):
+            response = JSONResponse(
+                status_code=403,
+                content={
+                    "code": DEPT_NOT_ACTIVE,
+                    "message": f"Department '{dept}' is not active for this institution",
+                },
+            )
+            apply_security_headers(response, request=request)
             return response
 
         # Valid dept - set on request state
@@ -711,7 +928,7 @@ async def request_id_middleware(request: Request, call_next):
                     "message": "Invalid X-Request-Id"
                 }
             )
-            apply_security_headers(response)
+            apply_security_headers(response, request=request)
             return response
         request_id = request_id_header
     else:
@@ -784,7 +1001,7 @@ async def institution_middleware(request: Request, call_next):
             status_code=exc.status_code,
             content=exc.detail if isinstance(exc.detail, dict) else {"code": "ERROR", "message": str(exc.detail)},
         )
-        apply_security_headers(response)
+        apply_security_headers(response, request=request)
         return response
 
     return await call_next(request)
