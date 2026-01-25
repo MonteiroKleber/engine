@@ -184,7 +184,7 @@ operations {
 
     endpoint admin_report_list {
       method: GET
-      path: "/admin/reports"
+      path: "/moderation/reports"
       request: void
       response: any
       permission: reports.list
@@ -267,4 +267,3 @@ operations {
     }
   }
 }
-

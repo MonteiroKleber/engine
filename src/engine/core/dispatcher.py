@@ -2127,7 +2127,80 @@ async def dispatch_transition(
             step=f"DISPATCHER:transition:{transition_name}:from_state",
         )
 
-    # 10. Build effects list
+    # 10. Check if approval is required for this transition
+    approvals_def = transition_def.get("approvals")
+    if approvals_def:
+        # Approval required - create pending approval instead of applying effects
+        approval_id = generate_approval_id()
+        now = datetime.now(timezone.utc).isoformat()
+
+        # Update entity status to PENDING_APPROVAL and store approval_id
+        entity_data["status"] = "PENDING_APPROVAL"
+        entity_data["approval_id"] = approval_id
+        entity_data["updated_at"] = now
+
+        # Persist entity with pending status
+        if entity_type == "ModerationAction":
+            state_store._data["moderation_actions"][entity_id] = entity_data
+        elif entity_type == "ContentReport":
+            state_store._data["content_reports"][entity_id] = entity_data
+        elif entity_type == "ChatReport":
+            state_store._data["chat_reports"][entity_id] = entity_data
+        else:
+            return DispatchResult(
+                status_code=500,
+                response_body={
+                    "code": "ENTITY_TYPE_UNSUPPORTED",
+                    "message": f"Approval not supported for entity type: {entity_type}",
+                },
+                error_code="ENTITY_TYPE_UNSUPPORTED",
+                step=f"DISPATCHER:transition:{transition_name}:approval",
+            )
+
+        # Index the approval for later lookup
+        state_store.index_generic_approval(
+            approval_id=approval_id,
+            entity_type=entity_type,
+            entity_id=entity_id,
+            workflow=workflow_name,
+            transition=transition_name,
+            transition_def=transition_def,
+            proposer_id=actor.actor_id,
+        )
+        state_store._save()
+
+        # Create a synthetic ApprovalRule for emitting events
+        approval_rule_name = f"{workflow_name}.{transition_name}"
+        synthetic_rule = ApprovalRule(
+            rule_name=approval_rule_name,
+            trigger_api=endpoint_sig,
+            approver_roles=approvals_def.get("approver_roles", []),
+            quorum=approvals_def.get("quorum", 1),
+        )
+
+        # Emit APPROVAL_REQUESTED event
+        emit_approval_requested(
+            approval_id=approval_id,
+            rule=synthetic_rule,
+            actor=actor,
+            payload_sha256="",  # No payload hash for transitions
+        )
+
+        # Return 202 with pending_approval
+        return DispatchResult(
+            status_code=202,
+            response_body={
+                "status": "pending_approval",
+                "approval_id": approval_id,
+                "id": entity_id,
+                "workflow": workflow_name,
+                "transition": transition_name,
+                "previous_status": current_status,
+            },
+            step=f"DISPATCHER:transition:{workflow_name}:{transition_name}:approval_requested",
+        )
+
+    # 11. Build effects list
     # If to_state is specified in transition_def, add set_state effect
     all_effects = []
     if to_state:

@@ -356,6 +356,7 @@ class StateStore:
         self._data: Dict[str, Any] = {
             "expenses": {},
             "approval_index": {},
+            "generic_approval_index": {},  # Generic approvals for workflow transitions
             "tickets": {},
             "content_reports": {},
             "chat_reports": {},
@@ -371,7 +372,7 @@ class StateStore:
                 with open(self._path, "r", encoding="utf-8") as f:
                     self._data = json.load(f)
                 # Ensure all keys exist for backward compat
-                for key in ["tickets", "content_reports", "chat_reports", "chat_blocks", "moderation_actions"]:
+                for key in ["tickets", "content_reports", "chat_reports", "chat_blocks", "moderation_actions", "generic_approval_index"]:
                     if key not in self._data:
                         self._data[key] = {}
             except Exception:
@@ -379,6 +380,7 @@ class StateStore:
                 self._data = {
                     "expenses": {},
                     "approval_index": {},
+                    "generic_approval_index": {},
                     "tickets": {},
                     "content_reports": {},
                     "chat_reports": {},
@@ -836,6 +838,7 @@ class StateStore:
         self._data = {
             "expenses": {},
             "approval_index": {},
+            "generic_approval_index": {},
             "tickets": {},
             "content_reports": {},
             "chat_reports": {},
@@ -844,6 +847,51 @@ class StateStore:
         }
         if self._path.exists():
             self._path.unlink()
+
+    # Generic approval index methods (for workflow transitions)
+
+    def index_generic_approval(
+        self,
+        approval_id: str,
+        entity_type: str,
+        entity_id: str,
+        workflow: str,
+        transition: str,
+        transition_def: Dict[str, Any],
+        proposer_id: str,
+    ) -> None:
+        """Index a generic approval for later lookup.
+
+        Args:
+            approval_id: The approval UUID.
+            entity_type: Type of entity (e.g., ModerationAction).
+            entity_id: ID of the entity.
+            workflow: Workflow name.
+            transition: Transition name.
+            transition_def: Transition definition with effects.
+            proposer_id: ID of the actor proposing the transition.
+        """
+        self._data["generic_approval_index"][approval_id] = {
+            "entity_type": entity_type,
+            "entity_id": entity_id,
+            "workflow": workflow,
+            "transition": transition,
+            "transition_def": transition_def,
+            "proposer_id": proposer_id,
+        }
+        self._save()
+
+    def get_generic_approval(self, approval_id: str) -> Optional[Dict[str, Any]]:
+        """Get generic approval info by approval_id.
+
+        Args:
+            approval_id: The approval UUID.
+
+        Returns:
+            Dict with entity_type, entity_id, workflow, transition, transition_def, proposer_id.
+            None if not found.
+        """
+        return self._data["generic_approval_index"].get(approval_id)
 
 
 # Global state stores: (institution_id, dept_id) key for namespaced stores

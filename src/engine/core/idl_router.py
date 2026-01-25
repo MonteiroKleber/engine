@@ -23,6 +23,8 @@ from .operations import Operation, get_operations, get_operation_by_endpoint_sig
 from .dispatcher import (
     dispatch_create,
     dispatch_read,
+    dispatch_list,
+    dispatch_delete,
     dispatch_approval_request,
     dispatch_approval_decide,
     dispatch_transition,
@@ -253,7 +255,26 @@ def _create_idl_handler(
                 )
 
         elif bind_kind == "read":
-            result = await dispatch_read(
+            # DSL v1.2.2 does not have bind.kind=list.
+            # Canonical behavior: treat read endpoints without path params as list.
+            if path_params:
+                result = await dispatch_read(
+                    institution_id=institution_id,
+                    dept_id=dept_id,
+                    actor=actor,
+                    operation=current_operation,
+                    path_params=path_params,
+                )
+            else:
+                result = await dispatch_list(
+                    institution_id=institution_id,
+                    dept_id=dept_id,
+                    actor=actor,
+                    operation=current_operation,
+                )
+
+        elif bind_kind == "delete":
+            result = await dispatch_delete(
                 institution_id=institution_id,
                 dept_id=dept_id,
                 actor=actor,
@@ -318,6 +339,18 @@ def _create_idl_handler(
                     "message": f"Unsupported bind.kind: {bind_kind}",
                 },
             )
+
+        # Record IDL telemetry (per-institution, append-only) - Expansão 05
+        from engine.core.idl_telemetry import record_idl_invocation
+
+        record_idl_invocation(
+            institution_id=institution_id,
+            endpoint_sig=endpoint_sig,
+            method=current_operation.method,
+            path=current_operation.path,
+            actor_id=actor.actor_id if actor else None,
+            dept_id=dept_id,
+        )
 
         return JSONResponse(
             status_code=result.status_code,

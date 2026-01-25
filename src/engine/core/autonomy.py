@@ -31,6 +31,19 @@ ALLOWED_ENDPOINT_SIGS = frozenset({
     "POST /finance/expenses",
     "POST /approvals/{approval_id}/decide",
     "POST /support/tickets",
+    # Bazari Phase 1 (control-plane CRUD)
+    "POST /reports",
+    "GET /reports/{report_id}",
+    "GET /reports/my",
+    "GET /moderation/reports",
+    "POST /chat/reports",
+    "POST /chat/blocks",
+    "DELETE /chat/blocks/{block_id}",
+    "POST /moderation/actions",
+    "GET /moderation/actions/{action_id}",
+    "GET /moderation/actions",
+    # Bazari MVP (workflows / transitions)
+    "POST /moderation/reports/{report_id}/triage",
 })
 
 # Allowed phases

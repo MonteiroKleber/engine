@@ -305,8 +305,7 @@ async def decide_approval(
             institution_id=institution_id,
         )
 
-    # Original finance expense flow below
-    # Lookup expense via state store (institution-aware)
+    # Check if this is a generic approval (workflow transition - Expansão 03)
     state_store = get_state_store(institution_id=institution_id)
     if not state_store:
         raise HTTPException(
@@ -317,6 +316,21 @@ async def decide_approval(
             },
         )
 
+    generic_approval = state_store.get_generic_approval(approval_id)
+    if generic_approval:
+        return await _handle_generic_approval_decision(
+            request=request,
+            approval_id=approval_id,
+            rule=rule,
+            actor=actor,
+            decision=body.decision,
+            reason=body.reason,
+            institution_id=institution_id,
+            state_store=state_store,
+            generic_approval=generic_approval,
+        )
+
+    # Original finance expense flow below
     expense = state_store.get_expense_by_approval_id(approval_id)
     if not expense:
         raise HTTPException(
@@ -626,3 +640,158 @@ async def _handle_legacy_write_decision(
             "action_status": "enqueued",
             "outbox_path": result.outbox_path,
         }
+
+
+async def _handle_generic_approval_decision(
+    request: Request,
+    approval_id: str,
+    rule: Any,
+    actor: ActorContext,
+    decision: str,
+    reason: Optional[str],
+    institution_id: Optional[str],
+    state_store: Any,
+    generic_approval: Dict[str, Any],
+) -> Dict[str, Any]:
+    """Handle approval decision for generic workflow transition (Expansão 03).
+
+    This handler processes approval decisions for workflow transitions that
+    require approval (e.g., ModerationAction Apply/Revert).
+
+    Args:
+        request: FastAPI request object.
+        approval_id: The approval ID.
+        rule: The approval rule.
+        actor: The deciding actor.
+        decision: "approve" or "reject".
+        reason: Optional decision reason.
+        institution_id: Institution ID.
+        state_store: State store instance.
+        generic_approval: Approval index data with entity info.
+
+    Returns:
+        Decision result.
+
+    Raises:
+        HTTPException: Various error codes.
+    """
+    from datetime import datetime, timezone
+
+    entity_type = generic_approval["entity_type"]
+    entity_id = generic_approval["entity_id"]
+    workflow = generic_approval["workflow"]
+    transition = generic_approval["transition"]
+    transition_def = generic_approval["transition_def"]
+    proposer_id = generic_approval["proposer_id"]
+
+    # SoD check: proposer cannot decide their own approval
+    if actor.actor_id == proposer_id:
+        raise HTTPException(
+            status_code=403,
+            detail={
+                "code": "APPROVAL_SOD_VIOLATION",
+                "message": "Self-approval not allowed: proposer cannot decide their own approval",
+            },
+        )
+
+    # Emit APPROVAL_DECIDED event
+    emit_approval_decided(
+        approval_id=approval_id,
+        rule=rule,
+        actor=actor,
+        decision=decision,
+        reason=reason,
+    )
+
+    now = datetime.now(timezone.utc).isoformat()
+
+    if decision == "reject":
+        # Update entity status to REJECTED
+        if entity_type == "ModerationAction":
+            state_store._data["moderation_actions"][entity_id]["status"] = "REJECTED"
+            state_store._data["moderation_actions"][entity_id]["updated_at"] = now
+        elif entity_type == "ContentReport":
+            state_store._data["content_reports"][entity_id]["status"] = "REJECTED"
+            state_store._data["content_reports"][entity_id]["updated_at"] = now
+        elif entity_type == "ChatReport":
+            state_store._data["chat_reports"][entity_id]["status"] = "REJECTED"
+            state_store._data["chat_reports"][entity_id]["updated_at"] = now
+        state_store._save()
+
+        # Emit CASE_REJECTED
+        emit_case_rejected(entity_id, actor, institution_id=institution_id)
+
+        return {
+            "status": "decided",
+            "approval_id": approval_id,
+            "entity_id": entity_id,
+            "entity_type": entity_type,
+            "decision": decision,
+            "case_status": "REJECTED",
+        }
+
+    # Handle approve - apply transition effects
+    to_state = transition_def.get("to")
+    effects = transition_def.get("effects", [])
+
+    # Get current entity data
+    if entity_type == "ModerationAction":
+        entity_data = state_store._data["moderation_actions"].get(entity_id, {})
+    elif entity_type == "ContentReport":
+        entity_data = state_store._data["content_reports"].get(entity_id, {})
+    elif entity_type == "ChatReport":
+        entity_data = state_store._data["chat_reports"].get(entity_id, {})
+    else:
+        raise HTTPException(
+            status_code=500,
+            detail={
+                "code": "ENTITY_TYPE_UNSUPPORTED",
+                "message": f"Unsupported entity type: {entity_type}",
+            },
+        )
+
+    # Apply to_state if specified
+    if to_state:
+        entity_data["status"] = to_state
+
+    # Apply effects
+    for effect in effects:
+        effect_type = effect.get("type")
+        if effect_type == "set_state":
+            entity_data["status"] = effect.get("value")
+        elif effect_type == "set_field":
+            field_name = effect.get("field")
+            field_value = effect.get("value")
+            if field_name:
+                entity_data[field_name] = field_value
+        elif effect_type == "bump_version":
+            current_version = entity_data.get("version", 0)
+            entity_data["version"] = current_version + effect.get("value", 1)
+
+    # Update timestamps
+    entity_data["updated_at"] = now
+    if entity_type == "ModerationAction" and entity_data.get("status") == "APPLIED":
+        entity_data["applied_at"] = now
+
+    # Persist updated entity
+    if entity_type == "ModerationAction":
+        state_store._data["moderation_actions"][entity_id] = entity_data
+    elif entity_type == "ContentReport":
+        state_store._data["content_reports"][entity_id] = entity_data
+    elif entity_type == "ChatReport":
+        state_store._data["chat_reports"][entity_id] = entity_data
+    state_store._save()
+
+    # Emit CASE_COMMITTED
+    emit_case_committed(entity_id, actor, institution_id=institution_id)
+
+    return {
+        "status": "decided",
+        "approval_id": approval_id,
+        "entity_id": entity_id,
+        "entity_type": entity_type,
+        "workflow": workflow,
+        "transition": transition,
+        "decision": decision,
+        "case_status": "COMMITTED",
+    }

@@ -319,7 +319,7 @@ operations {
 
     endpoint admin_report_list {
       method: GET
-      path: "/admin/reports"
+      path: "/moderation/reports"
       request: void
       response: any
       permission: reports.list
@@ -331,7 +331,7 @@ operations {
 
     endpoint report_triage {
       method: POST
-      path: "/admin/reports/{report_id}/triage"
+      path: "/moderation/reports/{report_id}/triage"
       request: any
       response: ContentReport
       permission: reports.triage
@@ -367,7 +367,7 @@ operations {
 
     endpoint chat_block_delete {
       method: DELETE
-      path: "/chat/blocks/{profile_id}"
+      path: "/chat/blocks/{block_id}"
       request: void
       response: any
       permission: chat.blocks.delete

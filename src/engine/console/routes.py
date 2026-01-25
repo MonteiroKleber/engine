@@ -1003,6 +1003,14 @@ async def console_status(
     except Exception:
         legacy_cutover = {"total": 0, "last_ts": None, "by_endpoint": []}
 
+    # IDL telemetry (ENGINE_API_MODE=idl|both): endpoint usage for observability - Expansão 05
+    try:
+        from engine.core.idl_telemetry import get_idl_telemetry_status
+
+        idl_telemetry = get_idl_telemetry_status(institution_id)
+    except Exception:
+        idl_telemetry = {"total": 0, "last_ts": None, "by_endpoint": []}
+
     # Get institution name
     institutions = _get_institutions_list()
     institution_name = next(
@@ -1028,6 +1036,7 @@ async def console_status(
             "mandates": mandates,
             "migration": migration,
             "legacy_cutover": legacy_cutover,
+            "idl_telemetry": idl_telemetry,
         },
     )
 
