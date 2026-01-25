@@ -32,6 +32,8 @@ from engine.core.errors import (
     SEED_DSL_NOT_FOUND,
     SEED_DSL_MISSING_FOR_DEPT,
 )
+from engine.core.idl_router import API_MODE_IDL, get_api_mode
+from engine.core.migration_check import MIGRATION_MISSING_OPERATIONS
 from engine.core.institutions import get_registry as get_institutions_registry
 from engine.proof import verify_bundle_offline, ProofResult
 
@@ -41,6 +43,29 @@ TEMPLATE_NOT_FOUND = "TEMPLATE_NOT_FOUND"
 BUNDLE_GENERATION_FAILED = "BUNDLE_GENERATION_FAILED"
 BUNDLE_COPY_FAILED = "BUNDLE_COPY_FAILED"
 BUNDLE_ALREADY_EXISTS = "BUNDLE_ALREADY_EXISTS"
+
+
+def _validate_idl_ready_bundle(bundle_path: Path, departments: List[str]) -> Tuple[bool, str, str]:
+    """Validate that a bundle is IDL-ready (has operations registry).
+
+    In ENGINE_API_MODE=idl, boot is a hard fail if operations.json is missing.
+    """
+    is_multi = len(departments) > 1
+    if is_multi:
+        for dept_id in departments:
+            ops_path = bundle_path / "departments" / dept_id / "operations.json"
+            if not ops_path.exists():
+                return (
+                    False,
+                    MIGRATION_MISSING_OPERATIONS,
+                    f"Missing operations.json for dept '{dept_id}'",
+                )
+        return True, "", ""
+
+    ops_path = bundle_path / "operations.json"
+    if not ops_path.exists():
+        return False, MIGRATION_MISSING_OPERATIONS, "Missing operations.json"
+    return True, "", ""
 
 
 @dataclass
@@ -441,6 +466,17 @@ def generate_bundle_from_template(
             error_code=BUNDLE_COPY_FAILED,
             error_message=f"Failed to copy template: {e}",
         )
+
+    # IDL-ready gate: do not leave partial bundles in IDL mode
+    if get_api_mode() == API_MODE_IDL:
+        ok, code, msg = _validate_idl_ready_bundle(target_bundle_path, template.departments)
+        if not ok:
+            shutil.rmtree(target_bundle_path, ignore_errors=True)
+            return BundleGenerationResult(
+                success=False,
+                error_code=code,
+                error_message=msg,
+            )
 
     # Copy seed DSL files into bundle and compute hashes
     success, dept_hashes, error_msg = _copy_seed_dsl_to_bundle(

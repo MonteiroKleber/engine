@@ -740,6 +740,12 @@ def compile_from_ircs(
 
     # Get source_idl_sha256 from IR for ledger
     source_idl_sha256 = get_source_idl_sha256(ir)
+    if not source_idl_sha256:
+        return CompileResult(
+            success=False,
+            error_code=errors.ISE_SOURCE_IDL_SHA256_MISSING,
+            error_message="IRCS v1 missing required field 'source_idl_sha256'",
+        )
 
     # Generate contracts using existing emitters
     # Pass ir to emit operations.json from IRCS data

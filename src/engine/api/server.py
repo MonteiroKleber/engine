@@ -58,6 +58,7 @@ from engine.api.approvals import router as approvals_router
 from engine.api.nl import router as nl_router
 from engine.api.ise import router as ise_router
 from engine.api.pipeline import router as pipeline_router
+from engine.api.observe import router as observe_router
 from engine.api.contracts import router as contracts_router
 from engine.api.admin_institutions import router as admin_institutions_router
 from engine.api.admin_institution_config import router as admin_institution_config_router
@@ -414,6 +415,7 @@ app.include_router(admin_policies_router)
 app.include_router(admin_autonomy_router)
 app.include_router(admin_depts_router)
 app.include_router(admin_actors_router)
+app.include_router(observe_router)
 app.include_router(console_router)
 
 # Setup custom OpenAPI with registry overlay
