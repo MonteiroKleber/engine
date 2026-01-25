@@ -43,7 +43,7 @@ Por isso, o plano abaixo separa **CRUD genérico** primeiro, depois **transiçõ
 - `docs/specs/expansao/01-dispatcher-crud-bazari/prompts.md`
 - testes novos em `tests/` cobrindo strict/idl via TestClient
 
-Status: ⏳ PENDENTE
+Status: ✅ IMPLEMENTADO (ver `docs/specs/expansao/01-dispatcher-crud-bazari/`)
 
 ---
 
@@ -57,7 +57,7 @@ Status: ⏳ PENDENTE
 
 **Não inclui:** engine genérico de workflow DSL completo; apenas executor de passos suportados.
 
-Status: ⏳ PENDENTE
+Status: ⏳ PENDENTE (próxima fase)
 
 ---
 
@@ -90,4 +90,3 @@ Status: ⏳ PENDENTE
 **Objetivo:** consolidar telemetria, status console e política de evolução do bundle (release/pin/rollback) para Bazari.
 
 Status: ⏳ PENDENTE
-

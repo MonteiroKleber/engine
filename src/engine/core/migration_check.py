@@ -17,9 +17,9 @@ from .operations import get_operations
 from .idl_router import get_api_mode, API_MODE_LEGACY, API_MODE_IDL, API_MODE_BOTH
 
 
-# Bind kinds supported by the dispatcher (Etapas 6.1-6.3)
-# These match the handlers in idl_router.py:247-320
-SUPPORTED_BIND_KINDS = frozenset({"create", "read", "approval_decide"})
+# Bind kinds supported by the dispatcher (Etapas 6.1-6.3 + Expansão 02)
+# These match the handlers in idl_router.py
+SUPPORTED_BIND_KINDS = frozenset({"create", "read", "approval_decide", "transition"})
 
 # Migration check result codes
 MIGRATION_OK = "MIGRATION_OK"

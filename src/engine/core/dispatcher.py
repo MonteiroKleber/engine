@@ -63,6 +63,11 @@ from .errors import (
     CHAT_REPORT_NOT_FOUND,
     CHAT_BLOCK_NOT_FOUND,
     MODERATION_ACTION_NOT_FOUND,
+    WORKFLOW_NOT_FOUND,
+    WORKFLOW_TRANSITION_NOT_FOUND,
+    WORKFLOW_TRANSITION_CONFLICT,
+    WORKFLOW_EFFECT_INVALID,
+    WORKFLOW_GUARD_UNSUPPORTED,
 )
 from .approvals import (
     get_approvals_policy,
@@ -1709,4 +1714,485 @@ async def dispatch_approval_decide(
             "case_status": STATUS_COMMITTED,
         },
         step="DISPATCHER:decide:approve",
+    )
+
+
+# =============================================================================
+# Dispatcher v2: Transition Support (Expansão 02)
+# =============================================================================
+
+
+def _validate_guard(guard: Any) -> tuple[bool, Optional[str]]:
+    """Validate transition guard.
+
+    Only literal true/false is supported in this phase.
+
+    Args:
+        guard: Guard value from transition definition.
+
+    Returns:
+        Tuple of (is_valid, error_message).
+        If guard is None or literal true, returns (True, None).
+        If guard is literal false, returns (False, "Guard evaluated to false").
+        If guard is not a literal bool, returns (False, error_message).
+    """
+    if guard is None:
+        # No guard = always allowed
+        return True, None
+
+    if guard is True:
+        return True, None
+
+    if guard is False:
+        return False, "Guard evaluated to false"
+
+    # Any other value (expression, string, etc.) is unsupported
+    return False, f"Guard expression not supported: {guard}"
+
+
+def _is_literal_value(value: Any) -> bool:
+    """Check if value is a supported literal (string, int, bool, or null)."""
+    if value is None:
+        return True
+    if isinstance(value, (str, int, bool)):
+        return True
+    if isinstance(value, float):
+        # Allow float as well (int check won't catch floats)
+        return True
+    return False
+
+
+def _apply_effects(
+    entity_data: Dict[str, Any],
+    effects: list,
+) -> tuple[bool, Optional[str], Dict[str, Any]]:
+    """Apply transition effects to entity data.
+
+    Supported effects (subset):
+    - set_state("<STATE>")
+    - set_field("<field>", <literal>)
+    - bump_version(1)
+
+    Args:
+        entity_data: Current entity data dict.
+        effects: List of effect definitions.
+
+    Returns:
+        Tuple of (success, error_message, updated_data).
+    """
+    updated = dict(entity_data)
+
+    for effect in effects:
+        if not isinstance(effect, dict):
+            return False, f"Invalid effect format: {effect}", entity_data
+
+        effect_type = effect.get("type")
+
+        if effect_type == "set_state":
+            new_state = effect.get("value")
+            if not isinstance(new_state, str):
+                return False, f"set_state requires string value: {new_state}", entity_data
+            updated["status"] = new_state
+
+        elif effect_type == "set_field":
+            field_name = effect.get("field")
+            field_value = effect.get("value")
+
+            if not isinstance(field_name, str):
+                return False, f"set_field requires string field name: {field_name}", entity_data
+
+            if not _is_literal_value(field_value):
+                return False, f"set_field only supports literal values, got: {type(field_value).__name__}", entity_data
+
+            # Check for unsupported dynamic values
+            if isinstance(field_value, str) and field_value in ("now()", "__NOW__"):
+                return False, f"Dynamic value '{field_value}' not supported in this phase", entity_data
+
+            updated[field_name] = field_value
+
+        elif effect_type == "bump_version":
+            increment = effect.get("value", 1)
+            if increment != 1:
+                return False, f"bump_version only supports increment of 1, got: {increment}", entity_data
+            current_version = updated.get("version", 0)
+            if not isinstance(current_version, int):
+                current_version = 0
+            updated["version"] = current_version + 1
+
+        else:
+            return False, f"Unsupported effect type: {effect_type}", entity_data
+
+    return True, None, updated
+
+
+async def dispatch_transition(
+    institution_id: str,
+    dept_id: Optional[str],
+    actor: ActorContext,
+    operation: Operation,
+    path_params: Dict[str, str],
+    request_body: Optional[Dict[str, Any]] = None,
+) -> DispatchResult:
+    """Execute a transition operation via dispatcher.
+
+    Pipeline:
+    1. Validate entity type
+    2. RBAC gate (permission)
+    3. Load entity from state store (404 if not found)
+    4. Validate workflow/transition exist in bind
+    5. Validate guard (only true/false literal)
+    6. Validate current state matches transition 'from' (if specified)
+    7. Apply effects in order
+    8. Persist updated entity
+    9. Return result
+
+    Args:
+        institution_id: Institution UUID.
+        dept_id: Department ID (None for single mode).
+        actor: Actor context with roles.
+        operation: Operation from registry.
+        path_params: Extracted path parameters (must contain entity ID).
+        request_body: Optional request body (may contain transition params).
+
+    Returns:
+        DispatchResult with status and response.
+    """
+    permission = operation.permission
+    endpoint_sig = operation.endpoint_sig
+    bind = operation.bind or {}
+
+    entity_type = bind.get("entity")
+    workflow_name = bind.get("workflow")
+    transition_name = bind.get("transition")
+
+    # Validate entity type is supported
+    if not entity_type or entity_type not in ENTITY_CONFIG:
+        return DispatchResult(
+            status_code=500,
+            response_body={
+                "code": "ENTITY_TYPE_UNSUPPORTED",
+                "message": f"Unsupported entity type: {entity_type}",
+            },
+            error_code="ENTITY_TYPE_UNSUPPORTED",
+            step="DISPATCHER:validate_entity",
+        )
+
+    # Validate workflow is specified
+    if not workflow_name:
+        return DispatchResult(
+            status_code=400,
+            response_body={
+                "code": WORKFLOW_NOT_FOUND,
+                "message": "Workflow not specified in operation bind",
+            },
+            error_code=WORKFLOW_NOT_FOUND,
+            step="DISPATCHER:validate_workflow",
+        )
+
+    # Validate transition is specified
+    if not transition_name:
+        return DispatchResult(
+            status_code=400,
+            response_body={
+                "code": WORKFLOW_TRANSITION_NOT_FOUND,
+                "message": "Transition not specified in operation bind",
+            },
+            error_code=WORKFLOW_TRANSITION_NOT_FOUND,
+            step="DISPATCHER:validate_transition",
+        )
+
+    config = ENTITY_CONFIG[entity_type]
+    id_param = config["id_param"]
+    not_found_code = config["not_found_code"]
+
+    # Extract entity ID from path_params
+    entity_id = path_params.get(id_param)
+    if not entity_id:
+        return DispatchResult(
+            status_code=400,
+            response_body={
+                "error": f"Missing required path parameter: {id_param}",
+            },
+            error_code="PATH_PARAM_MISSING",
+            step="DISPATCHER:validate_params",
+        )
+
+    case_id = f"{entity_type.lower()}:{entity_id}"
+
+    # 1. RBAC Gate
+    rbac_allowed = gate_rbac(permission, actor, dept_id=dept_id)
+    _emit_rbac_decision(
+        actor=actor,
+        permission=permission,
+        allowed=rbac_allowed,
+        case_id=case_id,
+        step=f"RBAC:{permission}",
+        dept_id=dept_id,
+        institution_id=institution_id,
+    )
+
+    if not rbac_allowed:
+        return DispatchResult(
+            status_code=403,
+            response_body={
+                "code": "RBAC_DENIED",
+                "message": f"Permission '{permission}' denied",
+            },
+            error_code="RBAC_DENIED",
+            step=f"RBAC:{permission}",
+        )
+
+    # 2. Policy PRE Gate
+    payload = request_body or {}
+    policy_result: PolicyEvalResult = evaluate_policies(
+        phase="pre",
+        dept_id=dept_id,
+        endpoint_sig=endpoint_sig,
+        payload=payload,
+        institution_id=institution_id,
+    )
+
+    emit_policy_decision(
+        phase="pre",
+        endpoint_sig=endpoint_sig,
+        dept_id=dept_id,
+        case_id=case_id,
+        actor=actor,
+        result=policy_result,
+    )
+
+    if not policy_result.allow:
+        violation_messages = [v.message for v in policy_result.violations]
+        return DispatchResult(
+            status_code=403,
+            response_body={
+                "code": POLICY_DENIED,
+                "message": "Policy denied",
+                "violations": violation_messages,
+            },
+            error_code=POLICY_DENIED,
+            step=f"POLICY_GATE:pre:{endpoint_sig}",
+        )
+
+    # 3. Mandates PRE Gate
+    mandate_result: MandateEvalResult = evaluate_mandates(
+        phase="pre",
+        dept_id=dept_id,
+        endpoint_sig=endpoint_sig,
+        actor=actor,
+        payload=payload,
+        institution_id=institution_id,
+    )
+
+    emit_mandate_decision(
+        phase="pre",
+        endpoint_sig=endpoint_sig,
+        dept_id=dept_id,
+        case_id=case_id,
+        actor=actor,
+        result=mandate_result,
+    )
+
+    if not mandate_result.allow:
+        violation_messages = [v.message for v in mandate_result.violations]
+        return DispatchResult(
+            status_code=403,
+            response_body={
+                "code": MANDATE_DENIED,
+                "message": "Mandate denied",
+                "mandate_id": mandate_result.mandate_id,
+                "violations": violation_messages,
+            },
+            error_code=MANDATE_DENIED,
+            step=f"MANDATE_GATE:pre:{endpoint_sig}",
+        )
+
+    # 4. Autonomy PRE Gate
+    autonomy_result: AutonomyEvalResult = evaluate_autonomy(
+        phase="pre",
+        dept_id=dept_id,
+        endpoint_sig=endpoint_sig,
+        institution_id=institution_id,
+    )
+
+    emit_autonomy_evaluated(
+        tenant_id=actor.tenant_id,
+        actor=actor,
+        dept_id=dept_id,
+        phase="pre",
+        endpoint_sig=endpoint_sig,
+        case_id=case_id,
+        result=autonomy_result,
+    )
+
+    if autonomy_result.decision == "deny":
+        return DispatchResult(
+            status_code=403,
+            response_body={
+                "code": AUTONOMY_INSUFFICIENT,
+                "message": "Autonomy level insufficient",
+                "current_level": autonomy_result.current_level,
+                "required_level": autonomy_result.required_level,
+                "rule_id": autonomy_result.rule_id,
+                "reason": autonomy_result.reason,
+            },
+            error_code=AUTONOMY_INSUFFICIENT,
+            step=f"AXIOM_AUTONOMY:pre:{endpoint_sig}",
+        )
+
+    # 5. Get State Store
+    state_store = get_state_store(dept_id, institution_id=institution_id)
+    if not state_store:
+        return DispatchResult(
+            status_code=503,
+            response_body={
+                "code": STATE_STORE_UNAVAILABLE,
+                "message": "State store not available",
+            },
+            error_code=STATE_STORE_UNAVAILABLE,
+            step="DISPATCHER:state_store",
+        )
+
+    # 6. Load Entity
+    read_method = config.get("read_method")
+    if not read_method:
+        return DispatchResult(
+            status_code=500,
+            response_body={
+                "code": "ENTITY_READ_UNSUPPORTED",
+                "message": f"Read not supported for entity type: {entity_type}",
+            },
+            error_code="ENTITY_READ_UNSUPPORTED",
+            step="DISPATCHER:validate_read",
+        )
+
+    entity = getattr(state_store, read_method)(entity_id)
+    if not entity:
+        return DispatchResult(
+            status_code=404,
+            response_body={
+                "code": not_found_code,
+                "message": f"{entity_type} not found",
+            },
+            error_code=not_found_code,
+            step=f"DISPATCHER:transition:{entity_type}",
+        )
+
+    # 7. Get transition definition from bind
+    transition_def = bind.get("transition_def", {})
+    guard = transition_def.get("guard")
+    from_state = transition_def.get("from")
+    to_state = transition_def.get("to")
+    effects = transition_def.get("effects", [])
+
+    # 8. Validate guard
+    guard_ok, guard_error = _validate_guard(guard)
+    if guard_error and guard is not True and guard is not False and guard is not None:
+        # Non-literal guard expression
+        return DispatchResult(
+            status_code=400,
+            response_body={
+                "code": WORKFLOW_GUARD_UNSUPPORTED,
+                "message": guard_error,
+            },
+            error_code=WORKFLOW_GUARD_UNSUPPORTED,
+            step=f"DISPATCHER:transition:{transition_name}:guard",
+        )
+
+    if not guard_ok:
+        return DispatchResult(
+            status_code=409,
+            response_body={
+                "code": WORKFLOW_TRANSITION_CONFLICT,
+                "message": guard_error or "Guard condition not met",
+            },
+            error_code=WORKFLOW_TRANSITION_CONFLICT,
+            step=f"DISPATCHER:transition:{transition_name}:guard",
+        )
+
+    # 9. Validate current state matches 'from' (if specified)
+    entity_data = entity.to_dict()
+    current_status = entity_data.get("status")
+
+    if from_state and current_status != from_state:
+        return DispatchResult(
+            status_code=409,
+            response_body={
+                "code": WORKFLOW_TRANSITION_CONFLICT,
+                "message": f"Current state '{current_status}' does not match expected 'from' state '{from_state}'",
+                "current_state": current_status,
+                "expected_from": from_state,
+            },
+            error_code=WORKFLOW_TRANSITION_CONFLICT,
+            step=f"DISPATCHER:transition:{transition_name}:from_state",
+        )
+
+    # 10. Build effects list
+    # If to_state is specified in transition_def, add set_state effect
+    all_effects = []
+    if to_state:
+        all_effects.append({"type": "set_state", "value": to_state})
+    all_effects.extend(effects)
+
+    # 11. Apply effects
+    if all_effects:
+        success, error_msg, updated_data = _apply_effects(entity_data, all_effects)
+        if not success:
+            return DispatchResult(
+                status_code=400,
+                response_body={
+                    "code": WORKFLOW_EFFECT_INVALID,
+                    "message": error_msg,
+                },
+                error_code=WORKFLOW_EFFECT_INVALID,
+                step=f"DISPATCHER:transition:{transition_name}:effects",
+            )
+    else:
+        updated_data = entity_data
+
+    # 12. Persist updated entity
+    # Use the appropriate update method based on entity type
+    now = datetime.now(timezone.utc).isoformat()
+    updated_data["updated_at"] = now
+
+    # Update in state store raw data
+    if entity_type == "ContentReport":
+        state_store._data["content_reports"][entity_id] = updated_data
+        state_store._save()
+    elif entity_type == "ChatReport":
+        state_store._data["chat_reports"][entity_id] = updated_data
+        state_store._save()
+    elif entity_type == "ModerationAction":
+        state_store._data["moderation_actions"][entity_id] = updated_data
+        state_store._save()
+    elif entity_type == "Expense":
+        state_store._data["expenses"][entity_id] = updated_data
+        state_store._save()
+    elif entity_type == "Ticket":
+        state_store._data["tickets"][entity_id] = updated_data
+        state_store._save()
+    else:
+        return DispatchResult(
+            status_code=500,
+            response_body={
+                "code": "ENTITY_UPDATE_UNSUPPORTED",
+                "message": f"Update not supported for entity type: {entity_type}",
+            },
+            error_code="ENTITY_UPDATE_UNSUPPORTED",
+            step="DISPATCHER:transition:persist",
+        )
+
+    # 13. Return success
+    return DispatchResult(
+        status_code=200,
+        response_body={
+            "id": entity_id,
+            "workflow": workflow_name,
+            "transition": transition_name,
+            "previous_status": current_status,
+            "status": updated_data.get("status"),
+            "updated_at": updated_data.get("updated_at"),
+            "entity": updated_data,
+        },
+        step=f"DISPATCHER:transition:{workflow_name}:{transition_name}",
     )

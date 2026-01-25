@@ -25,6 +25,7 @@ from .dispatcher import (
     dispatch_read,
     dispatch_approval_request,
     dispatch_approval_decide,
+    dispatch_transition,
     DispatchResult,
 )
 from .approvals import get_approvals_policy
@@ -293,6 +294,19 @@ def _create_idl_handler(
                 approval_id=approval_id,
                 decision=decision,
                 reason=reason,
+            )
+
+        elif bind_kind == "transition":
+            # Read optional request body (may contain transition params)
+            request_body = await _read_request_body(request)
+
+            result = await dispatch_transition(
+                institution_id=institution_id,
+                dept_id=dept_id,
+                actor=actor,
+                operation=current_operation,
+                path_params=path_params,
+                request_body=request_body,
             )
 
         else:
