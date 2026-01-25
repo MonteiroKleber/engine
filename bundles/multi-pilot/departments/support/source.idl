@@ -1,0 +1,152 @@
+// Support Pilot - IDL DSL v1.2.2 Canonical Example
+// Governed support department with ticket handling and escalation workflows.
+
+system SupportPilot {
+  name: "Support Pilot"
+  description: "Governed support department with ticket handling and escalation."
+  version: 1.0.0
+  domain: "support"
+  owner: "Libervia"
+  contact: "ops@libervia.xyz"
+  tenancy: multi
+}
+
+actors {
+  human agent {
+    name: "Support Agent"
+    description: "Handles support tickets."
+    authentication: oauth2
+    permissions: [support.ticket.create, support.ticket.read, support.ticket.update]
+  }
+
+  human supervisor {
+    name: "Supervisor"
+    description: "Escalates and resolves complex tickets."
+    authentication: oauth2
+    permissions: [support.ticket.read, support.ticket.escalate, support.ticket.resolve]
+  }
+
+  system runtime {
+    name: "Runtime"
+    description: "Institutional runtime actor."
+    authentication: token
+    permissions: [runtime.bundle.load, runtime.proof.snapshot, runtime.safe_mode.enter]
+  }
+}
+
+entities {
+  entity Ticket {
+    storage {
+      tenant_field: tenant_id
+      version_field: version
+    }
+
+    field id: uuid required unique
+    field tenant_id: uuid required indexed
+    field subject: string required
+    field description: text required
+    field priority: string required indexed
+    field created_by: uuid required indexed
+    field assigned_to: uuid indexed
+    field created_at: datetime required
+    field state: string required indexed
+    field version: int required default(1)
+  }
+}
+
+policy_context {
+  field sla_tier: string required
+  field escalation_count: int default(0)
+}
+
+invariants {
+  invariant TicketMustHaveSubject {
+    applies_to: Ticket
+    when: always
+    assert: Ticket.subject != ""
+    severity: high
+    message: "Ticket subject must be defined."
+  }
+}
+
+separation_of_duties {
+  rule NoSelfAssignment {
+    on: Ticket
+    forbid: Assign when actor.id == Ticket.created_by
+    severity: high
+    message: "Creator cannot assign their own ticket."
+  }
+}
+
+workflows {
+  workflow TicketFlow on Ticket {
+    state Open { initial: true }
+    state InProgress
+    state Escalated
+    state Resolved { terminal: true }
+    state Closed { terminal: true }
+
+    transition Assign: Open -> InProgress {
+      guard: context.sla_tier != ""
+      effects: [set_state("InProgress"), bump_version(1)]
+    }
+
+    transition Escalate: InProgress -> Escalated {
+      guard: context.escalation_count < 3
+      approvals: {
+        quorum: 1
+        roles: [supervisor]
+        distinct_actors: true
+        expires_in: 24h
+      }
+      effects: [set_state("Escalated"), bump_version(1)]
+    }
+
+    transition Resolve: InProgress -> Resolved {
+      effects: [set_state("Resolved"), bump_version(1)]
+    }
+
+    transition ResolveEscalated: Escalated -> Resolved {
+      approvals: {
+        quorum: 1
+        roles: [supervisor]
+        distinct_actors: true
+        expires_in: 24h
+      }
+      effects: [set_state("Resolved"), bump_version(1)]
+    }
+
+    transition Close: Resolved -> Closed {
+      effects: [set_state("Closed"), bump_version(1)]
+    }
+  }
+}
+
+operations {
+  api {
+    endpoint ticket_create {
+      method: POST
+      path: "/support/tickets"
+      request: Ticket
+      response: Ticket
+      permission: support.ticket.create
+      scope: tenant
+      idempotency: required
+      errors: [400, 401, 403]
+      bind: { entity: Ticket, kind: create }
+    }
+
+    endpoint ticket_get {
+      method: GET
+      path: "/support/tickets/{id}"
+      request: void
+      response: Ticket
+      permission: support.ticket.read
+      scope: tenant
+      idempotency: none
+      errors: [401, 403, 404]
+      bind: { entity: Ticket, kind: read }
+    }
+  }
+}
+

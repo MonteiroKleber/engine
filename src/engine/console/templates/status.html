@@ -120,12 +120,52 @@
         </ul>
     </div>
     {% endif %}
-</div>
+	</div>
 
-<!-- Institution Config -->
-<div class="card">
-    <h3 class="card-title">Institution Configuration</h3>
-    <div class="grid grid-2">
+	<!-- Legacy Cutover Telemetry (Etapa 7) -->
+	<div class="card">
+	    <h3 class="card-title">Legacy Cutover Telemetry</h3>
+	    <div class="info-row">
+	        <span class="info-label">Total Legacy Invocations</span>
+	        <span class="info-value">{{ legacy_cutover.total }}</span>
+	    </div>
+	    <div class="info-row">
+	        <span class="info-label">Last Seen</span>
+	        <span class="info-value mono">{{ legacy_cutover.last_ts or "-" }}</span>
+	    </div>
+	    {% if legacy_cutover.by_endpoint %}
+	    <table style="margin-top: 0.75rem;">
+	        <thead>
+	            <tr>
+	                <th>Endpoint</th>
+	                <th>Count</th>
+	                <th>Last Seen</th>
+	            </tr>
+	        </thead>
+	        <tbody>
+	            {% for row in legacy_cutover.by_endpoint[:20] %}
+	            <tr>
+	                <td class="mono">{{ row.endpoint_sig }}</td>
+	                <td>{{ row.count }}</td>
+	                <td class="mono">{{ row.last_ts or "-" }}</td>
+	            </tr>
+	            {% endfor %}
+	        </tbody>
+	    </table>
+	    {% if legacy_cutover.by_endpoint|length > 20 %}
+	    <div style="margin-top: 0.5rem; color: var(--text-secondary);">
+	        Showing top 20 of {{ legacy_cutover.by_endpoint|length }} endpoints.
+	    </div>
+	    {% endif %}
+	    {% else %}
+	    <div class="empty-state">No legacy telemetry recorded (only records in ENGINE_API_MODE=both)</div>
+	    {% endif %}
+	</div>
+
+	<!-- Institution Config -->
+	<div class="card">
+	    <h3 class="card-title">Institution Configuration</h3>
+	    <div class="grid grid-2">
         <div>
             <div class="info-row">
                 <span class="info-label">Emergency Freeze</span>

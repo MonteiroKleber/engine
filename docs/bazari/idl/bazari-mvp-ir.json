@@ -1,0 +1,1298 @@
+{
+  "actors": [
+    {
+      "auth": "oauth2",
+      "description": "Usuario final da plataforma. Cria denuncias e bloqueios.",
+      "id": "user",
+      "kind": "human",
+      "name": "User",
+      "permissions": [
+        "reports.create",
+        "reports.read.own",
+        "chat.reports.create",
+        "chat.blocks.create",
+        "chat.blocks.delete"
+      ]
+    },
+    {
+      "auth": "oauth2",
+      "description": "Operador de moderacao. Faz triage de reports e propoe acoes.",
+      "id": "moderator",
+      "kind": "human",
+      "name": "Moderator",
+      "permissions": [
+        "reports.read",
+        "reports.list",
+        "reports.triage",
+        "moderation.actions.create",
+        "moderation.actions.read",
+        "chat.reports.read",
+        "chat.reports.list"
+      ]
+    },
+    {
+      "auth": "oauth2",
+      "description": "Autoridade institucional. Decide approvals para acoes irreversiveis.",
+      "id": "trust_safety_manager",
+      "kind": "human",
+      "name": "Trust & Safety Manager",
+      "permissions": [
+        "reports.read",
+        "reports.list",
+        "moderation.actions.read",
+        "moderation.actions.list",
+        "approval.decide"
+      ]
+    },
+    {
+      "auth": "oauth2",
+      "description": "Break-glass para situacoes excepcionais. Tambem governado por approvals para acoes destructivas.",
+      "id": "admin",
+      "kind": "human",
+      "name": "Administrator",
+      "permissions": [
+        "reports.read",
+        "reports.list",
+        "moderation.actions.create",
+        "moderation.actions.read",
+        "moderation.actions.list",
+        "moderation.actions.apply",
+        "approval.decide"
+      ]
+    },
+    {
+      "auth": "token",
+      "description": "Ator de sistema institucional.",
+      "id": "runtime",
+      "kind": "system",
+      "name": "Runtime",
+      "permissions": [
+        "runtime.bundle.load",
+        "runtime.proof.snapshot",
+        "runtime.safe_mode.enter"
+      ]
+    }
+  ],
+  "department": {
+    "dept_id": "moderation",
+    "entrypoints": {
+      "api_prefix": "/moderation",
+      "event_prefix": "moderation.",
+      "permission_prefix": "moderation."
+    },
+    "name": "Bazari MVP - Governanca de Moderacao",
+    "namespace": "moderation",
+    "tenancy": "multi"
+  },
+  "entities": [
+    {
+      "fields": [
+        {
+          "name": "id",
+          "required": true,
+          "type": "uuid",
+          "unique": true
+        },
+        {
+          "indexed": true,
+          "name": "institution_id",
+          "required": true,
+          "type": "uuid"
+        },
+        {
+          "indexed": true,
+          "name": "content_type",
+          "required": true,
+          "type": "string"
+        },
+        {
+          "indexed": true,
+          "name": "content_id",
+          "required": true,
+          "type": "string"
+        },
+        {
+          "name": "reason",
+          "required": true,
+          "type": "string"
+        },
+        {
+          "name": "details",
+          "required": false,
+          "type": "text"
+        },
+        {
+          "indexed": true,
+          "name": "created_by",
+          "required": true,
+          "type": "uuid"
+        },
+        {
+          "indexed": true,
+          "name": "created_at",
+          "required": true,
+          "type": "datetime"
+        },
+        {
+          "indexed": true,
+          "name": "status",
+          "required": true,
+          "type": "string"
+        },
+        {
+          "indexed": true,
+          "name": "triaged_by",
+          "required": false,
+          "type": "uuid"
+        },
+        {
+          "name": "triaged_at",
+          "required": false,
+          "type": "datetime"
+        },
+        {
+          "name": "report_severity",
+          "required": false,
+          "type": "string"
+        },
+        {
+          "default": 1,
+          "name": "version",
+          "required": true,
+          "type": "int"
+        }
+      ],
+      "name": "ContentReport",
+      "storage": {
+        "tenant_field": "institution_id",
+        "version_field": "version"
+      }
+    },
+    {
+      "fields": [
+        {
+          "name": "id",
+          "required": true,
+          "type": "uuid",
+          "unique": true
+        },
+        {
+          "indexed": true,
+          "name": "institution_id",
+          "required": true,
+          "type": "uuid"
+        },
+        {
+          "indexed": true,
+          "name": "message_id",
+          "required": true,
+          "type": "string"
+        },
+        {
+          "indexed": true,
+          "name": "thread_id",
+          "required": true,
+          "type": "string"
+        },
+        {
+          "name": "reason",
+          "required": true,
+          "type": "string"
+        },
+        {
+          "name": "details",
+          "required": false,
+          "type": "text"
+        },
+        {
+          "indexed": true,
+          "name": "created_by",
+          "required": true,
+          "type": "uuid"
+        },
+        {
+          "indexed": true,
+          "name": "created_at",
+          "required": true,
+          "type": "datetime"
+        },
+        {
+          "indexed": true,
+          "name": "status",
+          "required": true,
+          "type": "string"
+        },
+        {
+          "default": 1,
+          "name": "version",
+          "required": true,
+          "type": "int"
+        }
+      ],
+      "name": "ChatReport",
+      "storage": {
+        "tenant_field": "institution_id",
+        "version_field": "version"
+      }
+    },
+    {
+      "fields": [
+        {
+          "name": "id",
+          "required": true,
+          "type": "uuid",
+          "unique": true
+        },
+        {
+          "indexed": true,
+          "name": "institution_id",
+          "required": true,
+          "type": "uuid"
+        },
+        {
+          "indexed": true,
+          "name": "blocker_id",
+          "required": true,
+          "type": "uuid"
+        },
+        {
+          "indexed": true,
+          "name": "blocked_profile_id",
+          "required": true,
+          "type": "uuid"
+        },
+        {
+          "name": "reason",
+          "required": false,
+          "type": "text"
+        },
+        {
+          "indexed": true,
+          "name": "created_at",
+          "required": true,
+          "type": "datetime"
+        },
+        {
+          "default": 1,
+          "name": "version",
+          "required": true,
+          "type": "int"
+        }
+      ],
+      "name": "ChatBlock",
+      "storage": {
+        "tenant_field": "institution_id",
+        "version_field": "version"
+      }
+    },
+    {
+      "fields": [
+        {
+          "name": "id",
+          "required": true,
+          "type": "uuid",
+          "unique": true
+        },
+        {
+          "indexed": true,
+          "name": "institution_id",
+          "required": true,
+          "type": "uuid"
+        },
+        {
+          "indexed": true,
+          "name": "target_type",
+          "required": true,
+          "type": "string"
+        },
+        {
+          "indexed": true,
+          "name": "target_id",
+          "required": true,
+          "type": "string"
+        },
+        {
+          "indexed": true,
+          "name": "action",
+          "required": true,
+          "type": "string"
+        },
+        {
+          "name": "reason",
+          "required": true,
+          "type": "text"
+        },
+        {
+          "indexed": true,
+          "name": "report_id",
+          "required": false,
+          "type": "uuid"
+        },
+        {
+          "indexed": true,
+          "name": "proposed_by",
+          "required": true,
+          "type": "uuid"
+        },
+        {
+          "indexed": true,
+          "name": "proposed_at",
+          "required": true,
+          "type": "datetime"
+        },
+        {
+          "indexed": true,
+          "name": "status",
+          "required": true,
+          "type": "string"
+        },
+        {
+          "indexed": true,
+          "name": "decided_by",
+          "required": false,
+          "type": "uuid"
+        },
+        {
+          "name": "decided_at",
+          "required": false,
+          "type": "datetime"
+        },
+        {
+          "name": "applied_at",
+          "required": false,
+          "type": "datetime"
+        },
+        {
+          "indexed": true,
+          "name": "applied_by",
+          "required": false,
+          "type": "uuid"
+        },
+        {
+          "name": "reverted_at",
+          "required": false,
+          "type": "datetime"
+        },
+        {
+          "indexed": true,
+          "name": "reverted_by",
+          "required": false,
+          "type": "uuid"
+        },
+        {
+          "name": "revert_reason",
+          "required": false,
+          "type": "text"
+        },
+        {
+          "default": 1,
+          "name": "version",
+          "required": true,
+          "type": "int"
+        }
+      ],
+      "name": "ModerationAction",
+      "storage": {
+        "tenant_field": "institution_id",
+        "version_field": "version"
+      }
+    }
+  ],
+  "invariants": [
+    {
+      "applies_to": "ContentReport",
+      "assert": {
+        "kind": "compare",
+        "lhs": {
+          "ref": "ContentReport.reason",
+          "type": "unknown"
+        },
+        "op": "!=",
+        "rhs": {
+          "lit": "",
+          "type": "string"
+        }
+      },
+      "message": "Denuncia deve ter motivo definido.",
+      "name": "ReportMustHaveReason",
+      "severity": "high",
+      "when": {
+        "kind": "always"
+      }
+    },
+    {
+      "applies_to": "ModerationAction",
+      "assert": {
+        "kind": "compare",
+        "lhs": {
+          "ref": "ModerationAction.reason",
+          "type": "unknown"
+        },
+        "op": "!=",
+        "rhs": {
+          "lit": "",
+          "type": "string"
+        }
+      },
+      "message": "Acao moderativa deve ter justificativa.",
+      "name": "ActionMustHaveReason",
+      "severity": "high",
+      "when": {
+        "kind": "always"
+      }
+    },
+    {
+      "applies_to": "ChatBlock",
+      "assert": {
+        "kind": "compare",
+        "lhs": {
+          "ref": "ChatBlock.blocker_id",
+          "type": "unknown"
+        },
+        "op": "!=",
+        "rhs": {
+          "ref": "ChatBlock.blocked_profile_id",
+          "type": "unknown"
+        }
+      },
+      "message": "Usuario nao pode bloquear a si mesmo.",
+      "name": "BlockCannotBeSelf",
+      "severity": "critical",
+      "when": {
+        "kind": "always"
+      }
+    }
+  ],
+  "ir_version": "ircs.v1",
+  "operations": {
+    "api": [
+      {
+        "bind": {
+          "entity": "ContentReport",
+          "kind": "create"
+        },
+        "errors": [
+          400,
+          401,
+          403
+        ],
+        "id": "report_create",
+        "idempotency": "required",
+        "method": "POST",
+        "path": "/reports",
+        "path_params": [],
+        "permission": "reports.create",
+        "request_type": "ContentReport",
+        "response_type": "ContentReport",
+        "scope": "tenant"
+      },
+      {
+        "bind": {
+          "entity": "ContentReport",
+          "kind": "read"
+        },
+        "errors": [
+          401,
+          403,
+          404
+        ],
+        "id": "report_get",
+        "idempotency": "none",
+        "method": "GET",
+        "path": "/reports/{report_id}",
+        "path_params": [
+          "report_id"
+        ],
+        "permission": "reports.read",
+        "request_type": "void",
+        "response_type": "ContentReport",
+        "scope": "tenant"
+      },
+      {
+        "bind": {
+          "entity": "ContentReport",
+          "kind": "read"
+        },
+        "errors": [
+          401
+        ],
+        "id": "report_list_own",
+        "idempotency": "none",
+        "method": "GET",
+        "path": "/reports/my",
+        "path_params": [],
+        "permission": "reports.read.own",
+        "request_type": "void",
+        "response_type": "any",
+        "scope": "tenant"
+      },
+      {
+        "bind": {
+          "entity": "ContentReport",
+          "kind": "read"
+        },
+        "errors": [
+          401,
+          403
+        ],
+        "id": "admin_report_list",
+        "idempotency": "none",
+        "method": "GET",
+        "path": "/admin/reports",
+        "path_params": [],
+        "permission": "reports.list",
+        "request_type": "void",
+        "response_type": "any",
+        "scope": "tenant"
+      },
+      {
+        "bind": {
+          "entity": "ContentReport",
+          "kind": "transition",
+          "transition": "Triage",
+          "workflow": "ReportFlow"
+        },
+        "errors": [
+          400,
+          401,
+          403,
+          404,
+          409
+        ],
+        "id": "report_triage",
+        "idempotency": "required",
+        "method": "POST",
+        "path": "/admin/reports/{report_id}/triage",
+        "path_params": [
+          "report_id"
+        ],
+        "permission": "reports.triage",
+        "request_type": "any",
+        "response_type": "ContentReport",
+        "scope": "tenant"
+      },
+      {
+        "bind": {
+          "entity": "ChatReport",
+          "kind": "create"
+        },
+        "errors": [
+          400,
+          401,
+          403
+        ],
+        "id": "chat_report_create",
+        "idempotency": "required",
+        "method": "POST",
+        "path": "/chat/reports",
+        "path_params": [],
+        "permission": "chat.reports.create",
+        "request_type": "ChatReport",
+        "response_type": "ChatReport",
+        "scope": "tenant"
+      },
+      {
+        "bind": {
+          "entity": "ChatBlock",
+          "kind": "create"
+        },
+        "errors": [
+          400,
+          401,
+          403
+        ],
+        "id": "chat_block_create",
+        "idempotency": "required",
+        "method": "POST",
+        "path": "/chat/blocks",
+        "path_params": [],
+        "permission": "chat.blocks.create",
+        "request_type": "ChatBlock",
+        "response_type": "ChatBlock",
+        "scope": "tenant"
+      },
+      {
+        "bind": {
+          "entity": "ChatBlock",
+          "kind": "delete"
+        },
+        "errors": [
+          401,
+          403,
+          404
+        ],
+        "id": "chat_block_delete",
+        "idempotency": "required",
+        "method": "DELETE",
+        "path": "/chat/blocks/{profile_id}",
+        "path_params": [
+          "profile_id"
+        ],
+        "permission": "chat.blocks.delete",
+        "request_type": "void",
+        "response_type": "any",
+        "scope": "tenant"
+      },
+      {
+        "bind": {
+          "entity": "ModerationAction",
+          "kind": "create"
+        },
+        "errors": [
+          400,
+          401,
+          403
+        ],
+        "id": "moderation_action_create",
+        "idempotency": "required",
+        "method": "POST",
+        "path": "/moderation/actions",
+        "path_params": [],
+        "permission": "moderation.actions.create",
+        "request_type": "ModerationAction",
+        "response_type": "ModerationAction",
+        "scope": "tenant"
+      },
+      {
+        "bind": {
+          "entity": "ModerationAction",
+          "kind": "read"
+        },
+        "errors": [
+          401,
+          403,
+          404
+        ],
+        "id": "moderation_action_get",
+        "idempotency": "none",
+        "method": "GET",
+        "path": "/moderation/actions/{action_id}",
+        "path_params": [
+          "action_id"
+        ],
+        "permission": "moderation.actions.read",
+        "request_type": "void",
+        "response_type": "ModerationAction",
+        "scope": "tenant"
+      },
+      {
+        "bind": {
+          "decision": "approve",
+          "entity": "ModerationAction",
+          "kind": "approval",
+          "transition": "Approve",
+          "workflow": "ModerationActionFlow"
+        },
+        "errors": [
+          400,
+          401,
+          403,
+          404,
+          409
+        ],
+        "id": "moderation_action_approve",
+        "idempotency": "required",
+        "method": "POST",
+        "path": "/approvals/{approval_id}/decide",
+        "path_params": [
+          "approval_id"
+        ],
+        "permission": "approval.decide",
+        "request_type": "any",
+        "response_type": "any",
+        "scope": "tenant"
+      },
+      {
+        "bind": {
+          "decision": "reject",
+          "entity": "ModerationAction",
+          "kind": "approval",
+          "transition": "Reject",
+          "workflow": "ModerationActionFlow"
+        },
+        "errors": [
+          400,
+          401,
+          403,
+          404,
+          409
+        ],
+        "id": "moderation_action_reject",
+        "idempotency": "required",
+        "method": "POST",
+        "path": "/approvals/{approval_id}/decide",
+        "path_params": [
+          "approval_id"
+        ],
+        "permission": "approval.decide",
+        "request_type": "any",
+        "response_type": "any",
+        "scope": "tenant"
+      },
+      {
+        "bind": {
+          "entity": "ModerationAction",
+          "kind": "transition",
+          "transition": "Apply",
+          "workflow": "ModerationActionFlow"
+        },
+        "errors": [
+          400,
+          401,
+          403,
+          404,
+          409
+        ],
+        "id": "moderation_action_apply",
+        "idempotency": "required",
+        "method": "POST",
+        "path": "/moderation/actions/{action_id}/apply",
+        "path_params": [
+          "action_id"
+        ],
+        "permission": "moderation.actions.apply",
+        "request_type": "void",
+        "response_type": "ModerationAction",
+        "scope": "tenant"
+      }
+    ]
+  },
+  "policy_context": {
+    "schema": [
+      {
+        "name": "jurisdiction",
+        "required": true,
+        "type": "string"
+      },
+      {
+        "default": "low",
+        "name": "risk_level",
+        "required": false,
+        "type": "string"
+      },
+      {
+        "default": "normal",
+        "name": "content_sensitivity",
+        "required": false,
+        "type": "string"
+      }
+    ]
+  },
+  "runtime": {
+    "gate_order": [
+      "safe_mode",
+      "rbac",
+      "policy_pre",
+      "sod",
+      "workflow",
+      "invariants",
+      "commit",
+      "policy_post",
+      "ledger_finalize"
+    ],
+    "proof": {
+      "snapshot_enabled": true
+    },
+    "safe_mode": {
+      "enabled": true,
+      "on_contract_tamper": "enter",
+      "on_invariant_violation": "enter"
+    }
+  },
+  "separation_of_duties": [
+    {
+      "forbid": {
+        "action": "Decide",
+        "when": {
+          "kind": "compare",
+          "lhs": {
+            "ref": "actor.id",
+            "type": "unknown"
+          },
+          "op": "==",
+          "rhs": {
+            "ref": "report.created_by",
+            "type": "unknown"
+          }
+        }
+      },
+      "message": "Denunciante nao pode decidir o caso da propria denuncia.",
+      "name": "ReporterCannotDecide",
+      "on_entity": "ModerationAction",
+      "severity": "critical"
+    },
+    {
+      "forbid": {
+        "action": "Decide",
+        "when": {
+          "kind": "compare",
+          "lhs": {
+            "ref": "actor.id",
+            "type": "unknown"
+          },
+          "op": "==",
+          "rhs": {
+            "ref": "ModerationAction.proposed_by",
+            "type": "unknown"
+          }
+        }
+      },
+      "message": "Proponente da acao nao pode aprovar/rejeitar a propria proposta.",
+      "name": "ProposerCannotDecide",
+      "on_entity": "ModerationAction",
+      "severity": "critical"
+    },
+    {
+      "forbid": {
+        "action": "Apply",
+        "when": {
+          "exprs": [
+            {
+              "kind": "compare",
+              "lhs": {
+                "ref": "actor.id",
+                "type": "unknown"
+              },
+              "op": "==",
+              "rhs": {
+                "ref": "ModerationAction.proposed_by",
+                "type": "unknown"
+              }
+            },
+            {
+              "exprs": [
+                {
+                  "kind": "compare",
+                  "lhs": {
+                    "ref": "ModerationAction.action",
+                    "type": "unknown"
+                  },
+                  "op": "==",
+                  "rhs": {
+                    "lit": "BAN",
+                    "type": "string"
+                  }
+                },
+                {
+                  "kind": "compare",
+                  "lhs": {
+                    "ref": "ModerationAction.action",
+                    "type": "unknown"
+                  },
+                  "op": "==",
+                  "rhs": {
+                    "lit": "REMOVE",
+                    "type": "string"
+                  }
+                },
+                {
+                  "kind": "compare",
+                  "lhs": {
+                    "ref": "ModerationAction.action",
+                    "type": "unknown"
+                  },
+                  "op": "==",
+                  "rhs": {
+                    "lit": "SHADOWBAN",
+                    "type": "string"
+                  }
+                }
+              ],
+              "kind": "or"
+            }
+          ],
+          "kind": "and"
+        }
+      },
+      "message": "Proponente de acao irreversivel nao pode aplicar a propria proposta.",
+      "name": "ProposerCannotApply",
+      "on_entity": "ModerationAction",
+      "severity": "high"
+    }
+  ],
+  "source_idl_sha256": "4ff30af1e2d09aec471fe0e8197b66322e06734f04680c5f4b1950e518e26296",
+  "source_idl_version": "idl.v1.2.2",
+  "system": {
+    "contact": "ops@bazari.libervia.xyz",
+    "description": "Governanca de moderacao para social e chat com approvals, SoD e auditoria.",
+    "domain": "moderation",
+    "id": "BazariMVP",
+    "name": "Bazari MVP - Governanca de Moderacao",
+    "owner": "Bazari"
+  },
+  "workflows": [
+    {
+      "name": "ReportFlow",
+      "on_entity": "ContentReport",
+      "state_field": "state",
+      "states": [
+        {
+          "initial": true,
+          "name": "Pending",
+          "terminal": false
+        },
+        {
+          "initial": false,
+          "name": "Triaged",
+          "terminal": false
+        },
+        {
+          "initial": false,
+          "name": "Resolved",
+          "terminal": true
+        },
+        {
+          "initial": false,
+          "name": "Dismissed",
+          "terminal": true
+        }
+      ],
+      "transitions": [
+        {
+          "approvals": null,
+          "effects": [
+            {
+              "kind": "set_state",
+              "value": "Triaged"
+            },
+            {
+              "kind": "set_field"
+            },
+            {
+              "by": 1,
+              "field": "version",
+              "kind": "bump_version"
+            }
+          ],
+          "from": "Pending",
+          "guard": {
+            "lit": true,
+            "type": "bool"
+          },
+          "name": "Triage",
+          "to": "Triaged"
+        },
+        {
+          "approvals": null,
+          "effects": [
+            {
+              "kind": "set_state",
+              "value": "Resolved"
+            },
+            {
+              "by": 1,
+              "field": "version",
+              "kind": "bump_version"
+            }
+          ],
+          "from": "Triaged",
+          "guard": {
+            "lit": true,
+            "type": "bool"
+          },
+          "name": "Resolve",
+          "to": "Resolved"
+        },
+        {
+          "approvals": null,
+          "effects": [
+            {
+              "kind": "set_state",
+              "value": "Dismissed"
+            },
+            {
+              "by": 1,
+              "field": "version",
+              "kind": "bump_version"
+            }
+          ],
+          "from": "Triaged",
+          "guard": {
+            "lit": true,
+            "type": "bool"
+          },
+          "name": "Dismiss",
+          "to": "Dismissed"
+        }
+      ]
+    },
+    {
+      "name": "ModerationActionFlow",
+      "on_entity": "ModerationAction",
+      "state_field": "state",
+      "states": [
+        {
+          "initial": true,
+          "name": "Proposed",
+          "terminal": false
+        },
+        {
+          "initial": false,
+          "name": "PendingApproval",
+          "terminal": false
+        },
+        {
+          "initial": false,
+          "name": "Approved",
+          "terminal": false
+        },
+        {
+          "initial": false,
+          "name": "Rejected",
+          "terminal": true
+        },
+        {
+          "initial": false,
+          "name": "Applied",
+          "terminal": true
+        },
+        {
+          "initial": false,
+          "name": "Reverted",
+          "terminal": true
+        }
+      ],
+      "transitions": [
+        {
+          "approvals": null,
+          "effects": [
+            {
+              "kind": "set_state",
+              "value": "Approved"
+            },
+            {
+              "kind": "set_field"
+            },
+            {
+              "by": 1,
+              "field": "version",
+              "kind": "bump_version"
+            }
+          ],
+          "from": "Proposed",
+          "guard": {
+            "exprs": [
+              {
+                "kind": "compare",
+                "lhs": {
+                  "ref": "ModerationAction.action",
+                  "type": "unknown"
+                },
+                "op": "==",
+                "rhs": {
+                  "lit": "WARN",
+                  "type": "string"
+                }
+              },
+              {
+                "kind": "compare",
+                "lhs": {
+                  "ref": "ModerationAction.action",
+                  "type": "unknown"
+                },
+                "op": "==",
+                "rhs": {
+                  "lit": "MUTE",
+                  "type": "string"
+                }
+              },
+              {
+                "kind": "compare",
+                "lhs": {
+                  "ref": "ModerationAction.action",
+                  "type": "unknown"
+                },
+                "op": "==",
+                "rhs": {
+                  "lit": "HIDE",
+                  "type": "string"
+                }
+              }
+            ],
+            "kind": "or"
+          },
+          "name": "AutoApprove",
+          "to": "Approved"
+        },
+        {
+          "approvals": null,
+          "effects": [
+            {
+              "kind": "set_state",
+              "value": "PendingApproval"
+            },
+            {
+              "by": 1,
+              "field": "version",
+              "kind": "bump_version"
+            }
+          ],
+          "from": "Proposed",
+          "guard": {
+            "exprs": [
+              {
+                "kind": "compare",
+                "lhs": {
+                  "ref": "ModerationAction.action",
+                  "type": "unknown"
+                },
+                "op": "==",
+                "rhs": {
+                  "lit": "BAN",
+                  "type": "string"
+                }
+              },
+              {
+                "kind": "compare",
+                "lhs": {
+                  "ref": "ModerationAction.action",
+                  "type": "unknown"
+                },
+                "op": "==",
+                "rhs": {
+                  "lit": "REMOVE",
+                  "type": "string"
+                }
+              },
+              {
+                "kind": "compare",
+                "lhs": {
+                  "ref": "ModerationAction.action",
+                  "type": "unknown"
+                },
+                "op": "==",
+                "rhs": {
+                  "lit": "SHADOWBAN",
+                  "type": "string"
+                }
+              }
+            ],
+            "kind": "or"
+          },
+          "name": "RequestApproval",
+          "to": "PendingApproval"
+        },
+        {
+          "approvals": {
+            "distinct_actors": true,
+            "expires_in": "72h",
+            "quorum": 1,
+            "roles": [
+              "trust_safety_manager",
+              "admin"
+            ]
+          },
+          "effects": [
+            {
+              "kind": "set_state",
+              "value": "Approved"
+            },
+            {
+              "kind": "set_field"
+            },
+            {
+              "by": 1,
+              "field": "version",
+              "kind": "bump_version"
+            }
+          ],
+          "from": "PendingApproval",
+          "guard": {
+            "lit": true,
+            "type": "bool"
+          },
+          "name": "Approve",
+          "to": "Approved"
+        },
+        {
+          "approvals": {
+            "distinct_actors": true,
+            "expires_in": "72h",
+            "quorum": 1,
+            "roles": [
+              "trust_safety_manager",
+              "admin"
+            ]
+          },
+          "effects": [
+            {
+              "kind": "set_state",
+              "value": "Rejected"
+            },
+            {
+              "kind": "set_field"
+            },
+            {
+              "by": 1,
+              "field": "version",
+              "kind": "bump_version"
+            }
+          ],
+          "from": "PendingApproval",
+          "guard": {
+            "lit": true,
+            "type": "bool"
+          },
+          "name": "Reject",
+          "to": "Rejected"
+        },
+        {
+          "approvals": null,
+          "effects": [
+            {
+              "kind": "set_state",
+              "value": "Applied"
+            },
+            {
+              "kind": "set_field"
+            },
+            {
+              "by": 1,
+              "field": "version",
+              "kind": "bump_version"
+            }
+          ],
+          "from": "Approved",
+          "guard": {
+            "lit": true,
+            "type": "bool"
+          },
+          "name": "Apply",
+          "to": "Applied"
+        },
+        {
+          "approvals": {
+            "distinct_actors": true,
+            "expires_in": "72h",
+            "quorum": 1,
+            "roles": [
+              "trust_safety_manager",
+              "admin"
+            ]
+          },
+          "effects": [
+            {
+              "kind": "set_state",
+              "value": "Reverted"
+            },
+            {
+              "kind": "set_field"
+            },
+            {
+              "by": 1,
+              "field": "version",
+              "kind": "bump_version"
+            }
+          ],
+          "from": "Applied",
+          "guard": {
+            "lit": true,
+            "type": "bool"
+          },
+          "name": "Revert",
+          "to": "Reverted"
+        }
+      ]
+    }
+  ]
+}

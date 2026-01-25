@@ -13,6 +13,8 @@ from pydantic import BaseModel
 from engine.core.actor_context import ActorContext
 from engine.core.ledger import get_ledger, get_ledger_for_institution
 from engine.core.institution_context import get_request_institution_id
+from engine.core.institution_context import DEFAULT_INSTITUTION_ID
+from engine.core.legacy_telemetry import record_legacy_invocation
 from engine.core.approvals import (
     find_approval_requested,
     find_approval_decided,
@@ -180,6 +182,18 @@ async def decide_approval(
     """
     # Get institution_id from request context (set by middleware)
     institution_id = get_request_institution_id(request)
+    institution_id_for_telemetry = (
+        institution_id
+        or request.headers.get("X-Institution-Id")
+        or request.headers.get("X-Tenant-Id")
+        or DEFAULT_INSTITUTION_ID
+    )
+    record_legacy_invocation(
+        institution_id=institution_id_for_telemetry,
+        endpoint_sig="POST /approvals/{approval_id}/decide",
+        method="POST",
+        path=str(request.url.path),
+    )
 
     # Validate decision value
     if body.decision not in ("approve", "reject"):

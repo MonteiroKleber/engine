@@ -1,0 +1,270 @@
+// Bazari Phase 1 — Control Plane CRUD (DSL v1.2.2)
+//
+// Objetivo: primeiro bundle executável em PROD/STRICT/IDL, sem depender de:
+// - bind.kind=transition (workflows)
+// - bind.kind=approval (approvals/workflows)
+//
+// Escopo desta fase:
+// - create/read (inclui "list" via read sem {id} no path)
+// - delete mínimo (ChatBlock)
+
+system BazariPhase1 {
+  name: "Bazari Phase 1 - Social/Chat Moderation (CRUD)"
+  description: "Control plane mínimo para reports/blocks/moderation actions (CRUD) em strict/idl."
+  version: 1.0.0
+  domain: "moderation"
+  owner: "Bazari"
+  contact: "ops@bazari.libervia.xyz"
+  tenancy: multi
+}
+
+actors {
+  human user {
+    name: "User"
+    description: "Usuario final. Cria reports e blocks."
+    authentication: oauth2
+    permissions: [
+      reports.create,
+      reports.read.own,
+      chat.reports.create,
+      chat.blocks.create,
+      chat.blocks.delete
+    ]
+  }
+
+  human moderator {
+    name: "Moderator"
+    description: "Operador. Lista e lê reports."
+    authentication: oauth2
+    permissions: [
+      reports.read,
+      reports.list,
+      moderation.actions.create,
+      moderation.actions.read,
+      moderation.actions.list,
+      chat.reports.read,
+      chat.reports.list
+    ]
+  }
+
+  human trust_safety_manager {
+    name: "Trust & Safety Manager"
+    description: "Autoridade institucional (approvals entram em fases seguintes)."
+    authentication: oauth2
+    permissions: [
+      reports.read,
+      reports.list,
+      moderation.actions.read,
+      moderation.actions.list,
+      approval.decide
+    ]
+  }
+
+  human admin {
+    name: "Administrator"
+    description: "Break-glass (apenas CRUD nesta fase)."
+    authentication: oauth2
+    permissions: [
+      reports.read,
+      reports.list,
+      moderation.actions.create,
+      moderation.actions.read,
+      moderation.actions.list,
+      chat.reports.read,
+      chat.reports.list,
+      approval.decide
+    ]
+  }
+
+  system runtime {
+    name: "Runtime"
+    description: "Ator de sistema institucional."
+    authentication: token
+    permissions: [runtime.bundle.load, runtime.proof.snapshot, runtime.safe_mode.enter]
+  }
+}
+
+entities {
+  entity ContentReport {
+    storage { tenant_field: institution_id version_field: version }
+
+    field id: uuid required unique
+    field institution_id: uuid required indexed
+    field content_type: string required indexed
+    field content_id: string required indexed
+    field reason: string required
+    field details: text
+    field created_by: uuid required indexed
+    field created_at: datetime required indexed
+    field status: string required indexed
+    field version: int required default(1)
+  }
+
+  entity ChatReport {
+    storage { tenant_field: institution_id version_field: version }
+
+    field id: uuid required unique
+    field institution_id: uuid required indexed
+    field message_id: string required indexed
+    field thread_id: string required indexed
+    field reason: string required
+    field details: text
+    field created_by: uuid required indexed
+    field created_at: datetime required indexed
+    field status: string required indexed
+    field version: int required default(1)
+  }
+
+  entity ChatBlock {
+    storage { tenant_field: institution_id version_field: version }
+
+    field id: uuid required unique
+    field institution_id: uuid required indexed
+    field blocker_id: uuid required indexed
+    field blocked_profile_id: uuid required indexed
+    field reason: text
+    field created_at: datetime required indexed
+    field version: int required default(1)
+  }
+
+  entity ModerationAction {
+    storage { tenant_field: institution_id version_field: version }
+
+    field id: uuid required unique
+    field institution_id: uuid required indexed
+    field target_type: string required indexed
+    field target_id: string required indexed
+    field action: string required indexed
+    field reason: text required
+    field report_id: uuid indexed
+    field proposed_by: uuid required indexed
+    field proposed_at: datetime required indexed
+    field status: string required indexed
+    field version: int required default(1)
+  }
+}
+
+operations {
+  api {
+    endpoint report_create {
+      method: POST
+      path: "/reports"
+      request: ContentReport
+      response: ContentReport
+      permission: reports.create
+      scope: tenant
+      idempotency: required
+      errors: [400, 401, 403]
+      bind: { entity: ContentReport, kind: create }
+    }
+
+    endpoint report_get {
+      method: GET
+      path: "/reports/{report_id}"
+      request: void
+      response: ContentReport
+      permission: reports.read
+      scope: tenant
+      idempotency: none
+      errors: [401, 403, 404]
+      bind: { entity: ContentReport, kind: read }
+    }
+
+    endpoint report_list_own {
+      method: GET
+      path: "/reports/my"
+      request: void
+      response: any
+      permission: reports.read.own
+      scope: tenant
+      idempotency: none
+      errors: [401]
+      bind: { entity: ContentReport, kind: read }
+    }
+
+    endpoint admin_report_list {
+      method: GET
+      path: "/admin/reports"
+      request: void
+      response: any
+      permission: reports.list
+      scope: tenant
+      idempotency: none
+      errors: [401, 403]
+      bind: { entity: ContentReport, kind: read }
+    }
+
+    endpoint chat_report_create {
+      method: POST
+      path: "/chat/reports"
+      request: ChatReport
+      response: ChatReport
+      permission: chat.reports.create
+      scope: tenant
+      idempotency: required
+      errors: [400, 401, 403]
+      bind: { entity: ChatReport, kind: create }
+    }
+
+    endpoint chat_block_create {
+      method: POST
+      path: "/chat/blocks"
+      request: ChatBlock
+      response: ChatBlock
+      permission: chat.blocks.create
+      scope: tenant
+      idempotency: required
+      errors: [400, 401, 403]
+      bind: { entity: ChatBlock, kind: create }
+    }
+
+    endpoint chat_block_delete {
+      method: DELETE
+      path: "/chat/blocks/{block_id}"
+      request: void
+      response: any
+      permission: chat.blocks.delete
+      scope: tenant
+      idempotency: required
+      errors: [401, 403, 404]
+      bind: { entity: ChatBlock, kind: delete }
+    }
+
+    endpoint moderation_action_create {
+      method: POST
+      path: "/moderation/actions"
+      request: ModerationAction
+      response: ModerationAction
+      permission: moderation.actions.create
+      scope: tenant
+      idempotency: required
+      errors: [400, 401, 403]
+      bind: { entity: ModerationAction, kind: create }
+    }
+
+    endpoint moderation_action_get {
+      method: GET
+      path: "/moderation/actions/{action_id}"
+      request: void
+      response: ModerationAction
+      permission: moderation.actions.read
+      scope: tenant
+      idempotency: none
+      errors: [401, 403, 404]
+      bind: { entity: ModerationAction, kind: read }
+    }
+
+    endpoint moderation_action_list {
+      method: GET
+      path: "/moderation/actions"
+      request: void
+      response: any
+      permission: moderation.actions.list
+      scope: tenant
+      idempotency: none
+      errors: [401, 403]
+      bind: { entity: ModerationAction, kind: read }
+    }
+  }
+}
+

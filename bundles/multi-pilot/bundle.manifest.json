@@ -48,16 +48,26 @@
       "sha256": "0151ac1f38390bd100cb6dac40ac42cff341ae19ecff5bec7ba29157106b9336",
       "required": true
     },
-    {
-      "file": "departments/finance/policies.json",
-      "sha256": "f2df6d753b154e6aa3abe70cdc277e914aeed775b63f91745075c200e1ebe09d",
-      "required": true
-    },
-    {
-      "file": "departments/support/rbac.json",
-      "sha256": "7765ba4194e4f4358106711900caf04860a5a10f3bfd143b9951395e3e17ecc7",
-      "required": true
-    },
+        {
+            "file": "departments/finance/policies.json",
+            "sha256": "f2df6d753b154e6aa3abe70cdc277e914aeed775b63f91745075c200e1ebe09d",
+            "required": true
+        },
+        {
+            "file": "departments/finance/operations.json",
+            "sha256": "675d775c6b94c9c755fa99a91cf6de767bdb79e770aee650819e651e89e60cfe",
+            "required": true
+        },
+        {
+            "file": "departments/finance/source.idl",
+            "sha256": "438b8523cf760361d945737197bee09a5e0bc842768a96a151d18add39c5dfbd",
+            "required": false
+        },
+        {
+            "file": "departments/support/rbac.json",
+            "sha256": "c22bb97c675bb5473226b4b059c69d85af96a379ff119e37ab7a516200ba13ce",
+            "required": true
+        },
     {
       "file": "departments/support/approvals.json",
       "sha256": "11a9e27b6300aec0327ecbfdec54c68fc616758952cf0585fe1d7f613dcc98d7",
@@ -83,20 +93,31 @@
       "sha256": "09a99e9f78c484996708909c5b9c2739f8ca79f1712c97254f3d6f275d63324e",
       "required": true
     },
-    {
-      "file": "departments/support/mandates.json",
-      "sha256": "ad53e50c31da321f52271df3ee07ec57ac81fcbd0273afd6067b22c756970e43",
-      "required": true
-    },
-    {
-      "file": "departments/support/autonomy.json",
-      "sha256": "5a5abfee3c7c0bd59b0ed58651101586c6963a3e59a75197911031d9a8104a72",
-      "required": true
-    },
-    {
-      "file": "departments/support/policies.json",
-      "sha256": "dcac73b2aeec7a3f5150279fb87a03e8c1e03c3addbdb63295be4f8e11874ac5",
-      "required": true
-    }
-  ]
+        {
+            "file": "departments/support/mandates.json",
+            "sha256": "7cb71311d4705616d040e94d69f8493ff26efb7c99b7797ffbe1e920931d24f6",
+            "required": true
+        },
+        {
+            "file": "departments/support/autonomy.json",
+            "sha256": "a56fe0b047f59d442a019b2bd9c4ef54618271bd798bd6d3e3479f370167b6cb",
+            "required": true
+        },
+        {
+            "file": "departments/support/policies.json",
+            "sha256": "dcac73b2aeec7a3f5150279fb87a03e8c1e03c3addbdb63295be4f8e11874ac5",
+            "required": true
+        }
+        ,
+        {
+            "file": "departments/support/operations.json",
+            "sha256": "131b1b8dd89a88abe6720ac9eeb085666c0a9aacb3cdee2ea10abdcba618ec43",
+            "required": true
+        },
+        {
+            "file": "departments/support/source.idl",
+            "sha256": "58718d40fc3d55c43d92aa5a138c86193130adc1ccaf0caf57f7156fbcba6bb0",
+            "required": false
+        }
+    ]
 }

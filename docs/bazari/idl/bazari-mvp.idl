@@ -1,0 +1,440 @@
+// Bazari MVP - IDL DSL v1.2.2
+// Governanca de moderacao para social e chat com approvals, SoD e auditoria.
+
+system BazariMVP {
+  name: "Bazari MVP - Governanca de Moderacao"
+  description: "Governanca de moderacao para social e chat com approvals, SoD e auditoria."
+  version: 1.0.0
+  domain: "moderation"
+  owner: "Bazari"
+  contact: "ops@bazari.libervia.xyz"
+  tenancy: multi
+}
+
+actors {
+  human user {
+    name: "User"
+    description: "Usuario final da plataforma. Cria denuncias e bloqueios."
+    authentication: oauth2
+    permissions: [
+      reports.create,
+      reports.read.own,
+      chat.reports.create,
+      chat.blocks.create,
+      chat.blocks.delete
+    ]
+  }
+
+  human moderator {
+    name: "Moderator"
+    description: "Operador de moderacao. Faz triage de reports e propoe acoes."
+    authentication: oauth2
+    permissions: [
+      reports.read,
+      reports.list,
+      reports.triage,
+      moderation.actions.create,
+      moderation.actions.read,
+      chat.reports.read,
+      chat.reports.list
+    ]
+  }
+
+  human trust_safety_manager {
+    name: "Trust & Safety Manager"
+    description: "Autoridade institucional. Decide approvals para acoes irreversiveis."
+    authentication: oauth2
+    permissions: [
+      reports.read,
+      reports.list,
+      moderation.actions.read,
+      moderation.actions.list,
+      approval.decide
+    ]
+  }
+
+  human admin {
+    name: "Administrator"
+    description: "Break-glass para situacoes excepcionais. Tambem governado por approvals para acoes destructivas."
+    authentication: oauth2
+    permissions: [
+      reports.read,
+      reports.list,
+      moderation.actions.create,
+      moderation.actions.read,
+      moderation.actions.list,
+      moderation.actions.apply,
+      approval.decide
+    ]
+  }
+
+  system runtime {
+    name: "Runtime"
+    description: "Ator de sistema institucional."
+    authentication: token
+    permissions: [runtime.bundle.load, runtime.proof.snapshot, runtime.safe_mode.enter]
+  }
+}
+
+entities {
+  entity ContentReport {
+    storage {
+      tenant_field: institution_id
+      version_field: version
+    }
+
+    field id: uuid required unique
+    field institution_id: uuid required indexed
+    field content_type: string required indexed
+    field content_id: string required indexed
+    field reason: string required
+    field details: text
+    field created_by: uuid required indexed
+    field created_at: datetime required indexed
+    field status: string required indexed
+    field triaged_by: uuid indexed
+    field triaged_at: datetime
+    field report_severity: string
+    field version: int required default(1)
+  }
+
+  entity ChatReport {
+    storage {
+      tenant_field: institution_id
+      version_field: version
+    }
+
+    field id: uuid required unique
+    field institution_id: uuid required indexed
+    field message_id: string required indexed
+    field thread_id: string required indexed
+    field reason: string required
+    field details: text
+    field created_by: uuid required indexed
+    field created_at: datetime required indexed
+    field status: string required indexed
+    field version: int required default(1)
+  }
+
+  entity ChatBlock {
+    storage {
+      tenant_field: institution_id
+      version_field: version
+    }
+
+    field id: uuid required unique
+    field institution_id: uuid required indexed
+    field blocker_id: uuid required indexed
+    field blocked_profile_id: uuid required indexed
+    field reason: text
+    field created_at: datetime required indexed
+    field version: int required default(1)
+  }
+
+  entity ModerationAction {
+    storage {
+      tenant_field: institution_id
+      version_field: version
+    }
+
+    field id: uuid required unique
+    field institution_id: uuid required indexed
+    field target_type: string required indexed
+    field target_id: string required indexed
+    field action: string required indexed
+    field reason: text required
+    field report_id: uuid indexed
+    field proposed_by: uuid required indexed
+    field proposed_at: datetime required indexed
+    field status: string required indexed
+    field decided_by: uuid indexed
+    field decided_at: datetime
+    field applied_at: datetime
+    field applied_by: uuid indexed
+    field reverted_at: datetime
+    field reverted_by: uuid indexed
+    field revert_reason: text
+    field version: int required default(1)
+  }
+}
+
+policy_context {
+  field jurisdiction: string required
+  field risk_level: string default("low")
+  field content_sensitivity: string default("normal")
+}
+
+invariants {
+  invariant ReportMustHaveReason {
+    applies_to: ContentReport
+    when: always
+    assert: ContentReport.reason != ""
+    severity: high
+    message: "Denuncia deve ter motivo definido."
+  }
+
+  invariant ActionMustHaveReason {
+    applies_to: ModerationAction
+    when: always
+    assert: ModerationAction.reason != ""
+    severity: high
+    message: "Acao moderativa deve ter justificativa."
+  }
+
+  invariant BlockCannotBeSelf {
+    applies_to: ChatBlock
+    when: always
+    assert: ChatBlock.blocker_id != ChatBlock.blocked_profile_id
+    severity: critical
+    message: "Usuario nao pode bloquear a si mesmo."
+  }
+}
+
+separation_of_duties {
+  rule ReporterCannotDecide {
+    on: ModerationAction
+    forbid: Decide when actor.id == report.created_by
+    severity: critical
+    message: "Denunciante nao pode decidir o caso da propria denuncia."
+  }
+
+  rule ProposerCannotDecide {
+    on: ModerationAction
+    forbid: Decide when actor.id == ModerationAction.proposed_by
+    severity: critical
+    message: "Proponente da acao nao pode aprovar/rejeitar a propria proposta."
+  }
+
+  rule ProposerCannotApply {
+    on: ModerationAction
+    forbid: Apply when actor.id == ModerationAction.proposed_by and (ModerationAction.action == "BAN" or ModerationAction.action == "REMOVE" or ModerationAction.action == "SHADOWBAN")
+    severity: high
+    message: "Proponente de acao irreversivel nao pode aplicar a propria proposta."
+  }
+}
+
+workflows {
+  workflow ReportFlow on ContentReport {
+    state Pending { initial: true }
+    state Triaged
+    state Resolved { terminal: true }
+    state Dismissed { terminal: true }
+
+    transition Triage: Pending -> Triaged {
+      guard: true
+      effects: [set_state("Triaged"), set_field("triaged_at", "__NOW__"), bump_version(1)]
+    }
+
+    transition Resolve: Triaged -> Resolved {
+      guard: true
+      effects: [set_state("Resolved"), bump_version(1)]
+    }
+
+    transition Dismiss: Triaged -> Dismissed {
+      guard: true
+      effects: [set_state("Dismissed"), bump_version(1)]
+    }
+  }
+
+  workflow ModerationActionFlow on ModerationAction {
+    state Proposed { initial: true }
+    state PendingApproval
+    state Approved
+    state Rejected { terminal: true }
+    state Applied { terminal: true }
+    state Reverted { terminal: true }
+
+    transition AutoApprove: Proposed -> Approved {
+      guard: ModerationAction.action == "WARN" or ModerationAction.action == "MUTE" or ModerationAction.action == "HIDE"
+      effects: [set_state("Approved"), set_field("decided_at", "__NOW__"), bump_version(1)]
+    }
+
+    transition RequestApproval: Proposed -> PendingApproval {
+      guard: ModerationAction.action == "BAN" or ModerationAction.action == "REMOVE" or ModerationAction.action == "SHADOWBAN"
+      effects: [set_state("PendingApproval"), bump_version(1)]
+    }
+
+    transition Approve: PendingApproval -> Approved {
+      guard: true
+      approvals: { quorum: 1 roles: [trust_safety_manager, admin] distinct_actors: true expires_in: 72h }
+      effects: [set_state("Approved"), set_field("decided_at", "__NOW__"), bump_version(1)]
+    }
+
+    transition Reject: PendingApproval -> Rejected {
+      guard: true
+      approvals: { quorum: 1 roles: [trust_safety_manager, admin] distinct_actors: true expires_in: 72h }
+      effects: [set_state("Rejected"), set_field("decided_at", "__NOW__"), bump_version(1)]
+    }
+
+    transition Apply: Approved -> Applied {
+      guard: true
+      effects: [set_state("Applied"), set_field("applied_at", "__NOW__"), bump_version(1)]
+    }
+
+    transition Revert: Applied -> Reverted {
+      guard: true
+      approvals: { quorum: 1 roles: [trust_safety_manager, admin] distinct_actors: true expires_in: 72h }
+      effects: [set_state("Reverted"), set_field("reverted_at", "__NOW__"), bump_version(1)]
+    }
+  }
+}
+
+operations {
+  api {
+    endpoint report_create {
+      method: POST
+      path: "/reports"
+      request: ContentReport
+      response: ContentReport
+      permission: reports.create
+      scope: tenant
+      idempotency: required
+      errors: [400, 401, 403]
+      bind: { entity: ContentReport, kind: create }
+    }
+
+    endpoint report_get {
+      method: GET
+      path: "/reports/{report_id}"
+      request: void
+      response: ContentReport
+      permission: reports.read
+      scope: tenant
+      idempotency: none
+      errors: [401, 403, 404]
+      bind: { entity: ContentReport, kind: read }
+    }
+
+    endpoint report_list_own {
+      method: GET
+      path: "/reports/my"
+      request: void
+      response: any
+      permission: reports.read.own
+      scope: tenant
+      idempotency: none
+      errors: [401]
+      bind: { entity: ContentReport, kind: read }
+    }
+
+    endpoint admin_report_list {
+      method: GET
+      path: "/admin/reports"
+      request: void
+      response: any
+      permission: reports.list
+      scope: tenant
+      idempotency: none
+      errors: [401, 403]
+      bind: { entity: ContentReport, kind: read }
+    }
+
+    endpoint report_triage {
+      method: POST
+      path: "/admin/reports/{report_id}/triage"
+      request: any
+      response: ContentReport
+      permission: reports.triage
+      scope: tenant
+      idempotency: required
+      errors: [400, 401, 403, 404, 409]
+      bind: { entity: ContentReport, kind: transition, workflow: ReportFlow, transition: Triage }
+    }
+
+    endpoint chat_report_create {
+      method: POST
+      path: "/chat/reports"
+      request: ChatReport
+      response: ChatReport
+      permission: chat.reports.create
+      scope: tenant
+      idempotency: required
+      errors: [400, 401, 403]
+      bind: { entity: ChatReport, kind: create }
+    }
+
+    endpoint chat_block_create {
+      method: POST
+      path: "/chat/blocks"
+      request: ChatBlock
+      response: ChatBlock
+      permission: chat.blocks.create
+      scope: tenant
+      idempotency: required
+      errors: [400, 401, 403]
+      bind: { entity: ChatBlock, kind: create }
+    }
+
+    endpoint chat_block_delete {
+      method: DELETE
+      path: "/chat/blocks/{profile_id}"
+      request: void
+      response: any
+      permission: chat.blocks.delete
+      scope: tenant
+      idempotency: required
+      errors: [401, 403, 404]
+      bind: { entity: ChatBlock, kind: delete }
+    }
+
+    endpoint moderation_action_create {
+      method: POST
+      path: "/moderation/actions"
+      request: ModerationAction
+      response: ModerationAction
+      permission: moderation.actions.create
+      scope: tenant
+      idempotency: required
+      errors: [400, 401, 403]
+      bind: { entity: ModerationAction, kind: create }
+    }
+
+    endpoint moderation_action_get {
+      method: GET
+      path: "/moderation/actions/{action_id}"
+      request: void
+      response: ModerationAction
+      permission: moderation.actions.read
+      scope: tenant
+      idempotency: none
+      errors: [401, 403, 404]
+      bind: { entity: ModerationAction, kind: read }
+    }
+
+    endpoint moderation_action_approve {
+      method: POST
+      path: "/approvals/{approval_id}/decide"
+      request: any
+      response: any
+      permission: approval.decide
+      scope: tenant
+      idempotency: required
+      errors: [400, 401, 403, 404, 409]
+      bind: { entity: ModerationAction, kind: approval, workflow: ModerationActionFlow, transition: Approve, decision: "approve" }
+    }
+
+    endpoint moderation_action_reject {
+      method: POST
+      path: "/approvals/{approval_id}/decide"
+      request: any
+      response: any
+      permission: approval.decide
+      scope: tenant
+      idempotency: required
+      errors: [400, 401, 403, 404, 409]
+      bind: { entity: ModerationAction, kind: approval, workflow: ModerationActionFlow, transition: Reject, decision: "reject" }
+    }
+
+    endpoint moderation_action_apply {
+      method: POST
+      path: "/moderation/actions/{action_id}/apply"
+      request: void
+      response: ModerationAction
+      permission: moderation.actions.apply
+      scope: tenant
+      idempotency: required
+      errors: [400, 401, 403, 404, 409]
+      bind: { entity: ModerationAction, kind: transition, workflow: ModerationActionFlow, transition: Apply }
+    }
+  }
+}

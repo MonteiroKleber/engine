@@ -8,12 +8,17 @@ from pydantic import BaseModel, Field
 
 from engine.core.admin_keys import get_admin_keys_registry, AdminKeyState
 from engine.core.admin_auth import require_admin_auth
+from engine.core.institution_context import DEFAULT_INSTITUTION_ID
 from engine.core.ledger import get_ledger_for_institution
 from engine.core.errors import (
+    ADMIN_KEY_BOOTSTRAP_NOT_ALLOWED,
+    ADMIN_KEY_INVALID,
     ADMIN_KEY_NOT_FOUND,
     ADMIN_KEY_ALREADY_REVOKED,
+    ADMIN_KEY_REQUIRED,
     ADMIN_KEYS_REGISTRY_UNAVAILABLE,
 )
+from engine.ise.release import verify_admin_token
 
 
 router = APIRouter(prefix="/admin/institutions", tags=["admin-keys"])
@@ -141,11 +146,63 @@ async def create_admin_key(
     Raises:
         HTTPException: 401 if unauthorized, 500 if registry unavailable.
     """
-    # Authenticate admin
-    require_admin_auth(request, institution_id)
-
     try:
         registry = get_admin_keys_registry()
+        current_keys = registry.load_current_state(institution_id)
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail={
+                "code": ADMIN_KEYS_REGISTRY_UNAVAILABLE,
+                "message": f"Failed to create admin key: {e}",
+            },
+        )
+
+    has_existing_keys = bool(current_keys)
+    admin_key_header = request.headers.get("X-Admin-Key")
+    admin_token_header = request.headers.get("X-Admin-Token")
+    bootstrap_via_admin_token = False
+
+    # If keys already exist, disallow legacy bootstrap for non-default institutions.
+    # Users must authenticate with X-Admin-Key going forward.
+    if (
+        has_existing_keys
+        and institution_id != DEFAULT_INSTITUTION_ID
+        and admin_token_header
+        and not admin_key_header
+    ):
+        raise HTTPException(
+            status_code=403,
+            detail={
+                "code": ADMIN_KEY_BOOTSTRAP_NOT_ALLOWED,
+                "message": "Bootstrap via X-Admin-Token is only allowed to create the first admin key. Use X-Admin-Key.",
+            },
+        )
+
+    # Bootstrap path (non-default institution with zero keys): allow one-time creation via X-Admin-Token.
+    if not has_existing_keys and institution_id != DEFAULT_INSTITUTION_ID:
+        if not admin_token_header:
+            raise HTTPException(
+                status_code=401,
+                detail={
+                    "code": ADMIN_KEY_REQUIRED,
+                    "message": "Admin authentication required. Use X-Admin-Token to bootstrap the first admin key.",
+                },
+            )
+        if not verify_admin_token(admin_token_header):
+            raise HTTPException(
+                status_code=401,
+                detail={
+                    "code": ADMIN_KEY_INVALID,
+                    "message": "Invalid admin token",
+                },
+            )
+        bootstrap_via_admin_token = True
+    else:
+        # Authenticate admin (X-Admin-Key for all, X-Admin-Token only for DEFAULT institution).
+        require_admin_auth(request, institution_id)
+
+    try:
         key_id, plaintext_secret = registry.create_key(
             institution_id=institution_id,
             expires_at=body.expires_at,
@@ -161,14 +218,21 @@ async def create_admin_key(
 
     # Get created timestamp from registry
     states = registry.load_current_state(institution_id)
-    created_at = states[key_id].created_at if key_id in states else datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
+    created_at = (
+        states[key_id].created_at
+        if key_id in states
+        else datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
+    )
 
     # Emit ledger event
+    event_payload: Dict[str, Any] = {"expires_at": body.expires_at}
+    if bootstrap_via_admin_token:
+        event_payload["bootstrap_via_admin_token"] = True
     _emit_key_event(
         institution_id=institution_id,
         event_type="ADMIN_KEY_CREATED",
         key_id=key_id,
-        extra_payload={"expires_at": body.expires_at},
+        extra_payload=event_payload,
     )
 
     return CreateAdminKeyResponse(

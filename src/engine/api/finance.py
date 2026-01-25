@@ -18,11 +18,12 @@ from engine.core.approvals import (
 )
 from engine.core.state_store import get_state_store
 from engine.core.errors import STATE_STORE_UNAVAILABLE, POLICY_DENIED, MANDATE_DENIED, AUTONOMY_INSUFFICIENT, EXPENSE_NOT_FOUND
-from engine.core.institution_context import get_request_institution_id
+from engine.core.institution_context import DEFAULT_INSTITUTION_ID, get_request_institution_id
 from engine.core.dept_context import (
     validate_legacy_finance_route,
     get_ledger_step_name,
 )
+from engine.core.legacy_telemetry import record_legacy_invocation
 from engine.core.policy import (
     evaluate_policies,
     emit_policy_decision,
@@ -302,6 +303,18 @@ async def create_expense(
     """
     # Validate and get dept_id for legacy route
     dept_id = validate_legacy_finance_route()
+    record_legacy_invocation(
+        institution_id=(
+            get_request_institution_id(request)
+            or request.headers.get("X-Institution-Id")
+            or request.headers.get("X-Tenant-Id")
+            or DEFAULT_INSTITUTION_ID
+        ),
+        endpoint_sig="POST /finance/expenses",
+        method="POST",
+        path=str(request.url.path),
+        dept_id=dept_id,
+    )
     return await create_expense_handler(request, actor, dept_id=dept_id)
 
 
@@ -386,4 +399,16 @@ async def get_expense(
     """
     # Validate and get dept_id for legacy route
     dept_id = validate_legacy_finance_route()
+    record_legacy_invocation(
+        institution_id=(
+            get_request_institution_id(request)
+            or request.headers.get("X-Institution-Id")
+            or request.headers.get("X-Tenant-Id")
+            or DEFAULT_INSTITUTION_ID
+        ),
+        endpoint_sig="GET /finance/expenses/{expense_id}",
+        method="GET",
+        path=str(request.url.path),
+        dept_id=dept_id,
+    )
     return await get_expense_handler(request, expense_id, actor, dept_id=dept_id)

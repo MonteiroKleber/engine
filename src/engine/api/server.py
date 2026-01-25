@@ -390,11 +390,17 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
 app = FastAPI(title="Libervia Engine", version="8.1.1", lifespan=lifespan)
 
 # Include routers
-app.include_router(finance_router)
-app.include_router(dept_finance_router)
-app.include_router(support_router)
-app.include_router(dept_support_router)
-app.include_router(approvals_router)
+_api_mode_for_routers = get_api_mode()
+
+# Legacy routers that can collide with IDL routes: skip in pure IDL mode.
+if _api_mode_for_routers != API_MODE_IDL:
+    app.include_router(finance_router)
+    app.include_router(dept_finance_router)
+    app.include_router(support_router)
+    app.include_router(dept_support_router)
+    app.include_router(approvals_router)
+
+# Always include these routers (no collision with IDL contract routes).
 app.include_router(nl_router)
 app.include_router(ise_router)
 app.include_router(pipeline_router)

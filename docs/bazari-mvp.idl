@@ -1,0 +1,559 @@
+// Bazari MVP - IDL DSL v1.2.2
+// Governanca de moderacao para social e chat com approvals, SoD e auditoria.
+//
+// Foco: control plane para denuncias, fila moderativa, decisoes e acoes.
+// O data plane (posts, mensagens) permanece no app Bazari; apenas acoes
+// sensíveis passam pelo Engine (e ficam auditadas).
+
+system BazariMVP {
+  name: "Bazari MVP - Governanca de Moderacao"
+  description: "Governanca de moderacao para social e chat com approvals, SoD e auditoria."
+  version: 1.0.0
+  domain: "moderation"
+  owner: "Bazari"
+  contact: "ops@bazari.io"
+  tenancy: multi
+}
+
+// ---------------------------------------------------------------------------
+// ACTORS (Roles)
+// ---------------------------------------------------------------------------
+
+actors {
+  human user {
+    name: "User"
+    description: "Usuario final da plataforma. Cria denuncias e bloqueios."
+    authentication: jwt
+    permissions: [
+      reports.create,
+      reports.read.own,
+      chat.reports.create,
+      chat.blocks.create,
+      chat.blocks.delete
+    ]
+  }
+
+  human moderator {
+    name: "Moderator"
+    description: "Operador de moderacao. Faz triage de reports e propoe acoes."
+    authentication: jwt
+    permissions: [
+      reports.read,
+      reports.list,
+      reports.triage,
+      moderation.actions.create,
+      moderation.actions.read,
+      chat.reports.read,
+      chat.reports.list
+    ]
+  }
+
+  human trust_safety_manager {
+    name: "Trust & Safety Manager"
+    description: "Autoridade institucional. Decide approvals para acoes irreversiveis."
+    authentication: jwt
+    permissions: [
+      reports.read,
+      reports.list,
+      moderation.actions.read,
+      moderation.actions.list,
+      approval.decide
+    ]
+  }
+
+  human admin {
+    name: "Administrator"
+    description: "Break-glass para situacoes excepcionais. Tambem governado por approvals para acoes destructivas."
+    authentication: jwt
+    permissions: [
+      reports.read,
+      reports.list,
+      moderation.actions.create,
+      moderation.actions.read,
+      moderation.actions.list,
+      moderation.actions.apply,
+      approval.decide
+    ]
+  }
+
+  system runtime {
+    name: "Runtime"
+    description: "Ator de sistema institucional."
+    authentication: token
+    permissions: [runtime.bundle.load, runtime.proof.snapshot, runtime.safe_mode.enter]
+  }
+}
+
+// ---------------------------------------------------------------------------
+// ENTITIES (Entidades minimas para MVP)
+// ---------------------------------------------------------------------------
+
+entities {
+  // Denuncia de conteudo social (post/comment/profile)
+  entity ContentReport {
+    storage {
+      tenant_field: institution_id
+      version_field: version
+    }
+
+    field id: uuid required unique
+    field institution_id: uuid required indexed
+    field content_type: string required indexed  // POST | COMMENT | PROFILE
+    field content_id: string required indexed
+    field reason: string required               // SPAM | HARASSMENT | INAPPROPRIATE | MISINFORMATION | VIOLENCE | OTHER
+    field details: text optional
+    field created_by: uuid required indexed     // profile_id do denunciante
+    field created_at: datetime required indexed
+    field status: string required indexed       // PENDING | TRIAGED | RESOLVED | DISMISSED
+    field triaged_by: uuid optional indexed     // moderator que fez triage
+    field triaged_at: datetime optional
+    field severity: string optional             // LOW | MEDIUM | HIGH | CRITICAL
+    field version: int required default(1)
+  }
+
+  // Denuncia de mensagem de chat
+  entity ChatReport {
+    storage {
+      tenant_field: institution_id
+      version_field: version
+    }
+
+    field id: uuid required unique
+    field institution_id: uuid required indexed
+    field message_id: string required indexed
+    field thread_id: string required indexed
+    field reason: string required               // SPAM | HARASSMENT | INAPPROPRIATE | SCAM | OTHER
+    field details: text optional
+    field created_by: uuid required indexed     // profile_id do denunciante
+    field created_at: datetime required indexed
+    field status: string required indexed       // PENDING | TRIAGED | RESOLVED | DISMISSED
+    field version: int required default(1)
+  }
+
+  // Bloqueio no chat (perfil-a-perfil)
+  entity ChatBlock {
+    storage {
+      tenant_field: institution_id
+      version_field: version
+    }
+
+    field id: uuid required unique
+    field institution_id: uuid required indexed
+    field blocker_id: uuid required indexed     // profile_id de quem bloqueia
+    field blocked_profile_id: uuid required indexed // profile_id do bloqueado
+    field reason: text optional
+    field created_at: datetime required indexed
+    field version: int required default(1)
+  }
+
+  // Acao moderativa (proposta + decisao + aplicacao)
+  entity ModerationAction {
+    storage {
+      tenant_field: institution_id
+      version_field: version
+    }
+
+    field id: uuid required unique
+    field institution_id: uuid required indexed
+    field target_type: string required indexed  // USER | POST | COMMENT | PROFILE | MESSAGE
+    field target_id: string required indexed
+    field action: string required indexed       // WARN | MUTE | HIDE | REMOVE | BAN | SHADOWBAN
+    field reason: text required
+    field report_id: uuid optional indexed      // FK -> ContentReport ou ChatReport (quando aplicavel)
+    field proposed_by: uuid required indexed    // profile_id do moderator
+    field proposed_at: datetime required indexed
+    field status: string required indexed       // PROPOSED | PENDING_APPROVAL | APPROVED | REJECTED | APPLIED | REVERTED
+    field decided_by: uuid optional indexed     // quem aprovou/rejeitou
+    field decided_at: datetime optional
+    field applied_at: datetime optional
+    field applied_by: uuid optional indexed
+    field reverted_at: datetime optional
+    field reverted_by: uuid optional indexed
+    field revert_reason: text optional
+    field version: int required default(1)
+  }
+}
+
+// ---------------------------------------------------------------------------
+// POLICY CONTEXT
+// ---------------------------------------------------------------------------
+
+policy_context {
+  field jurisdiction: string required
+  field risk_level: string default("low")       // low | medium | high
+  field content_sensitivity: string default("normal")  // normal | sensitive | illegal
+}
+
+// ---------------------------------------------------------------------------
+// INVARIANTS
+// ---------------------------------------------------------------------------
+
+invariants {
+  invariant ReportMustHaveReason {
+    applies_to: ContentReport
+    when: always
+    assert: ContentReport.reason != ""
+    severity: high
+    message: "Denuncia deve ter motivo definido."
+  }
+
+  invariant ActionMustHaveReason {
+    applies_to: ModerationAction
+    when: always
+    assert: ModerationAction.reason != ""
+    severity: high
+    message: "Acao moderativa deve ter justificativa."
+  }
+
+  invariant BlockCannotBeSelf {
+    applies_to: ChatBlock
+    when: always
+    assert: ChatBlock.blocker_id != ChatBlock.blocked_profile_id
+    severity: critical
+    message: "Usuario nao pode bloquear a si mesmo."
+  }
+}
+
+// ---------------------------------------------------------------------------
+// SEPARATION OF DUTIES (SoD)
+// ---------------------------------------------------------------------------
+
+separation_of_duties {
+  // O denunciante nao pode decidir o approval do caso originado por sua denuncia
+  rule ReporterCannotDecide {
+    on: ModerationAction
+    forbid: Decide when actor.id == report.created_by
+    severity: critical
+    message: "Denunciante nao pode decidir o caso da propria denuncia."
+  }
+
+  // O proponente da acao nao pode decidir o approval
+  rule ProposerCannotDecide {
+    on: ModerationAction
+    forbid: Decide when actor.id == ModerationAction.proposed_by
+    severity: critical
+    message: "Proponente da acao nao pode aprovar/rejeitar a propria proposta."
+  }
+
+  // Quem aplica nao pode ser quem propos (para acoes irreversiveis)
+  rule ProposerCannotApply {
+    on: ModerationAction
+    forbid: Apply when actor.id == ModerationAction.proposed_by AND ModerationAction.action IN ["BAN", "REMOVE", "SHADOWBAN"]
+    severity: high
+    message: "Proponente de acao irreversivel nao pode aplicar a propria proposta."
+  }
+}
+
+// ---------------------------------------------------------------------------
+// WORKFLOWS
+// ---------------------------------------------------------------------------
+
+workflows {
+  // Workflow de denuncia (ContentReport)
+  workflow ReportFlow on ContentReport {
+    state Pending { initial: true }
+    state Triaged
+    state Resolved { terminal: true }
+    state Dismissed { terminal: true }
+
+    transition Triage: Pending -> Triaged {
+      guard: true
+      effects: [set_state("Triaged"), set_field("triaged_at", now()), bump_version(1)]
+    }
+
+    transition Resolve: Triaged -> Resolved {
+      guard: true
+      effects: [set_state("Resolved"), bump_version(1)]
+    }
+
+    transition Dismiss: Triaged -> Dismissed {
+      guard: true
+      effects: [set_state("Dismissed"), bump_version(1)]
+    }
+  }
+
+  // Workflow de acao moderativa
+  workflow ModerationActionFlow on ModerationAction {
+    state Proposed { initial: true }
+    state PendingApproval
+    state Approved
+    state Rejected { terminal: true }
+    state Applied { terminal: true }
+    state Reverted { terminal: true }
+
+    // Acoes leves (warn/mute/hide) podem ir direto para Approved sem approval
+    transition AutoApprove: Proposed -> Approved {
+      guard: ModerationAction.action IN ["WARN", "MUTE", "HIDE"]
+      effects: [set_state("Approved"), set_field("decided_at", now()), bump_version(1)]
+    }
+
+    // Acoes irreversiveis (ban/remove/shadowban) exigem approval
+    transition RequestApproval: Proposed -> PendingApproval {
+      guard: ModerationAction.action IN ["BAN", "REMOVE", "SHADOWBAN"]
+      effects: [set_state("PendingApproval"), bump_version(1)]
+    }
+
+    transition Approve: PendingApproval -> Approved {
+      guard: true
+      approvals: {
+        quorum: 1
+        roles: [trust_safety_manager, admin]
+        distinct_actors: true
+        expires_in: 72h
+      }
+      effects: [set_state("Approved"), set_field("decided_at", now()), bump_version(1)]
+    }
+
+    transition Reject: PendingApproval -> Rejected {
+      guard: true
+      approvals: {
+        quorum: 1
+        roles: [trust_safety_manager, admin]
+        distinct_actors: true
+        expires_in: 72h
+      }
+      effects: [set_state("Rejected"), set_field("decided_at", now()), bump_version(1)]
+    }
+
+    transition Apply: Approved -> Applied {
+      guard: true
+      effects: [set_state("Applied"), set_field("applied_at", now()), bump_version(1)]
+    }
+
+    transition Revert: Applied -> Reverted {
+      guard: true
+      approvals: {
+        quorum: 1
+        roles: [trust_safety_manager, admin]
+        distinct_actors: true
+        expires_in: 72h
+      }
+      effects: [set_state("Reverted"), set_field("reverted_at", now()), bump_version(1)]
+    }
+  }
+}
+
+// ---------------------------------------------------------------------------
+// OPERATIONS (Endpoints do MVP)
+// ---------------------------------------------------------------------------
+
+operations {
+  api {
+    // -----------------------------------------------------------------------
+    // A) Social - Reports
+    // -----------------------------------------------------------------------
+
+    endpoint report_create {
+      method: POST
+      path: "/reports"
+      request: ContentReport
+      response: ContentReport
+      permission: reports.create
+      scope: tenant
+      idempotency: required
+      errors: [400, 401, 403]
+      bind: { entity: ContentReport, kind: create }
+    }
+
+    endpoint report_get {
+      method: GET
+      path: "/reports/{report_id}"
+      request: void
+      response: ContentReport
+      permission: reports.read
+      scope: tenant
+      idempotency: none
+      errors: [401, 403, 404]
+      bind: { entity: ContentReport, kind: read }
+    }
+
+    endpoint report_list_own {
+      method: GET
+      path: "/reports/my"
+      request: void
+      response: list(ContentReport)
+      permission: reports.read.own
+      scope: tenant
+      idempotency: none
+      errors: [401]
+      bind: { entity: ContentReport, kind: list }
+    }
+
+    endpoint admin_report_list {
+      method: GET
+      path: "/admin/reports"
+      request: void
+      response: list(ContentReport)
+      permission: reports.list
+      scope: tenant
+      idempotency: none
+      errors: [401, 403]
+      bind: { entity: ContentReport, kind: list }
+    }
+
+    endpoint report_triage {
+      method: POST
+      path: "/admin/reports/{report_id}/triage"
+      request: any
+      response: ContentReport
+      permission: reports.triage
+      scope: tenant
+      idempotency: required
+      errors: [400, 401, 403, 404, 409]
+      bind: { entity: ContentReport, kind: transition, workflow: ReportFlow, transition: Triage }
+    }
+
+    // -----------------------------------------------------------------------
+    // B) Chat - Reports e Blocks
+    // -----------------------------------------------------------------------
+
+    endpoint chat_report_create {
+      method: POST
+      path: "/chat/reports"
+      request: ChatReport
+      response: ChatReport
+      permission: chat.reports.create
+      scope: tenant
+      idempotency: required
+      errors: [400, 401, 403]
+      bind: { entity: ChatReport, kind: create }
+    }
+
+    endpoint chat_block_create {
+      method: POST
+      path: "/chat/blocks"
+      request: ChatBlock
+      response: ChatBlock
+      permission: chat.blocks.create
+      scope: tenant
+      idempotency: required
+      errors: [400, 401, 403]
+      bind: { entity: ChatBlock, kind: create }
+    }
+
+    endpoint chat_block_delete {
+      method: DELETE
+      path: "/chat/blocks/{profile_id}"
+      request: void
+      response: any
+      permission: chat.blocks.delete
+      scope: tenant
+      idempotency: required
+      errors: [401, 403, 404]
+      bind: { entity: ChatBlock, kind: delete }
+    }
+
+    // -----------------------------------------------------------------------
+    // C) Moderation - Actions
+    // -----------------------------------------------------------------------
+
+    endpoint moderation_action_create {
+      method: POST
+      path: "/moderation/actions"
+      request: ModerationAction
+      response: ModerationAction
+      permission: moderation.actions.create
+      scope: tenant
+      idempotency: required
+      errors: [400, 401, 403]
+      bind: { entity: ModerationAction, kind: create }
+    }
+
+    endpoint moderation_action_get {
+      method: GET
+      path: "/moderation/actions/{action_id}"
+      request: void
+      response: ModerationAction
+      permission: moderation.actions.read
+      scope: tenant
+      idempotency: none
+      errors: [401, 403, 404]
+      bind: { entity: ModerationAction, kind: read }
+    }
+
+    endpoint moderation_action_approve {
+      method: POST
+      path: "/approvals/{approval_id}/decide"
+      request: any
+      response: any
+      permission: approval.decide
+      scope: tenant
+      idempotency: required
+      errors: [400, 401, 403, 404, 409]
+      bind: { entity: ModerationAction, kind: approval, workflow: ModerationActionFlow, transition: Approve, decision: "approve" }
+    }
+
+    endpoint moderation_action_reject {
+      method: POST
+      path: "/approvals/{approval_id}/decide"
+      request: any
+      response: any
+      permission: approval.decide
+      scope: tenant
+      idempotency: required
+      errors: [400, 401, 403, 404, 409]
+      bind: { entity: ModerationAction, kind: approval, workflow: ModerationActionFlow, transition: Reject, decision: "reject" }
+    }
+
+    endpoint moderation_action_apply {
+      method: POST
+      path: "/moderation/actions/{action_id}/apply"
+      request: void
+      response: ModerationAction
+      permission: moderation.actions.apply
+      scope: tenant
+      idempotency: required
+      errors: [400, 401, 403, 404, 409]
+      bind: { entity: ModerationAction, kind: transition, workflow: ModerationActionFlow, transition: Apply }
+    }
+  }
+}
+
+// ---------------------------------------------------------------------------
+// NOTAS DE OPERACOES (Referencia humana)
+// ---------------------------------------------------------------------------
+//
+// Endpoints alvo do MVP (como referencia para integracao com Bazari app):
+//
+// SOCIAL:
+//   POST   /reports                        - Usuario cria denuncia
+//   GET    /reports/my                     - Usuario ve suas denuncias
+//   GET    /reports/{report_id}            - Detalhe da denuncia
+//
+// CHAT:
+//   POST   /chat/reports                   - Usuario denuncia mensagem de chat
+//   POST   /chat/blocks                    - Usuario bloqueia perfil no chat
+//   DELETE /chat/blocks/{profile_id}       - Usuario desbloqueia perfil
+//
+// MODERACAO (Admin/Moderator):
+//   GET    /admin/reports                  - Lista reports pendentes
+//   POST   /admin/reports/{report_id}/triage - Moderador classifica report
+//   POST   /moderation/actions             - Propoe acao moderativa
+//   GET    /moderation/actions/{action_id} - Auditoria da acao
+//   POST   /moderation/actions/{action_id}/apply - Aplica acao aprovada
+//
+// APPROVALS:
+//   POST   /approvals/{approval_id}/decide - Decide approval (approve/reject)
+//
+// ---------------------------------------------------------------------------
+// ACOES MODERATIVAS E APPROVALS
+// ---------------------------------------------------------------------------
+//
+// | Acao       | Requer Approval? | Quem decide?               |
+// |------------|------------------|----------------------------|
+// | WARN       | NAO (auto)       | moderator (auto-approved)  |
+// | MUTE       | NAO (auto)       | moderator (auto-approved)  |
+// | HIDE       | NAO (auto)       | moderator (auto-approved)  |
+// | REMOVE     | SIM              | trust_safety_manager/admin |
+// | BAN        | SIM              | trust_safety_manager/admin |
+// | SHADOWBAN  | SIM              | trust_safety_manager/admin |
+//
+// ---------------------------------------------------------------------------
+// SEPARACAO DE DEVERES (SoD)
+// ---------------------------------------------------------------------------
+//
+// 1. Denunciante NAO pode decidir o approval do caso originado por sua denuncia
+// 2. Proponente da acao NAO pode decidir o approval dessa acao
+// 3. Proponente de acao irreversivel NAO pode aplicar a propria proposta
+//
+// ---------------------------------------------------------------------------

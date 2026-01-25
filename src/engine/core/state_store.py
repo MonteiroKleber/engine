@@ -119,6 +119,25 @@ STATUS_REJECTED = "REJECTED"
 TICKET_STATUS_OPEN = "OPEN"
 TICKET_STATUS_CLOSED = "CLOSED"
 
+# ContentReport statuses
+CONTENT_REPORT_STATUS_PENDING = "PENDING"
+CONTENT_REPORT_STATUS_UNDER_REVIEW = "UNDER_REVIEW"
+CONTENT_REPORT_STATUS_RESOLVED = "RESOLVED"
+CONTENT_REPORT_STATUS_DISMISSED = "DISMISSED"
+
+# ChatReport statuses
+CHAT_REPORT_STATUS_PENDING = "PENDING"
+CHAT_REPORT_STATUS_UNDER_REVIEW = "UNDER_REVIEW"
+CHAT_REPORT_STATUS_RESOLVED = "RESOLVED"
+CHAT_REPORT_STATUS_DISMISSED = "DISMISSED"
+
+# ModerationAction statuses
+MOD_ACTION_STATUS_PROPOSED = "PROPOSED"
+MOD_ACTION_STATUS_PENDING_APPROVAL = "PENDING_APPROVAL"
+MOD_ACTION_STATUS_APPROVED = "APPROVED"
+MOD_ACTION_STATUS_REJECTED = "REJECTED"
+MOD_ACTION_STATUS_APPLIED = "APPLIED"
+
 
 @dataclass
 class ExpenseState:
@@ -178,6 +197,134 @@ class TicketState:
         )
 
 
+@dataclass
+class ContentReportState:
+    """State of a content report (social moderation)."""
+    report_id: str
+    content_type: str  # POST | COMMENT | PROFILE
+    content_id: str
+    reporter_id: str
+    reason: str
+    status: str
+    created_at: str
+    description: Optional[str] = None
+    updated_at: Optional[str] = None
+
+    def to_dict(self) -> Dict[str, Any]:
+        """Convert to dictionary."""
+        return asdict(self)
+
+    @classmethod
+    def from_dict(cls, data: Dict[str, Any]) -> "ContentReportState":
+        """Create from dictionary."""
+        return cls(
+            report_id=data["report_id"],
+            content_type=data["content_type"],
+            content_id=data["content_id"],
+            reporter_id=data["reporter_id"],
+            reason=data["reason"],
+            status=data["status"],
+            created_at=data["created_at"],
+            description=data.get("description"),
+            updated_at=data.get("updated_at"),
+        )
+
+
+@dataclass
+class ChatReportState:
+    """State of a chat message report."""
+    report_id: str
+    message_id: str
+    thread_id: str
+    reporter_id: str
+    reason: str
+    status: str
+    created_at: str
+    description: Optional[str] = None
+    updated_at: Optional[str] = None
+
+    def to_dict(self) -> Dict[str, Any]:
+        """Convert to dictionary."""
+        return asdict(self)
+
+    @classmethod
+    def from_dict(cls, data: Dict[str, Any]) -> "ChatReportState":
+        """Create from dictionary."""
+        return cls(
+            report_id=data["report_id"],
+            message_id=data["message_id"],
+            thread_id=data["thread_id"],
+            reporter_id=data["reporter_id"],
+            reason=data["reason"],
+            status=data["status"],
+            created_at=data["created_at"],
+            description=data.get("description"),
+            updated_at=data.get("updated_at"),
+        )
+
+
+@dataclass
+class ChatBlockState:
+    """State of a chat block (profile-level blocking)."""
+    block_id: str
+    blocker_profile_id: str
+    blocked_profile_id: str
+    created_at: str
+
+    def to_dict(self) -> Dict[str, Any]:
+        """Convert to dictionary."""
+        return asdict(self)
+
+    @classmethod
+    def from_dict(cls, data: Dict[str, Any]) -> "ChatBlockState":
+        """Create from dictionary."""
+        return cls(
+            block_id=data["block_id"],
+            blocker_profile_id=data["blocker_profile_id"],
+            blocked_profile_id=data["blocked_profile_id"],
+            created_at=data["created_at"],
+        )
+
+
+@dataclass
+class ModerationActionState:
+    """State of a moderation action proposal."""
+    action_id: str
+    report_id: Optional[str]  # May be null if not from a report
+    target_type: str  # USER | POST | COMMENT | PROFILE | MESSAGE
+    target_id: str
+    action_type: str  # WARN | HIDE | REMOVE | BAN | MUTE | SHADOWBAN
+    proposed_by: str
+    status: str
+    created_at: str
+    reason: Optional[str] = None
+    approval_id: Optional[str] = None
+    applied_at: Optional[str] = None
+    updated_at: Optional[str] = None
+
+    def to_dict(self) -> Dict[str, Any]:
+        """Convert to dictionary."""
+        return asdict(self)
+
+    @classmethod
+    def from_dict(cls, data: Dict[str, Any]) -> "ModerationActionState":
+        """Create from dictionary."""
+        return cls(
+            action_id=data["action_id"],
+            report_id=data.get("report_id"),
+            target_type=data["target_type"],
+            target_id=data["target_id"],
+            action_type=data["action_type"],
+            proposed_by=data["proposed_by"],
+            status=data["status"],
+            created_at=data["created_at"],
+            reason=data.get("reason"),
+            approval_id=data.get("approval_id"),
+            applied_at=data.get("applied_at"),
+            updated_at=data.get("updated_at"),
+        )
+
+
 class StateStore:
     """JSON file-based state store."""
 
@@ -210,6 +357,10 @@ class StateStore:
             "expenses": {},
             "approval_index": {},
             "tickets": {},
+            "content_reports": {},
+            "chat_reports": {},
+            "chat_blocks": {},
+            "moderation_actions": {},
         }
         self._load()
 
@@ -219,12 +370,21 @@ class StateStore:
             try:
                 with open(self._path, "r", encoding="utf-8") as f:
                     self._data = json.load(f)
-                # Ensure tickets key exists for backward compat
-                if "tickets" not in self._data:
-                    self._data["tickets"] = {}
+                # Ensure all keys exist for backward compat
+                for key in ["tickets", "content_reports", "chat_reports", "chat_blocks", "moderation_actions"]:
+                    if key not in self._data:
+                        self._data[key] = {}
             except Exception:
                 # Start fresh if file is corrupted
-                self._data = {"expenses": {}, "approval_index": {}, "tickets": {}}
+                self._data = {
+                    "expenses": {},
+                    "approval_index": {},
+                    "tickets": {},
+                    "content_reports": {},
+                    "chat_reports": {},
+                    "chat_blocks": {},
+                    "moderation_actions": {},
+                }
 
     def _save(self) -> None:
         """Save state to file."""
@@ -380,9 +540,308 @@ class StateStore:
 
         return self.get_ticket(ticket_id)
 
+    # ContentReport methods (Bazari social moderation)
+
+    def create_content_report(
+        self,
+        report_id: str,
+        content_type: str,
+        content_id: str,
+        reporter_id: str,
+        reason: str,
+        description: str = "",
+    ) -> ContentReportState:
+        """Create a new content report.
+
+        Args:
+            report_id: The report UUID.
+            content_type: Type of content (POST, COMMENT, PROFILE).
+            content_id: ID of the reported content.
+            reporter_id: ID of the user reporting.
+            reason: Reason for the report.
+            description: Optional additional description.
+
+        Returns:
+            The created content report state.
+        """
+        now = datetime.now(timezone.utc).isoformat()
+
+        report = ContentReportState(
+            report_id=report_id,
+            content_type=content_type,
+            content_id=content_id,
+            reporter_id=reporter_id,
+            reason=reason,
+            status=CONTENT_REPORT_STATUS_PENDING,
+            created_at=now,
+            description=description if description else None,
+        )
+
+        self._data["content_reports"][report_id] = report.to_dict()
+        self._save()
+
+        return report
+
+    def get_content_report(self, report_id: str) -> Optional[ContentReportState]:
+        """Get content report by ID."""
+        data = self._data["content_reports"].get(report_id)
+        if data:
+            return ContentReportState.from_dict(data)
+        return None
+
+    def list_content_reports(self) -> list:
+        """List all content reports."""
+        return [
+            ContentReportState.from_dict(data)
+            for data in self._data["content_reports"].values()
+        ]
+
+    def update_content_report_status(
+        self, report_id: str, status: str
+    ) -> Optional[ContentReportState]:
+        """Update content report status."""
+        if report_id not in self._data["content_reports"]:
+            return None
+
+        now = datetime.now(timezone.utc).isoformat()
+        self._data["content_reports"][report_id]["status"] = status
+        self._data["content_reports"][report_id]["updated_at"] = now
+        self._save()
+
+        return self.get_content_report(report_id)
+
+    # ChatReport methods (Bazari chat moderation)
+
+    def create_chat_report(
+        self,
+        report_id: str,
+        message_id: str,
+        thread_id: str,
+        reporter_id: str,
+        reason: str,
+        description: str = "",
+    ) -> ChatReportState:
+        """Create a new chat report.
+
+        Args:
+            report_id: The report UUID.
+            message_id: ID of the reported message.
+            thread_id: ID of the thread containing the message.
+            reporter_id: ID of the user reporting.
+            reason: Reason for the report.
+            description: Optional additional description.
+
+        Returns:
+            The created chat report state.
+        """
+        now = datetime.now(timezone.utc).isoformat()
+
+        report = ChatReportState(
+            report_id=report_id,
+            message_id=message_id,
+            thread_id=thread_id,
+            reporter_id=reporter_id,
+            reason=reason,
+            status=CHAT_REPORT_STATUS_PENDING,
+            created_at=now,
+            description=description if description else None,
+        )
+
+        self._data["chat_reports"][report_id] = report.to_dict()
+        self._save()
+
+        return report
+
+    def get_chat_report(self, report_id: str) -> Optional[ChatReportState]:
+        """Get chat report by ID."""
+        data = self._data["chat_reports"].get(report_id)
+        if data:
+            return ChatReportState.from_dict(data)
+        return None
+
+    def list_chat_reports(self) -> list:
+        """List all chat reports."""
+        return [
+            ChatReportState.from_dict(data)
+            for data in self._data["chat_reports"].values()
+        ]
+
+    def update_chat_report_status(
+        self, report_id: str, status: str
+    ) -> Optional[ChatReportState]:
+        """Update chat report status."""
+        if report_id not in self._data["chat_reports"]:
+            return None
+
+        now = datetime.now(timezone.utc).isoformat()
+        self._data["chat_reports"][report_id]["status"] = status
+        self._data["chat_reports"][report_id]["updated_at"] = now
+        self._save()
+
+        return self.get_chat_report(report_id)
+
+    # ChatBlock methods (Bazari chat blocking)
+
+    def create_chat_block(
+        self,
+        block_id: str,
+        blocker_profile_id: str,
+        blocked_profile_id: str,
+    ) -> ChatBlockState:
+        """Create a new chat block.
+
+        Args:
+            block_id: The block UUID.
+            blocker_profile_id: ID of the profile doing the blocking.
+            blocked_profile_id: ID of the profile being blocked.
+
+        Returns:
+            The created chat block state.
+        """
+        now = datetime.now(timezone.utc).isoformat()
+
+        block = ChatBlockState(
+            block_id=block_id,
+            blocker_profile_id=blocker_profile_id,
+            blocked_profile_id=blocked_profile_id,
+            created_at=now,
+        )
+
+        self._data["chat_blocks"][block_id] = block.to_dict()
+        self._save()
+
+        return block
+
+    def get_chat_block(self, block_id: str) -> Optional[ChatBlockState]:
+        """Get chat block by ID."""
+        data = self._data["chat_blocks"].get(block_id)
+        if data:
+            return ChatBlockState.from_dict(data)
+        return None
+
+    def delete_chat_block(self, block_id: str) -> bool:
+        """Delete a chat block.
+
+        Args:
+            block_id: The block UUID.
+
+        Returns:
+            True if deleted, False if not found.
+        """
+        if block_id not in self._data["chat_blocks"]:
+            return False
+
+        del self._data["chat_blocks"][block_id]
+        self._save()
+        return True
+
+    def list_chat_blocks(self) -> list:
+        """List all chat blocks."""
+        return [
+            ChatBlockState.from_dict(data)
+            for data in self._data["chat_blocks"].values()
+        ]
+
+    # ModerationAction methods (Bazari moderation actions)
+
+    def create_moderation_action(
+        self,
+        action_id: str,
+        target_type: str,
+        target_id: str,
+        action_type: str,
+        proposed_by: str,
+        report_id: Optional[str] = None,
+        reason: Optional[str] = None,
+        approval_id: Optional[str] = None,
+    ) -> ModerationActionState:
+        """Create a new moderation action proposal.
+
+        Args:
+            action_id: The action UUID.
+            target_type: Type of target (USER, POST, COMMENT, PROFILE, MESSAGE).
+            target_id: ID of the target.
+            action_type: Type of action (WARN, HIDE, REMOVE, BAN, MUTE, SHADOWBAN).
+            proposed_by: ID of the moderator proposing.
+            report_id: Optional linked report ID.
+            reason: Optional reason for the action.
+            approval_id: Optional approval ID if requiring approval.
+
+        Returns:
+            The created moderation action state.
+        """
+        now = datetime.now(timezone.utc).isoformat()
+
+        status = MOD_ACTION_STATUS_PENDING_APPROVAL if approval_id else MOD_ACTION_STATUS_PROPOSED
+
+        action = ModerationActionState(
+            action_id=action_id,
+            report_id=report_id,
+            target_type=target_type,
+            target_id=target_id,
+            action_type=action_type,
+            proposed_by=proposed_by,
+            status=status,
+            created_at=now,
+            reason=reason,
+            approval_id=approval_id,
+        )
+
+        self._data["moderation_actions"][action_id] = action.to_dict()
+        self._save()
+
+        return action
+
+    def get_moderation_action(self, action_id: str) -> Optional[ModerationActionState]:
+        """Get moderation action by ID."""
+        data = self._data["moderation_actions"].get(action_id)
+        if data:
+            return ModerationActionState.from_dict(data)
+        return None
+
+    def list_moderation_actions(self) -> list:
+        """List all moderation actions."""
+        return [
+            ModerationActionState.from_dict(data)
+            for data in self._data["moderation_actions"].values()
+        ]
+
+    def update_moderation_action_status(
+        self, action_id: str, status: str, applied_at: Optional[str] = None
+    ) -> Optional[ModerationActionState]:
+        """Update moderation action status.
+
+        Args:
+            action_id: The action ID.
+            status: New status.
+            applied_at: Optional timestamp when applied.
+
+        Returns:
+            Updated action state, or None if not found.
+        """
+        if action_id not in self._data["moderation_actions"]:
+            return None
+
+        now = datetime.now(timezone.utc).isoformat()
+        self._data["moderation_actions"][action_id]["status"] = status
+        self._data["moderation_actions"][action_id]["updated_at"] = now
+        if applied_at:
+            self._data["moderation_actions"][action_id]["applied_at"] = applied_at
+        self._save()
+
+        return self.get_moderation_action(action_id)
+
     def reset(self) -> None:
         """Reset state store (for testing)."""
-        self._data = {"expenses": {}, "approval_index": {}, "tickets": {}}
+        self._data = {
+            "expenses": {},
+            "approval_index": {},
+            "tickets": {},
+            "content_reports": {},
+            "chat_reports": {},
+            "chat_blocks": {},
+            "moderation_actions": {},
+        }
         if self._path.exists():
             self._path.unlink()
 

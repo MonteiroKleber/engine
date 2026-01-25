@@ -1,80 +1,140 @@
 {
-  "entries": [
+  "ledger_version": "1.0",
+  "ledger_id": "multi-pilot-manual-v1.0.0",
+  "bundle_name": "multi-pilot",
+  "bundle_version": "1.0.0",
+  "manifest_hash": "9b8bad6241770f1ed3dccaa349fcb4735d6cbdde39168a318dcabd129014c141",
+  "created_at": "2026-01-25T00:00:00+00:00",
+  "source_idl_sha256": "e4a5b98c2558697b0990b6ecde72aad3e28c131c8430a18512e7eba7c92baf5b",
+  "source_idl_by_dept": {
+    "finance": "438b8523cf760361d945737197bee09a5e0bc842768a96a151d18add39c5dfbd",
+    "support": "58718d40fc3d55c43d92aa5a138c86193130adc1ccaf0caf57f7156fbcba6bb0"
+  },
+  "contracts": [
     {
-      "file": "contracts.json",
-      "sha256": "83b8520d0ca857b087b1641296764ccb958264019d6a2b51290278c2d5fe3070"
+      "contract_name": "contracts.json",
+      "content_hash": "83b8520d0ca857b087b1641296764ccb958264019d6a2b51290278c2d5fe3070",
+      "status": "active"
     },
     {
-      "file": "departments/finance/rbac.json",
-      "sha256": "64907fac9729f9fc371b2a523048a2cd690216a3e0b9e08967f72de884ac8e05"
+      "contract_name": "departments/finance/approvals.json",
+      "content_hash": "49699db08dcd1c427be630fe9090c73e6c923793bb4f2783171a338107333f51",
+      "status": "active"
     },
     {
-      "file": "departments/finance/approvals.json",
-      "sha256": "49699db08dcd1c427be630fe9090c73e6c923793bb4f2783171a338107333f51"
+      "contract_name": "departments/finance/autonomy.json",
+      "content_hash": "0151ac1f38390bd100cb6dac40ac42cff341ae19ecff5bec7ba29157106b9336",
+      "status": "active"
     },
     {
-      "file": "departments/finance/workflows.json",
-      "sha256": "c473056482e60e9b11a254a4445ebb1c7e18c1a69c94ae8339d408234e66ae71"
+      "contract_name": "departments/finance/invariants.json",
+      "content_hash": "3e17572bd74f31c558b5690c2e696b84352ff078ffda81b5e72019f6a5104c7f",
+      "status": "active"
     },
     {
-      "file": "departments/finance/sod.json",
-      "sha256": "eaea64d77e9c5b0ba2d5318696c1a390da3a8d177249eb3e53e40d33659c7400"
+      "contract_name": "departments/finance/mandates.json",
+      "content_hash": "1a3ce1b59ff21a9033d4e5dcfa22a9168cc114e801b856348d583197dccd493d",
+      "status": "active"
     },
     {
-      "file": "departments/finance/invariants.json",
-      "sha256": "3e17572bd74f31c558b5690c2e696b84352ff078ffda81b5e72019f6a5104c7f"
+      "contract_name": "departments/finance/openapi.yaml",
+      "content_hash": "c96f851f30cf93204efe2bbce5c820737d0a1a65c0deb4b50de65e1610042fc5",
+      "status": "active"
     },
     {
-      "file": "departments/finance/openapi.yaml",
-      "sha256": "c96f851f30cf93204efe2bbce5c820737d0a1a65c0deb4b50de65e1610042fc5"
+      "contract_name": "departments/finance/operations.json",
+      "content_hash": "675d775c6b94c9c755fa99a91cf6de767bdb79e770aee650819e651e89e60cfe",
+      "status": "active"
     },
     {
-      "file": "departments/finance/mandates.json",
-      "sha256": "1a3ce1b59ff21a9033d4e5dcfa22a9168cc114e801b856348d583197dccd493d"
+      "contract_name": "departments/finance/policies.json",
+      "content_hash": "f2df6d753b154e6aa3abe70cdc277e914aeed775b63f91745075c200e1ebe09d",
+      "status": "active"
     },
     {
-      "file": "departments/finance/autonomy.json",
-      "sha256": "0151ac1f38390bd100cb6dac40ac42cff341ae19ecff5bec7ba29157106b9336"
+      "contract_name": "departments/finance/rbac.json",
+      "content_hash": "64907fac9729f9fc371b2a523048a2cd690216a3e0b9e08967f72de884ac8e05",
+      "status": "active"
     },
     {
-      "file": "departments/finance/policies.json",
-      "sha256": "f2df6d753b154e6aa3abe70cdc277e914aeed775b63f91745075c200e1ebe09d"
+      "contract_name": "departments/finance/sod.json",
+      "content_hash": "eaea64d77e9c5b0ba2d5318696c1a390da3a8d177249eb3e53e40d33659c7400",
+      "status": "active"
     },
     {
-      "file": "departments/support/rbac.json",
-      "sha256": "7765ba4194e4f4358106711900caf04860a5a10f3bfd143b9951395e3e17ecc7"
+      "contract_name": "departments/finance/source.idl",
+      "content_hash": "438b8523cf760361d945737197bee09a5e0bc842768a96a151d18add39c5dfbd",
+      "status": "active"
     },
     {
-      "file": "departments/support/approvals.json",
-      "sha256": "11a9e27b6300aec0327ecbfdec54c68fc616758952cf0585fe1d7f613dcc98d7"
+      "contract_name": "departments/finance/workflows.json",
+      "content_hash": "c473056482e60e9b11a254a4445ebb1c7e18c1a69c94ae8339d408234e66ae71",
+      "status": "active"
     },
     {
-      "file": "departments/support/workflows.json",
-      "sha256": "3d2bfc38e87892c273da711a489f2a0b02f8584e664de2a7bd8931cc1eb5752a"
+      "contract_name": "departments/support/approvals.json",
+      "content_hash": "11a9e27b6300aec0327ecbfdec54c68fc616758952cf0585fe1d7f613dcc98d7",
+      "status": "active"
     },
     {
-      "file": "departments/support/sod.json",
-      "sha256": "c92f6122e364f505a881c21b37df95e2c3c2baf8fd776e3b79bf537c2ebea0c3"
+      "contract_name": "departments/support/autonomy.json",
+      "content_hash": "a56fe0b047f59d442a019b2bd9c4ef54618271bd798bd6d3e3479f370167b6cb",
+      "status": "active"
     },
     {
-      "file": "departments/support/invariants.json",
-      "sha256": "e53aa7f6ce04f217ea31a6544164fa51584b0926cf1e6690e4b7fb7823c56a54"
+      "contract_name": "departments/support/invariants.json",
+      "content_hash": "e53aa7f6ce04f217ea31a6544164fa51584b0926cf1e6690e4b7fb7823c56a54",
+      "status": "active"
     },
     {
-      "file": "departments/support/openapi.yaml",
-      "sha256": "09a99e9f78c484996708909c5b9c2739f8ca79f1712c97254f3d6f275d63324e"
+      "contract_name": "departments/support/mandates.json",
+      "content_hash": "7cb71311d4705616d040e94d69f8493ff26efb7c99b7797ffbe1e920931d24f6",
+      "status": "active"
     },
     {
-      "file": "departments/support/mandates.json",
-      "sha256": "ad53e50c31da321f52271df3ee07ec57ac81fcbd0273afd6067b22c756970e43"
+      "contract_name": "departments/support/openapi.yaml",
+      "content_hash": "09a99e9f78c484996708909c5b9c2739f8ca79f1712c97254f3d6f275d63324e",
+      "status": "active"
     },
     {
-      "file": "departments/support/autonomy.json",
-      "sha256": "5a5abfee3c7c0bd59b0ed58651101586c6963a3e59a75197911031d9a8104a72"
+      "contract_name": "departments/support/operations.json",
+      "content_hash": "131b1b8dd89a88abe6720ac9eeb085666c0a9aacb3cdee2ea10abdcba618ec43",
+      "status": "active"
     },
     {
-      "file": "departments/support/policies.json",
-      "sha256": "dcac73b2aeec7a3f5150279fb87a03e8c1e03c3addbdb63295be4f8e11874ac5"
+      "contract_name": "departments/support/policies.json",
+      "content_hash": "dcac73b2aeec7a3f5150279fb87a03e8c1e03c3addbdb63295be4f8e11874ac5",
+      "status": "active"
+    },
+    {
+      "contract_name": "departments/support/rbac.json",
+      "content_hash": "c22bb97c675bb5473226b4b059c69d85af96a379ff119e37ab7a516200ba13ce",
+      "status": "active"
+    },
+    {
+      "contract_name": "departments/support/sod.json",
+      "content_hash": "c92f6122e364f505a881c21b37df95e2c3c2baf8fd776e3b79bf537c2ebea0c3",
+      "status": "active"
+    },
+    {
+      "contract_name": "departments/support/source.idl",
+      "content_hash": "58718d40fc3d55c43d92aa5a138c86193130adc1ccaf0caf57f7156fbcba6bb0",
+      "status": "active"
+    },
+    {
+      "contract_name": "departments/support/workflows.json",
+      "content_hash": "3d2bfc38e87892c273da711a489f2a0b02f8584e664de2a7bd8931cc1eb5752a",
+      "status": "active"
+    }
+  ],
+  "audit_trail": [
+    {
+      "event": "idl_migration_multi_dept",
+      "timestamp": "2026-01-25T00:00:00+00:00",
+      "details": {
+        "contract_count": 23,
+        "note": "Converted legacy ledger schema (entries[]) to contracts[] and added operations.json + source.idl anchors"
+      }
     }
   ]
 }

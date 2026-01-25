@@ -3,8 +3,9 @@
   "ledger_id": "fp-manual-v1.0.0",
   "bundle_name": "finance-pilot",
   "bundle_version": "1.0.0",
-  "manifest_hash": "SHA256:8f6bfd93e82619bbf94a5c213a0f7cb811f78613347ba1f2f3ace5d56e1d1ae6",
+  "manifest_hash": "SHA256:3ae28c214fd7f776e44ce2668f78af4b09bc85a8bc4dc335fe1c5aecef915696",
   "idl_hash": "SHA256:abe451b82e81612a3de8b4bb00c15b7311676326bf6f715ccb486a58193ffecb",
+  "source_idl_sha256": "abe451b82e81612a3de8b4bb00c15b7311676326bf6f715ccb486a58193ffecb",
   "created_at": "2025-01-18T00:00:00+00:00",
   "contracts": [
     {
@@ -33,6 +34,11 @@
       "status": "active"
     },
     {
+      "contract_name": "operations.json",
+      "content_hash": "SHA256:8a313c4f29bf9175d11dc5e018a35dcc17efbedf1d90fb68c3a749846a52e02d",
+      "status": "active"
+    },
+    {
       "contract_name": "policies.json",
       "content_hash": "SHA256:f2df6d753b154e6aa3abe70cdc277e914aeed775b63f91745075c200e1ebe09d",
       "status": "active"
@@ -58,7 +64,7 @@
       "event": "bundle_compiled",
       "timestamp": "2025-01-18T00:00:00+00:00",
       "details": {
-        "contract_count": 9,
+        "contract_count": 10,
         "bundle_name": "finance-pilot",
         "note": "Manual bundle for finance pilot - offline proof compliant"
       }

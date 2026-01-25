@@ -28,7 +28,7 @@ from .dispatcher import (
     DispatchResult,
 )
 from .approvals import get_approvals_policy
-from .actor_context import ActorContext, parse_actor_context, DEFAULT_TENANT_ID
+from .actor_context import ActorContext, DEFAULT_TENANT_ID
 from .institution_context import get_request_institution_id
 from .dept_context import get_request_dept
 from .logging import get_logger
@@ -109,38 +109,6 @@ def _get_registered_routes(app: FastAPI) -> Set[Tuple[str, str]]:
     return routes
 
 
-def _build_actor_context_from_request(request: Request) -> ActorContext:
-    """Build ActorContext from request headers.
-
-    Args:
-        request: FastAPI Request object.
-
-    Returns:
-        ActorContext parsed from headers.
-
-    Raises:
-        HTTPException: 401 if actor is missing or invalid.
-    """
-    actor_id = request.headers.get("X-Actor-Id")
-    actor_roles = request.headers.get("X-Actor-Roles")
-    tenant_id = request.headers.get("X-Tenant-Id")
-
-    context, error_code, error_message = parse_actor_context(
-        actor_id, actor_roles, tenant_id
-    )
-
-    if context is None:
-        raise HTTPException(
-            status_code=401,
-            detail={
-                "code": error_code,
-                "message": error_message,
-            },
-        )
-
-    return context
-
-
 def _extract_path_params(request: Request) -> Dict[str, str]:
     """Extract path parameters from request.
 
@@ -199,17 +167,28 @@ def _create_idl_handler(
 
     async def idl_handler(request: Request) -> JSONResponse:
         """Generic IDL route handler with dynamic operation lookup."""
-        # Build actor context
-        actor = _build_actor_context_from_request(request)
-
-        # Get institution_id from request (set by middleware)
+        # Resolve institution_id for auth + storage (prefer request context, then headers).
         institution_id = get_request_institution_id(request)
         if not institution_id:
             institution_id = request.headers.get("X-Institution-Id")
-            if not institution_id:
-                institution_id = request.headers.get("X-Tenant-Id")
-            if not institution_id:
-                institution_id = DEFAULT_TENANT_ID
+        if not institution_id:
+            institution_id = request.headers.get("X-Tenant-Id")
+        if not institution_id:
+            institution_id = DEFAULT_TENANT_ID
+
+        # Build actor context using the canonical dependency (respects ENGINE_AUTH_MODE).
+        # Local import avoids import-time surprises and keeps auth logic centralized.
+        from engine.api.dependencies import get_actor_context
+
+        actor = await get_actor_context(
+            request,
+            x_actor_id=request.headers.get("X-Actor-Id"),
+            x_actor_roles=request.headers.get("X-Actor-Roles"),
+            x_tenant_id=request.headers.get("X-Tenant-Id"),
+            x_actor_token=request.headers.get("X-Actor-Token"),
+            x_institution_id=institution_id,
+            x_on_behalf_of=request.headers.get("X-On-Behalf-Of"),
+        )
 
         # Resolve dept_id for request context
         if dept_from_path:

@@ -59,6 +59,10 @@ from .errors import (
     SOD_RULE_INVALID,
     INVARIANT_VIOLATION,
     INVARIANT_SCHEMA_INVALID,
+    CONTENT_REPORT_NOT_FOUND,
+    CHAT_REPORT_NOT_FOUND,
+    CHAT_BLOCK_NOT_FOUND,
+    MODERATION_ACTION_NOT_FOUND,
 )
 from .approvals import (
     get_approvals_policy,
@@ -94,19 +98,56 @@ class DispatchResult:
 
 
 # Entity type to StateStore method mapping
-# Maps bind.entity -> (create_method, read_method, id_param, not_found_code)
+# Maps bind.entity -> (create_method, read_method, list_method, delete_method, id_param, not_found_code)
 ENTITY_CONFIG = {
     "Expense": {
         "create_method": "create_expense",
         "read_method": "get_expense",
+        "list_method": None,  # Not supported
+        "delete_method": None,  # Not supported
         "id_param": "expense_id",
         "not_found_code": EXPENSE_NOT_FOUND,
     },
     "Ticket": {
         "create_method": "create_ticket",
         "read_method": "get_ticket",
+        "list_method": None,  # Not supported
+        "delete_method": None,  # Not supported
         "id_param": "ticket_id",
         "not_found_code": TICKET_NOT_FOUND,
+    },
+    # Bazari MVP entities
+    "ContentReport": {
+        "create_method": "create_content_report",
+        "read_method": "get_content_report",
+        "list_method": "list_content_reports",
+        "delete_method": None,  # Not supported
+        "id_param": "report_id",
+        "not_found_code": CONTENT_REPORT_NOT_FOUND,
+    },
+    "ChatReport": {
+        "create_method": "create_chat_report",
+        "read_method": "get_chat_report",
+        "list_method": "list_chat_reports",
+        "delete_method": None,  # Not supported
+        "id_param": "report_id",
+        "not_found_code": CHAT_REPORT_NOT_FOUND,
+    },
+    "ChatBlock": {
+        "create_method": "create_chat_block",
+        "read_method": "get_chat_block",
+        "list_method": "list_chat_blocks",
+        "delete_method": "delete_chat_block",
+        "id_param": "block_id",
+        "not_found_code": CHAT_BLOCK_NOT_FOUND,
+    },
+    "ModerationAction": {
+        "create_method": "create_moderation_action",
+        "read_method": "get_moderation_action",
+        "list_method": "list_moderation_actions",
+        "delete_method": None,  # Not supported
+        "id_param": "action_id",
+        "not_found_code": MODERATION_ACTION_NOT_FOUND,
     },
 }
 
@@ -390,6 +431,102 @@ async def dispatch_create(
             step=f"DISPATCHER:create:{entity_type}",
         )
 
+    elif entity_type == "ContentReport":
+        entity = state_store.create_content_report(
+            report_id=entity_id,
+            content_type=request_body.get("content_type", ""),
+            content_id=request_body.get("content_id", ""),
+            reporter_id=actor.actor_id,
+            reason=request_body.get("reason", ""),
+            description=request_body.get("description", ""),
+        )
+
+        return DispatchResult(
+            status_code=200,
+            response_body={
+                "id": entity.report_id,
+                "content_type": entity.content_type,
+                "content_id": entity.content_id,
+                "reporter_id": entity.reporter_id,
+                "reason": entity.reason,
+                "status": entity.status,
+                "created_at": entity.created_at,
+                "actor_id": actor.actor_id,
+            },
+            step=f"DISPATCHER:create:{entity_type}",
+        )
+
+    elif entity_type == "ChatReport":
+        entity = state_store.create_chat_report(
+            report_id=entity_id,
+            message_id=request_body.get("message_id", ""),
+            thread_id=request_body.get("thread_id", ""),
+            reporter_id=actor.actor_id,
+            reason=request_body.get("reason", ""),
+            description=request_body.get("description", ""),
+        )
+
+        return DispatchResult(
+            status_code=200,
+            response_body={
+                "id": entity.report_id,
+                "message_id": entity.message_id,
+                "thread_id": entity.thread_id,
+                "reporter_id": entity.reporter_id,
+                "reason": entity.reason,
+                "status": entity.status,
+                "created_at": entity.created_at,
+                "actor_id": actor.actor_id,
+            },
+            step=f"DISPATCHER:create:{entity_type}",
+        )
+
+    elif entity_type == "ChatBlock":
+        entity = state_store.create_chat_block(
+            block_id=entity_id,
+            blocker_profile_id=actor.actor_id,
+            blocked_profile_id=request_body.get("blocked_profile_id", ""),
+        )
+
+        return DispatchResult(
+            status_code=200,
+            response_body={
+                "id": entity.block_id,
+                "blocker_profile_id": entity.blocker_profile_id,
+                "blocked_profile_id": entity.blocked_profile_id,
+                "created_at": entity.created_at,
+                "actor_id": actor.actor_id,
+            },
+            step=f"DISPATCHER:create:{entity_type}",
+        )
+
+    elif entity_type == "ModerationAction":
+        entity = state_store.create_moderation_action(
+            action_id=entity_id,
+            target_type=request_body.get("target_type", ""),
+            target_id=request_body.get("target_id", ""),
+            action_type=request_body.get("action_type", ""),
+            proposed_by=actor.actor_id,
+            report_id=request_body.get("report_id"),
+            reason=request_body.get("reason"),
+        )
+
+        return DispatchResult(
+            status_code=200,
+            response_body={
+                "id": entity.action_id,
+                "target_type": entity.target_type,
+                "target_id": entity.target_id,
+                "action_type": entity.action_type,
+                "proposed_by": entity.proposed_by,
+                "report_id": entity.report_id,
+                "status": entity.status,
+                "created_at": entity.created_at,
+                "actor_id": actor.actor_id,
+            },
+            step=f"DISPATCHER:create:{entity_type}",
+        )
+
     # Should not reach here due to earlier validation
     return DispatchResult(
         status_code=500,
@@ -541,11 +678,359 @@ async def dispatch_read(
             step=f"DISPATCHER:read:{entity_type}",
         )
 
+    elif entity_type == "ContentReport":
+        entity = state_store.get_content_report(entity_id)
+        if not entity:
+            return DispatchResult(
+                status_code=404,
+                response_body={
+                    "code": not_found_code,
+                    "message": "Content report not found",
+                },
+                error_code=not_found_code,
+                step=f"DISPATCHER:read:{entity_type}",
+            )
+
+        return DispatchResult(
+            status_code=200,
+            response_body={
+                "id": entity.report_id,
+                "content_type": entity.content_type,
+                "content_id": entity.content_id,
+                "reporter_id": entity.reporter_id,
+                "reason": entity.reason,
+                "status": entity.status,
+                "created_at": entity.created_at,
+                "actor_id": actor.actor_id,
+            },
+            step=f"DISPATCHER:read:{entity_type}",
+        )
+
+    elif entity_type == "ChatReport":
+        entity = state_store.get_chat_report(entity_id)
+        if not entity:
+            return DispatchResult(
+                status_code=404,
+                response_body={
+                    "code": not_found_code,
+                    "message": "Chat report not found",
+                },
+                error_code=not_found_code,
+                step=f"DISPATCHER:read:{entity_type}",
+            )
+
+        return DispatchResult(
+            status_code=200,
+            response_body={
+                "id": entity.report_id,
+                "message_id": entity.message_id,
+                "thread_id": entity.thread_id,
+                "reporter_id": entity.reporter_id,
+                "reason": entity.reason,
+                "status": entity.status,
+                "created_at": entity.created_at,
+                "actor_id": actor.actor_id,
+            },
+            step=f"DISPATCHER:read:{entity_type}",
+        )
+
+    elif entity_type == "ChatBlock":
+        entity = state_store.get_chat_block(entity_id)
+        if not entity:
+            return DispatchResult(
+                status_code=404,
+                response_body={
+                    "code": not_found_code,
+                    "message": "Chat block not found",
+                },
+                error_code=not_found_code,
+                step=f"DISPATCHER:read:{entity_type}",
+            )
+
+        return DispatchResult(
+            status_code=200,
+            response_body={
+                "id": entity.block_id,
+                "blocker_profile_id": entity.blocker_profile_id,
+                "blocked_profile_id": entity.blocked_profile_id,
+                "created_at": entity.created_at,
+                "actor_id": actor.actor_id,
+            },
+            step=f"DISPATCHER:read:{entity_type}",
+        )
+
+    elif entity_type == "ModerationAction":
+        entity = state_store.get_moderation_action(entity_id)
+        if not entity:
+            return DispatchResult(
+                status_code=404,
+                response_body={
+                    "code": not_found_code,
+                    "message": "Moderation action not found",
+                },
+                error_code=not_found_code,
+                step=f"DISPATCHER:read:{entity_type}",
+            )
+
+        return DispatchResult(
+            status_code=200,
+            response_body={
+                "id": entity.action_id,
+                "target_type": entity.target_type,
+                "target_id": entity.target_id,
+                "action_type": entity.action_type,
+                "proposed_by": entity.proposed_by,
+                "report_id": entity.report_id,
+                "status": entity.status,
+                "created_at": entity.created_at,
+                "actor_id": actor.actor_id,
+            },
+            step=f"DISPATCHER:read:{entity_type}",
+        )
+
     # Should not reach here
     return DispatchResult(
         status_code=500,
         response_body={"error": "Unknown entity type"},
         error_code="ENTITY_TYPE_UNSUPPORTED",
+    )
+
+
+async def dispatch_list(
+    institution_id: str,
+    dept_id: Optional[str],
+    actor: ActorContext,
+    operation: Operation,
+) -> DispatchResult:
+    """Execute a list operation via dispatcher.
+
+    Pipeline:
+    1. RBAC gate (permission)
+    2. List from state store
+    3. Return entities
+
+    Args:
+        institution_id: Institution UUID.
+        dept_id: Department ID (None for single mode).
+        actor: Actor context with roles.
+        operation: Operation from registry.
+
+    Returns:
+        DispatchResult with status and response containing list.
+    """
+    permission = operation.permission
+    entity_type = operation.bind.get("entity") if operation.bind else None
+
+    # Validate entity type is supported
+    if not entity_type or entity_type not in ENTITY_CONFIG:
+        return DispatchResult(
+            status_code=500,
+            response_body={
+                "error": f"Unsupported entity type: {entity_type}",
+            },
+            error_code="ENTITY_TYPE_UNSUPPORTED",
+            step="DISPATCHER:validate_entity",
+        )
+
+    config = ENTITY_CONFIG[entity_type]
+    list_method = config.get("list_method")
+
+    # Check if list is supported for this entity
+    if not list_method:
+        return DispatchResult(
+            status_code=501,
+            response_body={
+                "code": "LIST_NOT_SUPPORTED",
+                "message": f"List not supported for entity type: {entity_type}",
+            },
+            error_code="LIST_NOT_SUPPORTED",
+            step="DISPATCHER:validate_list",
+        )
+
+    case_id = f"{entity_type.lower()}:list"
+
+    # 1. RBAC Gate
+    rbac_allowed = gate_rbac(permission, actor, dept_id=dept_id)
+    _emit_rbac_decision(
+        actor=actor,
+        permission=permission,
+        allowed=rbac_allowed,
+        case_id=case_id,
+        step=f"RBAC:{permission}",
+        dept_id=dept_id,
+        institution_id=institution_id,
+    )
+
+    if not rbac_allowed:
+        return DispatchResult(
+            status_code=403,
+            response_body={
+                "code": "RBAC_DENIED",
+                "message": f"Permission '{permission}' denied",
+            },
+            error_code="RBAC_DENIED",
+            step=f"RBAC:{permission}",
+        )
+
+    # 2. Get State Store
+    state_store = get_state_store(dept_id, institution_id=institution_id)
+    if not state_store:
+        return DispatchResult(
+            status_code=503,
+            response_body={
+                "code": STATE_STORE_UNAVAILABLE,
+                "message": "State store not available",
+            },
+            error_code=STATE_STORE_UNAVAILABLE,
+            step="DISPATCHER:state_store",
+        )
+
+    # 3. List Entities
+    method = getattr(state_store, list_method)
+    entities = method()
+
+    # Convert entities to dict format
+    items = []
+    for entity in entities:
+        items.append(entity.to_dict())
+
+    return DispatchResult(
+        status_code=200,
+        response_body={
+            "items": items,
+            "count": len(items),
+        },
+        step=f"DISPATCHER:list:{entity_type}",
+    )
+
+
+async def dispatch_delete(
+    institution_id: str,
+    dept_id: Optional[str],
+    actor: ActorContext,
+    operation: Operation,
+    path_params: Dict[str, str],
+) -> DispatchResult:
+    """Execute a delete operation via dispatcher.
+
+    Pipeline:
+    1. RBAC gate (permission)
+    2. Delete from state store
+    3. Return success or 404
+
+    Args:
+        institution_id: Institution UUID.
+        dept_id: Department ID (None for single mode).
+        actor: Actor context with roles.
+        operation: Operation from registry.
+        path_params: Extracted path parameters (must contain entity ID).
+
+    Returns:
+        DispatchResult with status and response.
+    """
+    permission = operation.permission
+    entity_type = operation.bind.get("entity") if operation.bind else None
+
+    # Validate entity type is supported
+    if not entity_type or entity_type not in ENTITY_CONFIG:
+        return DispatchResult(
+            status_code=500,
+            response_body={
+                "error": f"Unsupported entity type: {entity_type}",
+            },
+            error_code="ENTITY_TYPE_UNSUPPORTED",
+            step="DISPATCHER:validate_entity",
+        )
+
+    config = ENTITY_CONFIG[entity_type]
+    delete_method = config.get("delete_method")
+    id_param = config["id_param"]
+    not_found_code = config["not_found_code"]
+
+    # Check if delete is supported for this entity
+    if not delete_method:
+        return DispatchResult(
+            status_code=501,
+            response_body={
+                "code": "DELETE_NOT_SUPPORTED",
+                "message": f"Delete not supported for entity type: {entity_type}",
+            },
+            error_code="DELETE_NOT_SUPPORTED",
+            step="DISPATCHER:validate_delete",
+        )
+
+    # Extract entity ID from path_params
+    entity_id = path_params.get(id_param)
+    if not entity_id:
+        return DispatchResult(
+            status_code=400,
+            response_body={
+                "error": f"Missing required path parameter: {id_param}",
+            },
+            error_code="PATH_PARAM_MISSING",
+            step="DISPATCHER:validate_params",
+        )
+
+    case_id = f"{entity_type.lower()}:{entity_id}"
+
+    # 1. RBAC Gate
+    rbac_allowed = gate_rbac(permission, actor, dept_id=dept_id)
+    _emit_rbac_decision(
+        actor=actor,
+        permission=permission,
+        allowed=rbac_allowed,
+        case_id=case_id,
+        step=f"RBAC:{permission}",
+        dept_id=dept_id,
+        institution_id=institution_id,
+    )
+
+    if not rbac_allowed:
+        return DispatchResult(
+            status_code=403,
+            response_body={
+                "code": "RBAC_DENIED",
+                "message": f"Permission '{permission}' denied",
+            },
+            error_code="RBAC_DENIED",
+            step=f"RBAC:{permission}",
+        )
+
+    # 2. Get State Store
+    state_store = get_state_store(dept_id, institution_id=institution_id)
+    if not state_store:
+        return DispatchResult(
+            status_code=503,
+            response_body={
+                "code": STATE_STORE_UNAVAILABLE,
+                "message": "State store not available",
+            },
+            error_code=STATE_STORE_UNAVAILABLE,
+            step="DISPATCHER:state_store",
+        )
+
+    # 3. Delete Entity
+    method = getattr(state_store, delete_method)
+    deleted = method(entity_id)
+
+    if not deleted:
+        return DispatchResult(
+            status_code=404,
+            response_body={
+                "code": not_found_code,
+                "message": f"{entity_type} not found",
+            },
+            error_code=not_found_code,
+            step=f"DISPATCHER:delete:{entity_type}",
+        )
+
+    return DispatchResult(
+        status_code=200,
+        response_body={
+            "deleted": True,
+            "id": entity_id,
+        },
+        step=f"DISPATCHER:delete:{entity_type}",
     )
 
 

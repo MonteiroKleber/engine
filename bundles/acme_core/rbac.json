@@ -3,15 +3,16 @@
   "roles": [
     {
       "name": "controller",
-      "permissions": [
-        "finance.expense.approve",
-        "finance.expense.read",
-        "finance.expense.reject",
-        "ops.goods_received.confirm",
-        "ops.goods_received.read",
-        "procurement.purchase_request.approve",
-        "procurement.purchase_request.read"
-      ]
+        "permissions": [
+          "approval.decide",
+          "finance.expense.approve",
+          "finance.expense.read",
+          "finance.expense.reject",
+          "ops.goods_received.confirm",
+          "ops.goods_received.read",
+          "procurement.purchase_request.approve",
+          "procurement.purchase_request.read"
+        ]
     },
     {
       "name": "finance_bot",
@@ -22,13 +23,14 @@
     },
     {
       "name": "manager",
-      "permissions": [
-        "finance.expense.approve",
-        "finance.expense.read",
-        "finance.expense.transition",
-        "procurement.purchase_request.approve",
-        "procurement.purchase_request.read"
-      ]
+        "permissions": [
+          "approval.decide",
+          "finance.expense.approve",
+          "finance.expense.read",
+          "finance.expense.transition",
+          "procurement.purchase_request.approve",
+          "procurement.purchase_request.read"
+        ]
     },
     {
       "name": "operator",

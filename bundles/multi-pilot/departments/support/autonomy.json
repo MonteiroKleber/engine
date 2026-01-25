@@ -1,12 +1,18 @@
 {
   "autonomy_schema_version": "1.0",
   "current_level": 0,
-  "rules": [
-    {
-      "rule_id": "ticket-create-pre",
-      "endpoint_sig": "POST /support/tickets",
-      "phase": "pre",
-      "required_level": 0
-    }
-  ]
-}
+	  "rules": [
+	    {
+	      "rule_id": "ticket-create-pre",
+	      "endpoint_sig": "POST /support/tickets",
+	      "phase": "pre",
+	      "required_level": 0
+	    },
+	    {
+	      "rule_id": "approval-decide-post",
+	      "endpoint_sig": "POST /approvals/{approval_id}/decide",
+	      "phase": "post",
+	      "required_level": 0
+	    }
+	  ]
+	}

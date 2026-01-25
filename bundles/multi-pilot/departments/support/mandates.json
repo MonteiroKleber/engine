@@ -1,12 +1,19 @@
 {
   "mandate_schema_version": "1.0",
-  "mandates": [
-    {
-      "mandate_id": "ticket-create-pre",
-      "endpoint_sig": "POST /support/tickets",
-      "phase": "pre",
-      "allowed_roles": ["agent", "admin"],
-      "message": "Ticket creation mandate for support department"
-    }
-  ]
-}
+	  "mandates": [
+	    {
+	      "mandate_id": "ticket-create-pre",
+	      "endpoint_sig": "POST /support/tickets",
+	      "phase": "pre",
+	      "allowed_roles": ["agent", "admin"],
+	      "message": "Ticket creation mandate for support department"
+	    },
+	    {
+	      "mandate_id": "approval-decide-post",
+	      "endpoint_sig": "POST /approvals/{approval_id}/decide",
+	      "phase": "post",
+	      "allowed_roles": ["admin"],
+	      "message": "Approval decision mandate for support department"
+	    }
+	  ]
+	}

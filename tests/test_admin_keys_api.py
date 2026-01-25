@@ -87,33 +87,37 @@ class TestCreateAdminKey:
         assert len(data["plaintext_secret"]) == 43  # token_urlsafe(32)
         assert "created_at" in data
 
-    def test_create_key_with_admin_key(self, client, created_institution):
-        """Create key using another admin key for auth."""
-        # First create a key using legacy token (for DEFAULT)
-        from engine.core.institution_context import DEFAULT_INSTITUTION_ID
-
-        # For non-DEFAULT institution, we need to first create a key
-        # But we can't auth without a key. So we bootstrap via DEFAULT.
-        # Actually for this test, we use the created_institution with legacy token first.
-
-        # Since created_institution is not DEFAULT, we need a key first.
-        # Let's create a key for DEFAULT and use that pattern.
-        # Actually, looking at the code, admin_keys API uses require_admin_auth
-        # which accepts X-Admin-Token for any institution's auth check...
-
-        # Wait - the admin_auth module checks institution_id for legacy token.
-        # For non-DEFAULT, X-Admin-Token should be rejected.
-
-        # Let's test that X-Admin-Token is rejected for non-DEFAULT
+    def test_create_key_bootstrap_then_admin_key(self, client, created_institution):
+        """Bootstrap the first key via X-Admin-Token, then require X-Admin-Key."""
+        # Bootstrap: first key for non-default institution via global admin token
         response = client.post(
             f"/admin/institutions/{created_institution}/admin-keys",
             headers={"X-Admin-Token": "test-admin-token"},
             json={},
         )
+        assert response.status_code == 201
+        first_key = response.json()
+        assert "plaintext_secret" in first_key
 
-        # Should be rejected because X-Admin-Token only works for DEFAULT
-        assert response.status_code == 401
-        assert response.json()["code"] == "ADMIN_KEY_REQUIRED"
+        # Second attempt via X-Admin-Token must be blocked deterministically
+        response = client.post(
+            f"/admin/institutions/{created_institution}/admin-keys",
+            headers={"X-Admin-Token": "test-admin-token"},
+            json={},
+        )
+        assert response.status_code == 403
+        assert response.json()["code"] == "ADMIN_KEY_BOOTSTRAP_NOT_ALLOWED"
+
+        # Create another key via X-Admin-Key (per-institution key auth)
+        response = client.post(
+            f"/admin/institutions/{created_institution}/admin-keys",
+            headers={"X-Admin-Key": first_key["plaintext_secret"]},
+            json={},
+        )
+        assert response.status_code == 201
+        data = response.json()
+        assert "key_id" in data
+        assert "plaintext_secret" in data
 
     def test_create_key_no_auth_fails(self, client, created_institution):
         """Create key without auth fails."""

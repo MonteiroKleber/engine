@@ -995,6 +995,14 @@ async def console_status(
         institution_id, departments if departments else None
     )
 
+    # Legacy cutover telemetry (ENGINE_API_MODE=both): read-only status for transition planning.
+    try:
+        from engine.core.legacy_telemetry import get_legacy_cutover_status
+
+        legacy_cutover = get_legacy_cutover_status(institution_id)
+    except Exception:
+        legacy_cutover = {"total": 0, "last_ts": None, "by_endpoint": []}
+
     # Get institution name
     institutions = _get_institutions_list()
     institution_name = next(
@@ -1019,6 +1027,7 @@ async def console_status(
             "config": config,
             "mandates": mandates,
             "migration": migration,
+            "legacy_cutover": legacy_cutover,
         },
     )
 

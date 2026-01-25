@@ -1,0 +1,29 @@
+{
+  "operations_schema_version": "1.0",
+  "dept_id": "support",
+  "operations": [
+    {
+      "operation_id": "approval_decide",
+      "method": "POST",
+      "path": "/approvals/{approval_id}/decide",
+      "endpoint_sig": "POST /approvals/{approval_id}/decide",
+      "permission": "approval.decide",
+      "scope": "tenant",
+      "idempotency": "required",
+      "errors": [400, 401, 403, 404, 409],
+      "bind": { "kind": "approval_decide" }
+    },
+    {
+      "operation_id": "ticket_create",
+      "method": "POST",
+      "path": "/support/tickets",
+      "endpoint_sig": "POST /support/tickets",
+      "permission": "ticket.create",
+      "scope": "tenant",
+      "idempotency": "none",
+      "errors": [400, 401, 403],
+      "bind": { "kind": "create", "entity": "Ticket" }
+    }
+  ]
+}
+

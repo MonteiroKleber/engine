@@ -1,0 +1,202 @@
+// Finance Pilot - IDL DSL v1.2.2 Canonical Example
+// Governed finance department with approvals, SoD and hard invariants.
+
+system FinancePilot {
+  name: "Finance Pilot"
+  description: "Governed finance department with approvals, SoD and hard invariants."
+  version: 1.0.0
+  domain: "finance"
+  owner: "Libervia"
+  contact: "ops@libervia.xyz"
+  tenancy: multi
+}
+
+actors {
+  human operator {
+    name: "Operator"
+    description: "Creates and submits expenses."
+    authentication: oauth2
+    permissions: [finance.expense.create, finance.expense.read, finance.expense.submit]
+  }
+
+  human manager {
+    name: "Manager"
+    description: "Approves expenses under policy constraints."
+    authentication: oauth2
+    permissions: [finance.expense.read, finance.expense.approve, finance.expense.transition]
+  }
+
+  human controller {
+    name: "Controller"
+    description: "Second approver / financial control."
+    authentication: oauth2
+    permissions: [finance.expense.read, finance.expense.approve, finance.expense.transition]
+  }
+
+  system runtime {
+    name: "Runtime"
+    description: "Institutional runtime actor."
+    authentication: token
+    permissions: [runtime.bundle.load, runtime.proof.snapshot, runtime.safe_mode.enter]
+  }
+}
+
+entities {
+  entity Expense {
+    storage {
+      tenant_field: tenant_id
+      version_field: version
+    }
+
+    field id: uuid required unique
+    field tenant_id: uuid required indexed
+    field amount: decimal required min(0)
+    field currency: string required
+    field description: text required
+    field created_by: uuid required indexed
+    field created_at: datetime required
+    field state: string required indexed
+    field version: int required default(1)
+  }
+
+  entity Account {
+    storage {
+      tenant_field: tenant_id
+      version_field: version
+    }
+
+    field id: uuid required unique
+    field tenant_id: uuid required indexed
+    field balance: decimal required
+    field currency: string required
+    field version: int required default(1)
+  }
+}
+
+policy_context {
+  field jurisdiction: string required
+  field risk_level: string default("low")
+  field sanctions_hit: bool default(false)
+}
+
+invariants {
+  invariant NoNegativeAccountBalance {
+    applies_to: Account
+    when: always
+    assert: Account.balance >= 0
+    severity: critical
+    message: "Account balance cannot be negative."
+  }
+
+  invariant ExpenseMustHaveCurrency {
+    applies_to: Expense
+    when: always
+    assert: Expense.currency != ""
+    severity: high
+    message: "Expense currency must be defined."
+  }
+}
+
+separation_of_duties {
+  rule NoSelfApproval {
+    on: Expense
+    forbid: Approve when actor.id == Expense.created_by
+    severity: critical
+    message: "Creator cannot approve their own expense."
+  }
+
+  rule NoSubmitterApproval {
+    on: Expense
+    forbid: Approve when actor.id in history("Submit").actors
+    severity: critical
+    message: "Submitter cannot approve."
+  }
+}
+
+workflows {
+  workflow ExpenseFlow on Expense {
+    state Draft { initial: true }
+    state PendingApproval
+    state Approved { terminal: true }
+    state Rejected { terminal: true }
+
+    transition Submit: Draft -> PendingApproval {
+      guard: context.sanctions_hit == false
+      effects: [set_state("PendingApproval"), bump_version(1)]
+    }
+
+    transition Approve: PendingApproval -> Approved {
+      guard: context.risk_level != "high"
+      approvals: {
+        quorum: 2
+        roles: [manager, controller]
+        distinct_actors: true
+        expires_in: 48h
+      }
+      effects: [set_state("Approved"), bump_version(1)]
+    }
+
+    transition Reject: PendingApproval -> Rejected {
+      approvals: {
+        quorum: 1
+        roles: [controller]
+        distinct_actors: true
+        expires_in: 48h
+      }
+      effects: [set_state("Rejected"), bump_version(1)]
+    }
+  }
+}
+
+operations {
+  api {
+    endpoint expense_create {
+      method: POST
+      path: "/finance/expenses"
+      request: Expense
+      response: Expense
+      permission: finance.expense.create
+      scope: tenant
+      idempotency: required
+      errors: [400, 401, 403]
+      bind: { entity: Expense, kind: create }
+    }
+
+    endpoint expense_get {
+      method: GET
+      path: "/finance/expenses/{id}"
+      request: void
+      response: Expense
+      permission: finance.expense.read
+      scope: tenant
+      idempotency: none
+      errors: [401, 403, 404]
+      bind: { entity: Expense, kind: read }
+    }
+
+    endpoint expense_submit {
+      method: POST
+      path: "/finance/expenses/{id}/transitions/submit"
+      request: void
+      response: any
+      permission: finance.expense.submit
+      scope: tenant
+      idempotency: required
+      errors: [401, 403, 409]
+      bind: { entity: Expense, kind: transition, workflow: ExpenseFlow, transition: Submit }
+    }
+
+    endpoint expense_approve {
+      method: POST
+      path: "/finance/expenses/{id}/approvals/approve"
+      request: void
+      response: any
+      permission: finance.expense.approve
+      scope: tenant
+      idempotency: required
+      errors: [401, 403, 409]
+      bind: { entity: Expense, kind: approval, workflow: ExpenseFlow, transition: Approve, decision: "approve" }
+    }
+  }
+}
+

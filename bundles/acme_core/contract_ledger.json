@@ -3,7 +3,7 @@
     {
       "details": {
         "bundle_name": "acme_core",
-        "contract_count": 9
+        "contract_count": 10
       },
       "event": "bundle_compiled",
       "timestamp": "2026-01-21T14:24:39.234881+00:00"
@@ -18,7 +18,7 @@
       "status": "active"
     },
     {
-      "content_hash": "2872f901adca305e01ef2d01c6479dbb490380cb6a6cecff9ecffa1e35cc8919",
+      "content_hash": "0151ac1f38390bd100cb6dac40ac42cff341ae19ecff5bec7ba29157106b9336",
       "contract_name": "autonomy.json",
       "status": "active"
     },
@@ -28,8 +28,13 @@
       "status": "active"
     },
     {
-      "content_hash": "7f1ab6c108b087e5e96062f709d4eca5d61bbb46b406a4c1054873ac3c5c41f1",
+      "content_hash": "c469c528c9c835f1ba1e28a72dd67151182ac17c1b7107584a8703b52d95ec22",
       "contract_name": "mandates.json",
+      "status": "active"
+    },
+    {
+      "content_hash": "4f3e1df045ab017ff6c58bc24e9d6b076e6a71c1e5078d4e8b007a7203676874",
+      "contract_name": "operations.json",
       "status": "active"
     },
     {
@@ -43,7 +48,7 @@
       "status": "active"
     },
     {
-      "content_hash": "1870b053075abfc4822d7cec0e559d3e793d1b0eb98dfe9971de00eccb23dc5a",
+      "content_hash": "887c7e4f1108d1fba0e41cc2806a394d6051465fa851afdc9e66a4b87927e9ae",
       "contract_name": "rbac.json",
       "status": "active"
     },
@@ -62,6 +67,6 @@
   "idl_hash": "f43f872466cd21167336240d8bbbb4270f85fe8a9a3b0e4073bdbb46934639e1",
   "ledger_id": "5b4f2a3081412818",
   "ledger_version": "1.0",
-  "manifest_hash": "7c9c070340273c408acc802b15e7b11ffdf7cdbaa5274ddb99b9922882bdc73b",
+  "manifest_hash": "a71dafafc4899d9bd4e096cb78d963f788bb9b05fee8e2901ae78c47cc8b890d",
   "source_idl_sha256": "bc81502ffb54d9541dc4a9cf8f1821daf258525ec8bff4e5eda25c0542d1effd"
 }
