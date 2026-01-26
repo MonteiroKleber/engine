@@ -34,6 +34,7 @@ actors {
       reports.list,
       reports.triage,
       moderation.actions.create,
+      moderation.actions.submit,
       moderation.actions.read,
       chat.reports.read,
       chat.reports.list
@@ -61,6 +62,7 @@ actors {
       reports.read,
       reports.list,
       moderation.actions.create,
+      moderation.actions.submit,
       moderation.actions.read,
       moderation.actions.list,
       moderation.actions.apply,
@@ -249,6 +251,15 @@ workflows {
       effects: [set_state("Approved"), set_field("decided_at", "__NOW__"), bump_version(1)]
     }
 
+    // Canonical "approval request" flow for the current engine:
+    // calling this transition returns 202 + approval_id and puts the entity in PENDING_APPROVAL.
+    // then /approvals/{approval_id}/decide will COMMIT (Approved) or REJECT.
+    transition SubmitForApproval: Proposed -> Approved {
+      guard: true
+      approvals: { quorum: 1 roles: [trust_safety_manager, admin] distinct_actors: true expires_in: 72h }
+      effects: [bump_version(1)]
+    }
+
     transition RequestApproval: Proposed -> PendingApproval {
       guard: ModerationAction.action == "BAN" or ModerationAction.action == "REMOVE" or ModerationAction.action == "SHADOWBAN"
       effects: [set_state("PendingApproval"), bump_version(1)]
@@ -268,7 +279,7 @@ workflows {
 
     transition Apply: Approved -> Applied {
       guard: true
-      effects: [set_state("Applied"), set_field("applied_at", "__NOW__"), bump_version(1)]
+      effects: [set_state("Applied"), bump_version(1)]
     }
 
     transition Revert: Applied -> Reverted {
@@ -401,19 +412,21 @@ operations {
       bind: { entity: ModerationAction, kind: read }
     }
 
-    endpoint moderation_action_approve {
+    endpoint moderation_action_submit_for_approval {
       method: POST
-      path: "/approvals/{approval_id}/decide"
-      request: any
+      path: "/moderation/actions/{action_id}/submit"
+      request: void
       response: any
-      permission: approval.decide
+      permission: moderation.actions.submit
       scope: tenant
       idempotency: required
       errors: [400, 401, 403, 404, 409]
-      bind: { entity: ModerationAction, kind: approval, workflow: ModerationActionFlow, transition: Approve, decision: "approve" }
+      bind: { entity: ModerationAction, kind: transition, workflow: ModerationActionFlow, transition: SubmitForApproval }
     }
 
-    endpoint moderation_action_reject {
+    // Approvals são decididos via um único endpoint genérico.
+    // O request body deve conter: { "decision": "approve"|"reject", "reason"?: string }
+    endpoint approval_decide {
       method: POST
       path: "/approvals/{approval_id}/decide"
       request: any
@@ -422,7 +435,7 @@ operations {
       scope: tenant
       idempotency: required
       errors: [400, 401, 403, 404, 409]
-      bind: { entity: ModerationAction, kind: approval, workflow: ModerationActionFlow, transition: Reject, decision: "reject" }
+      bind: { kind: approval }
     }
 
     endpoint moderation_action_apply {

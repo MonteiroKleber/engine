@@ -282,7 +282,7 @@ def _create_idl_handler(
                 path_params=path_params,
             )
 
-        elif bind_kind == "approval_decide":
+        elif bind_kind in {"approval", "approval_decide"}:
             # Extract approval_id from path params
             approval_id = path_params.get("approval_id")
             if not approval_id:

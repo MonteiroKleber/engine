@@ -44,6 +44,8 @@ ALLOWED_ENDPOINT_SIGS = frozenset({
     "GET /moderation/actions",
     # Bazari MVP (workflows / transitions)
     "POST /moderation/reports/{report_id}/triage",
+    "POST /moderation/actions/{action_id}/apply",
+    "POST /moderation/actions/{action_id}/submit",
 })
 
 # Allowed phases

@@ -252,7 +252,7 @@ def _compile_multi_dept(
     # Emit contracts for each department
     try:
         for dept in parsed.departments:
-            dept_files = _emit_dept_contracts(parsed, dept)
+            dept_files = _emit_dept_contracts(parsed, dept, ir=ir)
             for filename, content in dept_files.items():
                 all_files[f"departments/{dept.dept_id}/{filename}"] = content
             dept_ids.append(dept.dept_id)
@@ -357,7 +357,11 @@ def _compile_multi_dept(
     )
 
 
-def _emit_dept_contracts(parsed: ParsedIDL, dept: IDLDepartment) -> Dict[str, str]:
+def _emit_dept_contracts(
+    parsed: ParsedIDL,
+    dept: IDLDepartment,
+    ir: Optional[Dict[str, Any]] = None,
+) -> Dict[str, str]:
     """Emit contracts for a specific department.
 
     Uses department-specific config if provided, otherwise uses global config.
@@ -420,11 +424,12 @@ def _emit_dept_contracts(parsed: ParsedIDL, dept: IDLDepartment) -> Dict[str, st
     contracts["policies.json"] = policies_json
 
     # Mandates contract - ALWAYS emit (use original parsed to access dept_mandates)
-    mandates_json = emit_mandates_json(parsed, dept_id=dept.dept_id)
+    # For IRCS v1 canonical compilation, pass the IR to allow deterministic bridge defaults.
+    mandates_json = emit_mandates_json(parsed, dept_id=dept.dept_id, ir=ir)
     contracts["mandates.json"] = mandates_json
 
     # Autonomy contract - ALWAYS emit (use original parsed to access dept_autonomy)
-    autonomy_json = emit_autonomy_json(parsed, dept_id=dept.dept_id)
+    autonomy_json = emit_autonomy_json(parsed, dept_id=dept.dept_id, ir=ir)
     contracts["autonomy.json"] = autonomy_json
 
     return contracts
@@ -518,11 +523,11 @@ def _emit_all_contracts(
     contracts["policies.json"] = policies_json
 
     # Mandates contract - ALWAYS emit
-    mandates_json = emit_mandates_json(parsed)
+    mandates_json = emit_mandates_json(parsed, ir=ir)
     contracts["mandates.json"] = mandates_json
 
     # Autonomy contract - ALWAYS emit
-    autonomy_json = emit_autonomy_json(parsed)
+    autonomy_json = emit_autonomy_json(parsed, ir=ir)
     contracts["autonomy.json"] = autonomy_json
 
     # Operations contract - emit from IRCS if available, otherwise from ParsedIDL

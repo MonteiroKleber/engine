@@ -1432,6 +1432,159 @@ async def dispatch_approval_decide(
             step="DISPATCHER:get_rule",
         )
 
+    # If this approval_id is for a generic workflow transition (Expansão 03),
+    # decide it using the generic approval index stored in the state store.
+    state_store = get_state_store(dept_id, institution_id=institution_id)
+    if not state_store:
+        return DispatchResult(
+            status_code=503,
+            response_body={
+                "code": STATE_STORE_UNAVAILABLE,
+                "message": "State store not available",
+            },
+            error_code=STATE_STORE_UNAVAILABLE,
+            step="DISPATCHER:state_store",
+        )
+
+    generic_approval = state_store.get_generic_approval(approval_id)
+    if generic_approval:
+        entity_type = generic_approval.get("entity_type")
+        entity_id = generic_approval.get("entity_id")
+        transition_def = generic_approval.get("transition_def") or {}
+        approvals_def = transition_def.get("approvals") or {}
+
+        approver_roles = approvals_def.get("roles") or approvals_def.get("approver_roles") or []
+        quorum = approvals_def.get("quorum", 1) or 1
+
+        synthetic_rule = ApprovalRule(
+            rule_name=rule_name,
+            trigger_api="POST /approvals/{approval_id}/decide",
+            approver_roles=list(approver_roles),
+            quorum=int(quorum),
+        )
+
+        # Role gate
+        if not can_actor_decide(actor, synthetic_rule):
+            return DispatchResult(
+                status_code=403,
+                response_body={
+                    "code": "APPROVAL_FORBIDDEN",
+                    "message": "Forbidden",
+                },
+                error_code="APPROVAL_FORBIDDEN",
+                step="DISPATCHER:check_role",
+            )
+
+        # SoD: requester != decider
+        proposer_id = generic_approval.get("proposer_id")
+        if proposer_id and proposer_id == actor.actor_id:
+            return DispatchResult(
+                status_code=409,
+                response_body={
+                    "code": "APPROVAL_SOD_VIOLATION",
+                    "message": "SoD violation: proposer cannot decide",
+                },
+                error_code="APPROVAL_SOD_VIOLATION",
+                step="DISPATCHER:sod_check",
+            )
+
+        # Load target entity data
+        if not isinstance(entity_id, str) or not entity_id:
+            return DispatchResult(
+                status_code=404,
+                response_body={
+                    "code": CASE_NOT_FOUND,
+                    "message": "Case not found",
+                },
+                error_code=CASE_NOT_FOUND,
+                step="DISPATCHER:generic:find_entity",
+            )
+
+        if entity_type == "ModerationAction":
+            entity_data = state_store._data["moderation_actions"].get(entity_id)
+        elif entity_type == "ContentReport":
+            entity_data = state_store._data["content_reports"].get(entity_id)
+        elif entity_type == "ChatReport":
+            entity_data = state_store._data["chat_reports"].get(entity_id)
+        else:
+            entity_data = None
+
+        if not isinstance(entity_data, dict):
+            return DispatchResult(
+                status_code=404,
+                response_body={
+                    "code": CASE_NOT_FOUND,
+                    "message": "Case not found",
+                },
+                error_code=CASE_NOT_FOUND,
+                step="DISPATCHER:generic:find_entity",
+            )
+
+        now = datetime.now(timezone.utc).isoformat()
+
+        # Decide
+        if decision == "reject":
+            updated_data = dict(entity_data)
+            updated_data["status"] = STATUS_REJECTED
+            updated_data.pop("approval_id", None)
+            # keep deterministic versioning
+            current_version = updated_data.get("version", 0)
+            if not isinstance(current_version, int):
+                current_version = 0
+            updated_data["version"] = current_version + 1
+            updated_data["updated_at"] = now
+        else:
+            effects = transition_def.get("effects") or []
+            # On approval, materialize the transition "to" state even if the
+            # transition_def has no explicit set_state effect.
+            to_state = transition_def.get("to")
+            base_data = dict(entity_data)
+            if isinstance(to_state, str) and to_state:
+                base_data["status"] = to_state
+
+            success, error_msg, updated_data = _apply_effects(base_data, effects)
+            if not success:
+                return DispatchResult(
+                    status_code=400,
+                    response_body={
+                        "code": WORKFLOW_EFFECT_INVALID,
+                        "message": error_msg,
+                    },
+                    error_code=WORKFLOW_EFFECT_INVALID,
+                    step="DISPATCHER:generic:effects",
+                )
+            updated_data.pop("approval_id", None)
+            updated_data["updated_at"] = now
+
+        # Persist
+        if entity_type == "ModerationAction":
+            state_store._data["moderation_actions"][entity_id] = updated_data
+        elif entity_type == "ContentReport":
+            state_store._data["content_reports"][entity_id] = updated_data
+        elif entity_type == "ChatReport":
+            state_store._data["chat_reports"][entity_id] = updated_data
+        state_store._save()
+
+        emit_approval_decided(
+            approval_id=approval_id,
+            rule=synthetic_rule,
+            actor=actor,
+            decision=decision,
+            reason=reason,
+        )
+
+        return DispatchResult(
+            status_code=200,
+            response_body={
+                "status": "decided",
+                "approval_id": approval_id,
+                "entity_id": entity_id,
+                "decision": decision,
+                "case_status": STATUS_COMMITTED if decision == "approve" else STATUS_REJECTED,
+            },
+            step="DISPATCHER:decide:generic",
+        )
+
     policy = get_approvals_policy(dept_id)
     if not policy:
         return DispatchResult(
@@ -1495,22 +1648,10 @@ async def dispatch_approval_decide(
                     "message": sod_message,
                 },
                 error_code=sod_error_code,
-                step="DISPATCHER:sod_check",
-            )
-
-    # Get state store and expense
-    state_store = get_state_store(dept_id, institution_id=institution_id)
-    if not state_store:
-        return DispatchResult(
-            status_code=503,
-            response_body={
-                "code": STATE_STORE_UNAVAILABLE,
-                "message": "State store not available",
-            },
-            error_code=STATE_STORE_UNAVAILABLE,
-            step="DISPATCHER:state_store",
+            step="DISPATCHER:sod_check",
         )
 
+    # Get expense (Finance path)
     expense = state_store.get_expense_by_approval_id(approval_id)
     if not expense:
         return DispatchResult(

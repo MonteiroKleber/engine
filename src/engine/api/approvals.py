@@ -16,6 +16,7 @@ from engine.core.institution_context import get_request_institution_id
 from engine.core.institution_context import DEFAULT_INSTITUTION_ID
 from engine.core.legacy_telemetry import record_legacy_invocation
 from engine.core.approvals import (
+    ApprovalRule,
     find_approval_requested,
     find_approval_decided,
     is_approval_decided,
@@ -249,6 +250,37 @@ async def decide_approval(
         )
 
     rule = policy.get_rule_by_name(rule_name)
+    # Bazari generic approvals (Expansão 03):
+    # approvals.json may legitimately have no explicit rule for workflow transitions.
+    # In that case, fall back to the generic approval index stored in the state store.
+    state_store = get_state_store(institution_id=institution_id)
+    if not state_store:
+        raise HTTPException(
+            status_code=503,
+            detail={
+                "code": STATE_STORE_UNAVAILABLE,
+                "message": "State store not available",
+            },
+        )
+
+    generic_approval = state_store.get_generic_approval(approval_id)
+    if not rule and generic_approval:
+        transition_def = generic_approval.get("transition_def", {})
+        approvals_def = transition_def.get("approvals") or {}
+
+        trigger_api = ""
+        try:
+            trigger_api = (requested_event.payload or {}).get("target", {}).get("api", "")  # type: ignore[union-attr]
+        except Exception:
+            trigger_api = ""
+
+        rule = ApprovalRule(
+            rule_name=rule_name,
+            trigger_api=trigger_api or "POST /approvals/{approval_id}/decide",
+            approver_roles=list(approvals_def.get("roles", [])),
+            quorum=int(approvals_def.get("quorum", 1) or 1),
+        )
+
     if not rule:
         raise HTTPException(
             status_code=500,
@@ -305,18 +337,6 @@ async def decide_approval(
             institution_id=institution_id,
         )
 
-    # Check if this is a generic approval (workflow transition - Expansão 03)
-    state_store = get_state_store(institution_id=institution_id)
-    if not state_store:
-        raise HTTPException(
-            status_code=503,
-            detail={
-                "code": STATE_STORE_UNAVAILABLE,
-                "message": "State store not available",
-            },
-        )
-
-    generic_approval = state_store.get_generic_approval(approval_id)
     if generic_approval:
         return await _handle_generic_approval_decision(
             request=request,

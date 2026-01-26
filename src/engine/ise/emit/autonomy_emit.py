@@ -7,7 +7,7 @@ IDL v1.1: mandates/autonomy are first-class. No silent defaults.
 """
 
 import json
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Set
 
 from ..idl_parser import ParsedIDL, IDLAutonomy, IDLAutonomyRule
 
@@ -18,6 +18,10 @@ AUTONOMY_SCHEMA_VERSION = "1.0"
 # Default autonomy level for IDL v1.0 legacy (L0 = full human oversight required)
 # This is the most restrictive default - requires explicit elevation
 DEFAULT_CURRENT_LEVEL_V10 = 0
+
+POST_ONLY_ENDPOINT_SIGS: Set[str] = {
+    "POST /approvals/{approval_id}/decide",
+}
 
 
 def _autonomy_rule_to_dict(rule: IDLAutonomyRule) -> Dict[str, Any]:
@@ -33,6 +37,7 @@ def _autonomy_rule_to_dict(rule: IDLAutonomyRule) -> Dict[str, Any]:
 def emit_autonomy(
     parsed: ParsedIDL,
     dept_id: Optional[str] = None,
+    ir: Optional[Dict[str, Any]] = None,
 ) -> Dict[str, Any]:
     """Emit autonomy contract from parsed IDL.
 
@@ -74,6 +79,29 @@ def emit_autonomy(
         # else: emit defaults (L0, empty rules) - explicit "require oversight for all"
     # else: v1.0 legacy - emit defaults (backward compatible)
 
+    if not rules_list and ir:
+        # IRCS v1 canonical path (IDL DSL v1.2.2):
+        # The runtime treats autonomy.json with empty rules as deny-all-by-default.
+        # Canonical bridge: generate minimum rules for all operations with required_level=0.
+        operations = (ir.get("operations") or {}).get("api") or []
+        for op in operations:
+            method = op.get("method")
+            path = op.get("path")
+            op_id = op.get("id") or op.get("operation_id") or "op"
+            if not method or not path:
+                continue
+
+            endpoint_sig = f"{method} {path}"
+            phase = "post" if endpoint_sig in POST_ONLY_ENDPOINT_SIGS else "pre"
+            rules_list.append(
+                {
+                    "rule_id": f"{op_id}:{phase}",
+                    "endpoint_sig": endpoint_sig,
+                    "phase": phase,
+                    "required_level": 0,
+                }
+            )
+
     return {
         "autonomy_schema_version": AUTONOMY_SCHEMA_VERSION,
         "current_level": current_level,
@@ -84,6 +112,7 @@ def emit_autonomy(
 def emit_autonomy_json(
     parsed: ParsedIDL,
     dept_id: Optional[str] = None,
+    ir: Optional[Dict[str, Any]] = None,
 ) -> str:
     """Emit autonomy contract as JSON string.
 
@@ -94,5 +123,5 @@ def emit_autonomy_json(
     Returns:
         JSON string with sorted keys.
     """
-    autonomy = emit_autonomy(parsed, dept_id)
+    autonomy = emit_autonomy(parsed, dept_id=dept_id, ir=ir)
     return json.dumps(autonomy, indent=2, sort_keys=True)

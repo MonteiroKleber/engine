@@ -259,7 +259,7 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
                         "event": "MIGRATION_CHECK_FAILED",
                         "api_mode": api_mode,
                         "code": migration_result.code,
-                        "message": migration_result.message,
+                        "migration_message": migration_result.message,
                         "depts_not_migrated": migration_result.depts_not_migrated,
                         "unsupported_binds": [
                             {
@@ -275,15 +275,15 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
                     f"Migration check failed: [{migration_result.code}] {migration_result.message}. "
                     f"Depts not migrated: {migration_result.depts_not_migrated}"
                 )
-            else:
-                logger.info(
-                    "MIGRATION_CHECK_PASSED",
-                    extra={
-                        "event": "MIGRATION_CHECK_PASSED",
-                        "api_mode": api_mode,
-                        "depts_migrated": migration_result.depts_migrated,
-                    },
-                )
+
+            logger.info(
+                "MIGRATION_CHECK_PASSED",
+                extra={
+                    "event": "MIGRATION_CHECK_PASSED",
+                    "api_mode": api_mode,
+                    "depts_migrated": migration_result.depts_migrated,
+                },
+            )
         else:
             # both mode: log warnings but don't fail
             if not migration_result.ok:

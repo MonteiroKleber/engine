@@ -89,6 +89,54 @@ def sample_ircs():
 
 
 @pytest.fixture
+def sample_ircs_with_transition_workflow():
+    """IRCS v1 including workflow transitions for bind.kind=transition enrichment."""
+    return {
+        "ir_version": "ircs.v1",
+        "system": {"name": "Bazari MVP", "version": "1.0.0"},
+        "workflows": [
+            {
+                "name": "ReportFlow",
+                "on_entity": "ContentReport",
+                "state_field": "state",
+                "transitions": [
+                    {
+                        "name": "Triage",
+                        "from": "Pending",
+                        "to": "Triaged",
+                        "guard": {"lit": True, "type": "bool"},
+                        "effects": [
+                            {"kind": "set_state", "value": "Triaged"},
+                            {"kind": "bump_version", "field": "version", "by": 1},
+                        ],
+                        "approvals": None,
+                    }
+                ],
+            }
+        ],
+        "operations": {
+            "api": [
+                {
+                    "id": "report_triage",
+                    "method": "POST",
+                    "path": "/moderation/reports/{report_id}/triage",
+                    "permission": "reports.triage",
+                    "scope": "tenant",
+                    "idempotency": "required",
+                    "errors": [400, 401, 403, 404, 409],
+                    "bind": {
+                        "kind": "transition",
+                        "entity": "ContentReport",
+                        "workflow": "ReportFlow",
+                        "transition": "Triage",
+                    },
+                }
+            ]
+        },
+    }
+
+
+@pytest.fixture
 def sample_operations_data():
     """Sample valid operations.json data."""
     return {
@@ -291,6 +339,24 @@ class TestEmitOperations:
         """Emit operations with dept_id."""
         result = emit_operations_from_ircs(sample_ircs, dept_id="finance")
         assert result["dept_id"] == "finance"
+
+    def test_emit_transition_includes_transition_def(self, sample_ircs_with_transition_workflow):
+        """Transitions include a transition_def usable by the dispatcher."""
+        result = emit_operations_from_ircs(sample_ircs_with_transition_workflow)
+        assert len(result["operations"]) == 1
+        op = result["operations"][0]
+        bind = op["bind"]
+        assert bind["kind"] == "transition"
+        assert bind["workflow"] == "ReportFlow"
+        assert bind["transition"] == "Triage"
+        transition_def = bind["transition_def"]
+        assert transition_def["guard"] is True
+        assert transition_def["from"] == "PENDING"
+        assert transition_def["to"] == "TRIAGED"
+        assert transition_def["effects"] == [
+            {"type": "set_state", "value": "TRIAGED"},
+            {"type": "bump_version", "value": 1},
+        ]
 
     def test_emit_operations_json_deterministic(self, sample_ircs):
         """JSON output is deterministic (sorted keys)."""

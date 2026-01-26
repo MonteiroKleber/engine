@@ -25,6 +25,7 @@
         "reports.list",
         "reports.triage",
         "moderation.actions.create",
+        "moderation.actions.submit",
         "moderation.actions.read",
         "chat.reports.read",
         "chat.reports.list"
@@ -54,6 +55,7 @@
         "reports.read",
         "reports.list",
         "moderation.actions.create",
+        "moderation.actions.submit",
         "moderation.actions.read",
         "moderation.actions.list",
         "moderation.actions.apply",
@@ -538,7 +540,7 @@
         "id": "admin_report_list",
         "idempotency": "none",
         "method": "GET",
-        "path": "/admin/reports",
+        "path": "/moderation/reports",
         "path_params": [],
         "permission": "reports.list",
         "request_type": "void",
@@ -562,7 +564,7 @@
         "id": "report_triage",
         "idempotency": "required",
         "method": "POST",
-        "path": "/admin/reports/{report_id}/triage",
+        "path": "/moderation/reports/{report_id}/triage",
         "path_params": [
           "report_id"
         ],
@@ -624,9 +626,9 @@
         "id": "chat_block_delete",
         "idempotency": "required",
         "method": "DELETE",
-        "path": "/chat/blocks/{profile_id}",
+        "path": "/chat/blocks/{block_id}",
         "path_params": [
-          "profile_id"
+          "block_id"
         ],
         "permission": "chat.blocks.delete",
         "request_type": "void",
@@ -677,10 +679,9 @@
       },
       {
         "bind": {
-          "decision": "approve",
           "entity": "ModerationAction",
-          "kind": "approval",
-          "transition": "Approve",
+          "kind": "transition",
+          "transition": "SubmitForApproval",
           "workflow": "ModerationActionFlow"
         },
         "errors": [
@@ -690,25 +691,22 @@
           404,
           409
         ],
-        "id": "moderation_action_approve",
+        "id": "moderation_action_submit_for_approval",
         "idempotency": "required",
         "method": "POST",
-        "path": "/approvals/{approval_id}/decide",
+        "path": "/moderation/actions/{action_id}/submit",
         "path_params": [
-          "approval_id"
+          "action_id"
         ],
-        "permission": "approval.decide",
-        "request_type": "any",
+        "permission": "moderation.actions.submit",
+        "request_type": "void",
         "response_type": "any",
         "scope": "tenant"
       },
       {
         "bind": {
-          "decision": "reject",
-          "entity": "ModerationAction",
-          "kind": "approval",
-          "transition": "Reject",
-          "workflow": "ModerationActionFlow"
+          "entity": "",
+          "kind": "approval"
         },
         "errors": [
           400,
@@ -717,7 +715,7 @@
           404,
           409
         ],
-        "id": "moderation_action_reject",
+        "id": "approval_decide",
         "idempotency": "required",
         "method": "POST",
         "path": "/approvals/{approval_id}/decide",
@@ -910,7 +908,7 @@
       "severity": "high"
     }
   ],
-  "source_idl_sha256": "4ff30af1e2d09aec471fe0e8197b66322e06734f04680c5f4b1950e518e26296",
+  "source_idl_sha256": "17184200048b2ef5befe1acbc61ae759efead264bd7b260684064b3f021298cf",
   "source_idl_version": "idl.v1.2.2",
   "system": {
     "contact": "ops@bazari.libervia.xyz",
@@ -1115,6 +1113,31 @@
           "to": "Approved"
         },
         {
+          "approvals": {
+            "distinct_actors": true,
+            "expires_in": "72h",
+            "quorum": 1,
+            "roles": [
+              "trust_safety_manager",
+              "admin"
+            ]
+          },
+          "effects": [
+            {
+              "by": 1,
+              "field": "version",
+              "kind": "bump_version"
+            }
+          ],
+          "from": "Proposed",
+          "guard": {
+            "lit": true,
+            "type": "bool"
+          },
+          "name": "SubmitForApproval",
+          "to": "Approved"
+        },
+        {
           "approvals": null,
           "effects": [
             {
@@ -1242,9 +1265,6 @@
             {
               "kind": "set_state",
               "value": "Applied"
-            },
-            {
-              "kind": "set_field"
             },
             {
               "by": 1,

@@ -13,6 +13,85 @@ from typing import Any, Dict, List, Optional
 from engine.core.operations import OPERATIONS_SCHEMA_VERSION
 
 
+def _normalize_state_name(state: Optional[str]) -> Optional[str]:
+    if not state or not isinstance(state, str):
+        return None
+    return state.upper()
+
+
+def _extract_guard_literal(guard: Any) -> Any:
+    """Return bool/None when guard is a literal, else return original value."""
+    if guard is True or guard is False or guard is None:
+        return guard
+    if isinstance(guard, dict) and "lit" in guard:
+        return guard.get("lit")
+    return guard
+
+
+def _convert_workflow_effects(effects: Any) -> List[Dict[str, Any]]:
+    """Convert IRCS workflow effects into dispatcher-supported effect dicts."""
+    if not isinstance(effects, list):
+        return []
+
+    converted: List[Dict[str, Any]] = []
+    for eff in effects:
+        if not isinstance(eff, dict):
+            continue
+        kind = eff.get("kind")
+        if kind == "set_state":
+            value = _normalize_state_name(eff.get("value"))
+            if value:
+                converted.append({"type": "set_state", "value": value})
+        elif kind == "set_field":
+            field = eff.get("field")
+            value = eff.get("value")
+            if isinstance(value, dict) and "lit" in value:
+                value = value.get("lit")
+            if isinstance(field, str):
+                converted.append({"type": "set_field", "field": field, "value": value})
+        elif kind == "bump_version":
+            field = eff.get("field")
+            by = eff.get("by", 1)
+            if field == "version" and by == 1:
+                converted.append({"type": "bump_version", "value": 1})
+    return converted
+
+
+def _lookup_transition_def_from_ircs(
+    ir: Dict[str, Any],
+    workflow_name: Optional[str],
+    transition_name: Optional[str],
+) -> Optional[Dict[str, Any]]:
+    if not workflow_name or not transition_name:
+        return None
+
+    workflows = ir.get("workflows", [])
+    if not isinstance(workflows, list):
+        return None
+
+    for wf in workflows:
+        if not isinstance(wf, dict):
+            continue
+        if wf.get("name") != workflow_name:
+            continue
+        transitions = wf.get("transitions", [])
+        if not isinstance(transitions, list):
+            return None
+        for tr in transitions:
+            if not isinstance(tr, dict):
+                continue
+            if tr.get("name") != transition_name:
+                continue
+            return {
+                "guard": _extract_guard_literal(tr.get("guard")),
+                "from": _normalize_state_name(tr.get("from")),
+                "to": _normalize_state_name(tr.get("to")),
+                "effects": _convert_workflow_effects(tr.get("effects", [])),
+                "approvals": tr.get("approvals"),
+            }
+    return None
+
+
 def emit_operations_from_ircs(
     ir: Dict[str, Any],
     dept_id: Optional[str] = None,
@@ -80,6 +159,14 @@ def emit_operations_from_ircs(
         }
 
         if bind:
+            # If this is a workflow transition, enrich bind with transition_def for runtime execution.
+            if isinstance(bind, dict) and bind.get("kind") == "transition":
+                workflow_name = bind.get("workflow")
+                transition_name = bind.get("transition")
+                transition_def = _lookup_transition_def_from_ircs(ir, workflow_name, transition_name)
+                if transition_def:
+                    bind = dict(bind)
+                    bind["transition_def"] = transition_def
             op_dict["bind"] = bind
 
         operations_list.append(op_dict)
