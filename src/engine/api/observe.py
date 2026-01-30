@@ -8,7 +8,7 @@ from __future__ import annotations
 
 from typing import Any, Dict, List, Optional, Set
 
-from fastapi import APIRouter, Request
+from fastapi import APIRouter, HTTPException, Request
 from pydantic import BaseModel, Field
 
 from engine.agent_ops.read_model import is_denied_event
@@ -35,6 +35,28 @@ class ObserveActorItem(BaseModel):
 class ObserveActorsResponse(BaseModel):
     items: List[ObserveActorItem]
     next_cursor: Optional[str] = None
+
+
+class ObserveEventItem(BaseModel):
+    seq: int
+    occurred_at: str
+    event_type: str
+    gate: Optional[str] = None
+    allowed: Optional[bool] = None
+    code: Optional[str] = None
+    reason: Optional[str] = None
+    actor_id: str
+    actor_roles: List[str] = Field(default_factory=list)
+    case_id: str
+    dept_id: Optional[str] = None
+    step: str
+    request_id: Optional[str] = None
+
+
+class ObserveActorDetailResponse(BaseModel):
+    actor: ObserveActorItem
+    recent_events: List[ObserveEventItem] = Field(default_factory=list)
+    denied_events: List[ObserveEventItem] = Field(default_factory=list)
 
 
 @router.get("/actors", response_model=ObserveActorsResponse)
@@ -122,3 +144,121 @@ async def observe_actors(limit: int = 50, request: Request = None):
 
     return ObserveActorsResponse(items=items, next_cursor=None)
 
+
+def _ledger_event_to_observe_item(event: Any) -> ObserveEventItem:
+    """Convert a LedgerEvent to ObserveEventItem."""
+    payload = event.payload or {}
+    allowed = payload.get("allowed")
+    code = payload.get("code")
+
+    # Back-compat: older RBAC_DECISION events used payload.decision ("allow"/"deny")
+    # and payload.permission, but did not include payload.allowed or payload.code.
+    # Infer both so downstream tooling (portal) can count denials and translate.
+    if event.event_type == "RBAC_DECISION" and allowed is None:
+        decision = payload.get("decision")
+        if decision in ("allow", "deny"):
+            allowed = decision == "allow"
+            if code is None:
+                code = "RBAC_ALLOWED" if allowed else "RBAC_DENIED"
+
+    return ObserveEventItem(
+        seq=event.seq,
+        occurred_at=event.timestamp or "",
+        event_type=event.event_type,
+        gate=payload.get("gate"),
+        allowed=allowed,
+        code=code,
+        reason=payload.get("reason") or payload.get("message"),
+        actor_id=event.actor_id,
+        actor_roles=list(event.actor_roles) if event.actor_roles else [],
+        case_id=event.case_id,
+        dept_id=event.dept_id,
+        step=event.step,
+        request_id=event.request_id,
+    )
+
+
+@router.get("/actors/{actor_id}", response_model=ObserveActorDetailResponse)
+async def observe_actor_detail(
+    actor_id: str,
+    limit: int = 50,
+    dept_id: Optional[str] = None,
+    request: Request = None,
+):
+    """Get detailed information about a specific actor.
+
+    Returns actor stats plus recent events and denied events.
+
+    Requires:
+    - `X-Institution-Id` (or legacy `X-Tenant-Id`)
+    - Admin auth (`X-Admin-Key` or bootstrap `X-Admin-Token` where allowed)
+    """
+    if request is None:  # pragma: no cover
+        raise RuntimeError("Request is required")
+
+    institution_id = resolve_institution_id(request, require_header=True)
+    require_admin_auth(request, institution_id)
+
+    ledger = get_ledger_for_institution(institution_id)
+    all_events = ledger.get_all_events()
+
+    # Filter events for this actor (and optionally dept_id)
+    actor_events = []
+    for event in all_events:
+        if event.actor_id != actor_id:
+            continue
+        if dept_id and event.dept_id != dept_id:
+            continue
+        actor_events.append(event)
+
+    # Check actor token registry for roles and registered status
+    registry = get_actor_tokens_registry()
+    actor_roles: Set[str] = set()
+    registered = False
+    for actor in registry.list_actors(institution_id):
+        if actor.actor_id == actor_id and actor.status == "active":
+            registered = True
+            actor_roles.update(actor.roles)
+
+    # If no events and not registered, return 404
+    if not actor_events and not registered:
+        raise HTTPException(status_code=404, detail="Actor not found")
+
+    # Compute stats
+    total_events = len(actor_events)
+    denied_count = sum(1 for e in actor_events if is_denied_event(e))
+    dept_ids: Set[str] = set()
+    last_active: Optional[str] = None
+
+    for event in actor_events:
+        if event.dept_id:
+            dept_ids.add(event.dept_id)
+        ts = event.timestamp
+        if ts and (last_active is None or ts > last_active):
+            last_active = ts
+
+    # Build actor item
+    actor_item = ObserveActorItem(
+        actor_id=actor_id,
+        name=actor_id,
+        registered=registered,
+        roles=sorted(actor_roles),
+        dept_ids=sorted(dept_ids),
+        total_events=total_events,
+        denied_count=denied_count,
+        last_active=last_active,
+    )
+
+    # Recent events (most recent first, limited)
+    sorted_events = sorted(actor_events, key=lambda e: e.timestamp or "", reverse=True)
+    recent_events = [_ledger_event_to_observe_item(e) for e in sorted_events[:limit]]
+
+    # Denied events (most recent first, limited)
+    denied_events_list = [e for e in sorted_events if is_denied_event(e)]
+    denied_events = [_ledger_event_to_observe_item(e) for e in denied_events_list[:limit]]
+
+    return ObserveActorDetailResponse(
+        actor=actor_item,
+        recent_events=recent_events,
+        denied_events=denied_events,
+    )

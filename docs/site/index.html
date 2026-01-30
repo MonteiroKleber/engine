@@ -1,0 +1,1356 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Libervia AI Governance - Governança para AI Agents</title>
+  <meta name="description" content="Plataforma de governança para AI Agents. Controle, auditoria e visibilidade em tempo real para suas automações de IA.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --primary: #6366f1;
+      --primary-dark: #4f46e5;
+      --secondary: #0ea5e9;
+      --accent: #f59e0b;
+      --dark: #0f172a;
+      --dark-light: #1e293b;
+      --gray: #64748b;
+      --gray-light: #94a3b8;
+      --light: #f8fafc;
+      --white: #ffffff;
+      --success: #10b981;
+      --danger: #ef4444;
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    html {
+      scroll-behavior: smooth;
+    }
+
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      background: var(--dark);
+      color: var(--light);
+      line-height: 1.6;
+    }
+
+    /* Utility Classes */
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 0 24px;
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 14px 28px;
+      border-radius: 8px;
+      font-weight: 600;
+      font-size: 16px;
+      text-decoration: none;
+      transition: all 0.3s ease;
+      cursor: pointer;
+      border: none;
+    }
+
+    .btn-primary {
+      background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
+      color: var(--white);
+      box-shadow: 0 4px 20px rgba(99, 102, 241, 0.4);
+    }
+
+    .btn-primary:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 30px rgba(99, 102, 241, 0.5);
+    }
+
+    .btn-secondary {
+      background: transparent;
+      color: var(--light);
+      border: 2px solid var(--gray);
+    }
+
+    .btn-secondary:hover {
+      border-color: var(--primary);
+      color: var(--primary);
+    }
+
+    .section-title {
+      font-size: clamp(32px, 5vw, 48px);
+      font-weight: 800;
+      margin-bottom: 16px;
+      background: linear-gradient(135deg, var(--light) 0%, var(--gray-light) 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .section-subtitle {
+      font-size: 18px;
+      color: var(--gray-light);
+      max-width: 600px;
+      margin: 0 auto 48px;
+    }
+
+    /* Language Toggle */
+    .lang-toggle {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      z-index: 1000;
+      display: flex;
+      gap: 4px;
+      background: var(--dark-light);
+      padding: 4px;
+      border-radius: 8px;
+      border: 1px solid rgba(255,255,255,0.1);
+    }
+
+    .lang-btn {
+      padding: 8px 16px;
+      border: none;
+      background: transparent;
+      color: var(--gray-light);
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      border-radius: 6px;
+      transition: all 0.2s;
+    }
+
+    .lang-btn.active {
+      background: var(--primary);
+      color: var(--white);
+    }
+
+    .lang-btn:hover:not(.active) {
+      color: var(--light);
+    }
+
+    /* Navigation */
+    nav {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      z-index: 900;
+      padding: 16px 0;
+      background: rgba(15, 23, 42, 0.8);
+      backdrop-filter: blur(20px);
+      border-bottom: 1px solid rgba(255,255,255,0.05);
+    }
+
+    nav .container {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .logo {
+      font-size: 24px;
+      font-weight: 800;
+      color: var(--light);
+      text-decoration: none;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .logo-icon {
+      width: 36px;
+      height: 36px;
+      background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 20px;
+    }
+
+    .nav-links {
+      display: flex;
+      gap: 32px;
+      list-style: none;
+    }
+
+    .nav-links a {
+      color: var(--gray-light);
+      text-decoration: none;
+      font-weight: 500;
+      transition: color 0.2s;
+    }
+
+    .nav-links a:hover {
+      color: var(--light);
+    }
+
+    .nav-cta {
+      display: flex;
+      gap: 12px;
+    }
+
+    .mobile-menu-btn {
+      display: none;
+      background: none;
+      border: none;
+      color: var(--light);
+      font-size: 24px;
+      cursor: pointer;
+    }
+
+    /* Hero Section */
+    .hero {
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      padding: 120px 0 80px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .hero::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: radial-gradient(ellipse at 30% 20%, rgba(99, 102, 241, 0.15) 0%, transparent 50%),
+                  radial-gradient(ellipse at 70% 80%, rgba(14, 165, 233, 0.1) 0%, transparent 50%);
+      pointer-events: none;
+    }
+
+    .hero .container {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 60px;
+      align-items: center;
+      position: relative;
+    }
+
+    .hero-content {
+      max-width: 600px;
+    }
+
+    .hero-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 16px;
+      background: rgba(99, 102, 241, 0.1);
+      border: 1px solid rgba(99, 102, 241, 0.3);
+      border-radius: 100px;
+      font-size: 14px;
+      color: var(--primary);
+      margin-bottom: 24px;
+    }
+
+    .hero-badge::before {
+      content: '';
+      width: 8px;
+      height: 8px;
+      background: var(--success);
+      border-radius: 50%;
+      animation: pulse 2s infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.5; }
+    }
+
+    .hero h1 {
+      font-size: clamp(40px, 6vw, 64px);
+      font-weight: 800;
+      line-height: 1.1;
+      margin-bottom: 24px;
+    }
+
+    .hero h1 span {
+      background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .hero p {
+      font-size: 20px;
+      color: var(--gray-light);
+      margin-bottom: 32px;
+      line-height: 1.7;
+    }
+
+    .hero-buttons {
+      display: flex;
+      gap: 16px;
+      flex-wrap: wrap;
+    }
+
+    .hero-visual {
+      position: relative;
+    }
+
+    .hero-card {
+      background: var(--dark-light);
+      border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 16px;
+      padding: 24px;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+    }
+
+    .hero-card-header {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 20px;
+      padding-bottom: 16px;
+      border-bottom: 1px solid rgba(255,255,255,0.1);
+    }
+
+    .hero-card-avatar {
+      width: 40px;
+      height: 40px;
+      background: linear-gradient(135deg, var(--primary), var(--secondary));
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 20px;
+    }
+
+    .hero-card-title {
+      font-weight: 600;
+      font-size: 14px;
+    }
+
+    .hero-card-subtitle {
+      font-size: 12px;
+      color: var(--gray-light);
+    }
+
+    .hero-card-content {
+      font-size: 15px;
+      line-height: 1.8;
+    }
+
+    .hero-card-content .highlight {
+      color: var(--accent);
+      font-weight: 600;
+    }
+
+    .hero-card-evidence {
+      margin-top: 16px;
+      padding: 12px;
+      background: rgba(16, 185, 129, 0.1);
+      border: 1px solid rgba(16, 185, 129, 0.2);
+      border-radius: 8px;
+      font-size: 13px;
+      color: var(--success);
+    }
+
+    .floating-badge {
+      position: absolute;
+      background: var(--dark-light);
+      border: 1px solid rgba(255,255,255,0.1);
+      padding: 12px 16px;
+      border-radius: 12px;
+      font-size: 14px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      box-shadow: 0 10px 40px rgba(0,0,0,0.3);
+    }
+
+    .floating-badge.top-right {
+      top: -20px;
+      right: -20px;
+    }
+
+    .floating-badge.bottom-left {
+      bottom: 40px;
+      left: -40px;
+    }
+
+    .floating-badge-icon {
+      width: 32px;
+      height: 32px;
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 16px;
+    }
+
+    .floating-badge-icon.success {
+      background: rgba(16, 185, 129, 0.2);
+      color: var(--success);
+    }
+
+    .floating-badge-icon.warning {
+      background: rgba(245, 158, 11, 0.2);
+      color: var(--accent);
+    }
+
+    /* Problem Section */
+    .problem {
+      padding: 100px 0;
+      background: linear-gradient(180deg, var(--dark) 0%, var(--dark-light) 100%);
+    }
+
+    .problem .container {
+      text-align: center;
+    }
+
+    .problem-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 24px;
+      margin-top: 48px;
+    }
+
+    .problem-card {
+      background: var(--dark);
+      border: 1px solid rgba(239, 68, 68, 0.2);
+      border-radius: 16px;
+      padding: 32px;
+      text-align: left;
+      transition: all 0.3s;
+    }
+
+    .problem-card:hover {
+      border-color: rgba(239, 68, 68, 0.4);
+      transform: translateY(-4px);
+    }
+
+    .problem-card-icon {
+      width: 48px;
+      height: 48px;
+      background: rgba(239, 68, 68, 0.1);
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 24px;
+      margin-bottom: 20px;
+    }
+
+    .problem-card h3 {
+      font-size: 20px;
+      margin-bottom: 12px;
+      color: var(--light);
+    }
+
+    .problem-card p {
+      color: var(--gray-light);
+      font-size: 15px;
+    }
+
+    /* Solution Section */
+    .solution {
+      padding: 100px 0;
+      background: var(--dark-light);
+    }
+
+    .solution .container {
+      text-align: center;
+    }
+
+    .solution-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 32px;
+      margin-top: 48px;
+    }
+
+    .solution-card {
+      background: var(--dark);
+      border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 20px;
+      padding: 40px;
+      text-align: left;
+      transition: all 0.3s;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .solution-card::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 4px;
+      background: linear-gradient(90deg, var(--primary), var(--secondary));
+      opacity: 0;
+      transition: opacity 0.3s;
+    }
+
+    .solution-card:hover::before {
+      opacity: 1;
+    }
+
+    .solution-card:hover {
+      border-color: var(--primary);
+      transform: translateY(-4px);
+    }
+
+    .solution-card-icon {
+      width: 56px;
+      height: 56px;
+      background: linear-gradient(135deg, rgba(99, 102, 241, 0.2), rgba(14, 165, 233, 0.2));
+      border-radius: 14px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 28px;
+      margin-bottom: 24px;
+    }
+
+    .solution-card h3 {
+      font-size: 24px;
+      margin-bottom: 16px;
+      color: var(--light);
+    }
+
+    .solution-card p {
+      color: var(--gray-light);
+      font-size: 16px;
+      margin-bottom: 20px;
+    }
+
+    .solution-card-features {
+      list-style: none;
+    }
+
+    .solution-card-features li {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 8px 0;
+      font-size: 14px;
+      color: var(--gray-light);
+    }
+
+    .solution-card-features li::before {
+      content: '✓';
+      color: var(--success);
+      font-weight: bold;
+    }
+
+    /* Comparison Section */
+    .comparison {
+      padding: 100px 0;
+      background: var(--dark);
+    }
+
+    .comparison .container {
+      text-align: center;
+    }
+
+    .comparison-table {
+      margin-top: 48px;
+      background: var(--dark-light);
+      border-radius: 20px;
+      overflow: hidden;
+      border: 1px solid rgba(255,255,255,0.1);
+    }
+
+    .comparison-table table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+
+    .comparison-table th,
+    .comparison-table td {
+      padding: 20px 24px;
+      text-align: left;
+      border-bottom: 1px solid rgba(255,255,255,0.05);
+    }
+
+    .comparison-table th {
+      background: rgba(99, 102, 241, 0.1);
+      font-weight: 600;
+      font-size: 14px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      color: var(--gray-light);
+    }
+
+    .comparison-table th:first-child {
+      text-align: left;
+    }
+
+    .comparison-table th:not(:first-child) {
+      text-align: center;
+    }
+
+    .comparison-table td:not(:first-child) {
+      text-align: center;
+    }
+
+    .comparison-table tr:last-child td {
+      border-bottom: none;
+    }
+
+    .comparison-table .feature-name {
+      font-weight: 500;
+      color: var(--light);
+    }
+
+    .check {
+      color: var(--success);
+      font-size: 20px;
+    }
+
+    .cross {
+      color: var(--danger);
+      font-size: 20px;
+    }
+
+    .partial {
+      color: var(--accent);
+      font-size: 14px;
+    }
+
+    /* CTA Section */
+    .cta {
+      padding: 100px 0;
+      background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+      text-align: center;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .cta::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.05'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+      opacity: 0.5;
+    }
+
+    .cta .container {
+      position: relative;
+    }
+
+    .cta h2 {
+      font-size: clamp(32px, 5vw, 48px);
+      font-weight: 800;
+      margin-bottom: 16px;
+      color: var(--white);
+    }
+
+    .cta p {
+      font-size: 20px;
+      color: rgba(255,255,255,0.8);
+      margin-bottom: 32px;
+      max-width: 600px;
+      margin-left: auto;
+      margin-right: auto;
+    }
+
+    .cta .btn-primary {
+      background: var(--white);
+      color: var(--primary-dark);
+      box-shadow: 0 4px 20px rgba(0,0,0,0.2);
+    }
+
+    .cta .btn-primary:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 30px rgba(0,0,0,0.3);
+    }
+
+    /* Footer */
+    footer {
+      padding: 60px 0 30px;
+      background: var(--dark);
+      border-top: 1px solid rgba(255,255,255,0.05);
+    }
+
+    .footer-content {
+      display: grid;
+      grid-template-columns: 2fr 1fr 1fr 1fr;
+      gap: 48px;
+      margin-bottom: 48px;
+    }
+
+    .footer-brand {
+      max-width: 300px;
+    }
+
+    .footer-brand .logo {
+      margin-bottom: 16px;
+    }
+
+    .footer-brand p {
+      color: var(--gray-light);
+      font-size: 14px;
+      line-height: 1.7;
+    }
+
+    .footer-links h4 {
+      font-size: 14px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      color: var(--light);
+      margin-bottom: 20px;
+    }
+
+    .footer-links ul {
+      list-style: none;
+    }
+
+    .footer-links a {
+      color: var(--gray-light);
+      text-decoration: none;
+      font-size: 14px;
+      display: block;
+      padding: 8px 0;
+      transition: color 0.2s;
+    }
+
+    .footer-links a:hover {
+      color: var(--light);
+    }
+
+    .footer-bottom {
+      padding-top: 30px;
+      border-top: 1px solid rgba(255,255,255,0.05);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 14px;
+      color: var(--gray);
+    }
+
+    /* Mobile Responsive */
+    @media (max-width: 1024px) {
+      .hero .container {
+        grid-template-columns: 1fr;
+        gap: 48px;
+      }
+
+      .hero-visual {
+        order: -1;
+      }
+
+      .floating-badge {
+        display: none;
+      }
+
+      .problem-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .solution-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .footer-content {
+        grid-template-columns: 1fr 1fr;
+        gap: 32px;
+      }
+    }
+
+    @media (max-width: 768px) {
+      .nav-links,
+      .nav-cta {
+        display: none;
+      }
+
+      .mobile-menu-btn {
+        display: block;
+      }
+
+      .lang-toggle {
+        top: auto;
+        bottom: 20px;
+        right: 20px;
+      }
+
+      .hero {
+        padding: 100px 0 60px;
+        min-height: auto;
+      }
+
+      .hero h1 {
+        font-size: 36px;
+      }
+
+      .hero p {
+        font-size: 18px;
+      }
+
+      .hero-buttons {
+        flex-direction: column;
+      }
+
+      .hero-buttons .btn {
+        width: 100%;
+        justify-content: center;
+      }
+
+      .comparison-table {
+        overflow-x: auto;
+      }
+
+      .comparison-table table {
+        min-width: 600px;
+      }
+
+      .footer-content {
+        grid-template-columns: 1fr;
+        gap: 32px;
+      }
+
+      .footer-bottom {
+        flex-direction: column;
+        gap: 16px;
+        text-align: center;
+      }
+    }
+
+    /* Language visibility */
+    [data-lang="en"] { display: none; }
+    [data-lang="pt"] { display: block; }
+
+    html[lang="en"] [data-lang="en"] { display: block; }
+    html[lang="en"] [data-lang="pt"] { display: none; }
+
+    /* For inline elements */
+    span[data-lang="en"], a[data-lang="en"] { display: none; }
+    span[data-lang="pt"], a[data-lang="pt"] { display: inline; }
+
+    html[lang="en"] span[data-lang="en"],
+    html[lang="en"] a[data-lang="en"] { display: inline; }
+    html[lang="en"] span[data-lang="pt"],
+    html[lang="en"] a[data-lang="pt"] { display: none; }
+
+    /* For flex items */
+    .hero-buttons [data-lang="en"],
+    .nav-cta [data-lang="en"] { display: none; }
+    .hero-buttons [data-lang="pt"],
+    .nav-cta [data-lang="pt"] { display: inline-flex; }
+
+    html[lang="en"] .hero-buttons [data-lang="en"],
+    html[lang="en"] .nav-cta [data-lang="en"] { display: inline-flex; }
+    html[lang="en"] .hero-buttons [data-lang="pt"],
+    html[lang="en"] .nav-cta [data-lang="pt"] { display: none; }
+  </style>
+</head>
+<body>
+
+  <!-- Language Toggle -->
+  <div class="lang-toggle">
+    <button class="lang-btn active" data-lang-switch="pt">PT</button>
+    <button class="lang-btn" data-lang-switch="en">EN</button>
+  </div>
+
+  <!-- Navigation -->
+  <nav>
+    <div class="container">
+      <a href="#" class="logo">
+        <div class="logo-icon">L</div>
+        Libervia
+      </a>
+      <ul class="nav-links">
+        <li>
+          <a href="#problem" data-lang="pt">Problema</a>
+          <a href="#problem" data-lang="en">Problem</a>
+        </li>
+        <li>
+          <a href="#solution" data-lang="pt">Solucao</a>
+          <a href="#solution" data-lang="en">Solution</a>
+        </li>
+        <li>
+          <a href="#comparison" data-lang="pt">Comparativo</a>
+          <a href="#comparison" data-lang="en">Comparison</a>
+        </li>
+      </ul>
+      <div class="nav-cta">
+        <a href="#cta" class="btn btn-primary" data-lang="pt">Agendar Demo</a>
+        <a href="#cta" class="btn btn-primary" data-lang="en">Book Demo</a>
+      </div>
+      <button class="mobile-menu-btn">☰</button>
+    </div>
+  </nav>
+
+  <!-- Hero Section -->
+  <section class="hero">
+    <div class="container">
+      <div class="hero-content">
+        <div class="hero-badge">
+          <span data-lang="pt">Plataforma On-Premises</span>
+          <span data-lang="en">On-Premises Platform</span>
+        </div>
+
+        <h1 data-lang="pt">
+          Seus AI Agents.<br>
+          Suas Regras.<br>
+          <span>Prova Imutavel.</span>
+        </h1>
+        <h1 data-lang="en">
+          Your AI Agents.<br>
+          Your Rules.<br>
+          <span>Immutable Proof.</span>
+        </h1>
+
+        <p data-lang="pt">
+          Plataforma de governanca que permite enterprises deployar AI agents com controle corporativo: limites de autonomia, aprovacoes multi-nivel, auditoria imutavel e visibilidade executiva em tempo real.
+        </p>
+        <p data-lang="en">
+          Governance platform that enables enterprises to deploy AI agents with corporate control: autonomy limits, multi-level approvals, immutable audit trail, and real-time executive visibility.
+        </p>
+
+        <div class="hero-buttons">
+          <a href="#cta" class="btn btn-primary" data-lang="pt">Agendar Demonstracao</a>
+          <a href="#cta" class="btn btn-primary" data-lang="en">Schedule Demo</a>
+          <a href="#solution" class="btn btn-secondary" data-lang="pt">Ver Recursos</a>
+          <a href="#solution" class="btn btn-secondary" data-lang="en">See Features</a>
+        </div>
+      </div>
+
+      <div class="hero-visual">
+        <div class="hero-card">
+          <div class="hero-card-header">
+            <div class="hero-card-avatar">🤖</div>
+            <div>
+              <div class="hero-card-title" data-lang="pt">Assistente Executivo</div>
+              <div class="hero-card-title" data-lang="en">Executive Assistant</div>
+              <div class="hero-card-subtitle" data-lang="pt">Libervia AI Governance</div>
+              <div class="hero-card-subtitle" data-lang="en">Libervia AI Governance</div>
+            </div>
+          </div>
+          <div class="hero-card-content">
+            <p data-lang="pt">
+              Ontem o <span class="highlight">Agent de Compras</span> processou 47 solicitacoes.
+              3 foram bloqueadas por exceder o limite de R$10k sem aprovacao gerencial
+              <span class="highlight">(registros #234, #267, #289)</span>.
+            </p>
+            <p data-lang="en">
+              Yesterday the <span class="highlight">Purchasing Agent</span> processed 47 requests.
+              3 were blocked for exceeding the $10k limit without managerial approval
+              <span class="highlight">(records #234, #267, #289)</span>.
+            </p>
+          </div>
+          <div class="hero-card-evidence">
+            <span data-lang="pt">✓ Resposta com evidencias verificaveis</span>
+            <span data-lang="en">✓ Response with verifiable evidence</span>
+          </div>
+        </div>
+
+        <div class="floating-badge top-right">
+          <div class="floating-badge-icon success">✓</div>
+          <div>
+            <div style="font-weight: 600; font-size: 13px;">47 <span data-lang="pt">aprovados</span><span data-lang="en">approved</span></div>
+            <div style="font-size: 11px; color: var(--gray-light);"><span data-lang="pt">Hoje</span><span data-lang="en">Today</span></div>
+          </div>
+        </div>
+
+        <div class="floating-badge bottom-left">
+          <div class="floating-badge-icon warning">⚠</div>
+          <div>
+            <div style="font-weight: 600; font-size: 13px;">3 <span data-lang="pt">bloqueados</span><span data-lang="en">blocked</span></div>
+            <div style="font-size: 11px; color: var(--gray-light);"><span data-lang="pt">Limite excedido</span><span data-lang="en">Limit exceeded</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Problem Section -->
+  <section class="problem" id="problem">
+    <div class="container">
+      <h2 class="section-title" data-lang="pt">O Problema que Apavora o C-Level</h2>
+      <h2 class="section-title" data-lang="en">The Problem that Terrifies the C-Level</h2>
+
+      <p class="section-subtitle" data-lang="pt">
+        Toda empresa esta deployando AI agents. Ninguem sabe o que eles estao fazendo.
+      </p>
+      <p class="section-subtitle" data-lang="en">
+        Every company is deploying AI agents. No one knows what they're doing.
+      </p>
+
+      <div class="problem-grid">
+        <div class="problem-card">
+          <div class="problem-card-icon">❓</div>
+          <h3 data-lang="pt">"Quantas decisoes o agent tomou?"</h3>
+          <h3 data-lang="en">"How many decisions did the agent make?"</h3>
+          <p data-lang="pt">
+            Sem visibilidade sobre o volume e impacto das acoes automatizadas.
+            O CFO descobre so quando algo da errado.
+          </p>
+          <p data-lang="en">
+            No visibility into the volume and impact of automated actions.
+            The CFO only finds out when something goes wrong.
+          </p>
+        </div>
+
+        <div class="problem-card">
+          <div class="problem-card-icon">🔓</div>
+          <h3 data-lang="pt">"Ele aprovou algo que nao deveria?"</h3>
+          <h3 data-lang="en">"Did it approve something it shouldn't have?"</h3>
+          <p data-lang="pt">
+            Agents com permissoes abertas demais. Sem separacao de deveres.
+            Sem limites de autonomia.
+          </p>
+          <p data-lang="en">
+            Agents with overly broad permissions. No separation of duties.
+            No autonomy limits.
+          </p>
+        </div>
+
+        <div class="problem-card">
+          <div class="problem-card-icon">📋</div>
+          <h3 data-lang="pt">"Como provamos para o auditor?"</h3>
+          <h3 data-lang="en">"How do we prove it to the auditor?"</h3>
+          <p data-lang="pt">
+            Logs editaveis. Sem trilha de auditoria imutavel.
+            Compliance vira um pesadelo.
+          </p>
+          <p data-lang="en">
+            Editable logs. No immutable audit trail.
+            Compliance becomes a nightmare.
+          </p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Solution Section -->
+  <section class="solution" id="solution">
+    <div class="container">
+      <h2 class="section-title" data-lang="pt">A Solucao: Governanca de Verdade</h2>
+      <h2 class="section-title" data-lang="en">The Solution: Real Governance</h2>
+
+      <p class="section-subtitle" data-lang="pt">
+        Cinco camadas de controle independentes. Ledger imutavel. Visibilidade executiva.
+      </p>
+      <p class="section-subtitle" data-lang="en">
+        Five independent control layers. Immutable ledger. Executive visibility.
+      </p>
+
+      <div class="solution-grid">
+        <div class="solution-card">
+          <div class="solution-card-icon">🛡️</div>
+          <h3 data-lang="pt">Agent Guardrails</h3>
+          <h3 data-lang="en">Agent Guardrails</h3>
+          <p data-lang="pt">
+            Coloque freios nos seus agents antes que causem danos.
+          </p>
+          <p data-lang="en">
+            Put brakes on your agents before they cause damage.
+          </p>
+          <ul class="solution-card-features">
+            <li data-lang="pt">Limites de autonomia por agent (ex: ate R$5k/dia)</li>
+            <li data-lang="en">Autonomy limits per agent (e.g., up to $5k/day)</li>
+            <li data-lang="pt">Separacao de deveres (quem propoe nao aprova)</li>
+            <li data-lang="en">Separation of duties (proposer can't approve)</li>
+            <li data-lang="pt">RBAC granular por agent e acao</li>
+            <li data-lang="en">Granular RBAC per agent and action</li>
+            <li data-lang="pt">Kill switch instantaneo</li>
+            <li data-lang="en">Instant kill switch</li>
+          </ul>
+        </div>
+
+        <div class="solution-card">
+          <div class="solution-card-icon">📜</div>
+          <h3 data-lang="pt">Compliance Autopilot</h3>
+          <h3 data-lang="en">Compliance Autopilot</h3>
+          <p data-lang="pt">
+            Auditoria pronta antes do auditor chegar.
+          </p>
+          <p data-lang="en">
+            Audit-ready before the auditor arrives.
+          </p>
+          <ul class="solution-card-features">
+            <li data-lang="pt">Ledger append-only com hash-chain</li>
+            <li data-lang="en">Append-only ledger with hash-chain</li>
+            <li data-lang="pt">Cada acao com seq, timestamp, actor, result</li>
+            <li data-lang="en">Each action with seq, timestamp, actor, result</li>
+            <li data-lang="pt">Prova matematica de integridade</li>
+            <li data-lang="en">Mathematical proof of integrity</li>
+            <li data-lang="pt">Export para auditoria (JSON/CSV)</li>
+            <li data-lang="en">Export for audit (JSON/CSV)</li>
+          </ul>
+        </div>
+
+        <div class="solution-card">
+          <div class="solution-card-icon">✅</div>
+          <h3 data-lang="pt">Approval Workflows</h3>
+          <h3 data-lang="en">Approval Workflows</h3>
+          <p data-lang="pt">
+            Aprovacoes como cidadas de primeira classe.
+          </p>
+          <p data-lang="en">
+            Approvals as first-class citizens.
+          </p>
+          <ul class="solution-card-features">
+            <li data-lang="pt">Multi-aprovador configuravel</li>
+            <li data-lang="en">Configurable multi-approver</li>
+            <li data-lang="pt">Escalacao automatica por timeout</li>
+            <li data-lang="en">Automatic escalation by timeout</li>
+            <li data-lang="pt">Integrado ao ledger (evidencia completa)</li>
+            <li data-lang="en">Integrated with ledger (complete evidence)</li>
+            <li data-lang="pt">Notificacoes em tempo real</li>
+            <li data-lang="en">Real-time notifications</li>
+          </ul>
+        </div>
+
+        <div class="solution-card">
+          <div class="solution-card-icon">💬</div>
+          <h3 data-lang="pt">Executive AI Assistant</h3>
+          <h3 data-lang="en">Executive AI Assistant</h3>
+          <p data-lang="pt">
+            O CEO pergunta, o sistema responde com evidencia.
+          </p>
+          <p data-lang="en">
+            The CEO asks, the system answers with evidence.
+          </p>
+          <ul class="solution-card-features">
+            <li data-lang="pt">Chat em linguagem natural</li>
+            <li data-lang="en">Natural language chat</li>
+            <li data-lang="pt">Respostas com citacoes verificaveis</li>
+            <li data-lang="en">Responses with verifiable citations</li>
+            <li data-lang="pt">Traducao automatica tecnico → negocio</li>
+            <li data-lang="en">Automatic technical → business translation</li>
+            <li data-lang="pt">Zero alucinacao (so fala o que esta no ledger)</li>
+            <li data-lang="en">Zero hallucination (only states what's in the ledger)</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Comparison Section -->
+  <section class="comparison" id="comparison">
+    <div class="container">
+      <h2 class="section-title" data-lang="pt">Por que Libervia?</h2>
+      <h2 class="section-title" data-lang="en">Why Libervia?</h2>
+
+      <p class="section-subtitle" data-lang="pt">
+        Compare com outras solucoes do mercado.
+      </p>
+      <p class="section-subtitle" data-lang="en">
+        Compare with other market solutions.
+      </p>
+
+      <div class="comparison-table">
+        <table>
+          <thead>
+            <tr>
+              <th data-lang="pt">Recurso</th>
+              <th data-lang="en">Feature</th>
+              <th>Libervia</th>
+              <th>Guardrails AI</th>
+              <th>LangSmith</th>
+              <th>OPA/Rego</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td class="feature-name" data-lang="pt">Multi-camadas de governanca</td>
+              <td class="feature-name" data-lang="en">Multi-layer governance</td>
+              <td><span class="check">✓</span></td>
+              <td><span class="cross">✗</span></td>
+              <td><span class="cross">✗</span></td>
+              <td><span class="partial">Parcial</span></td>
+            </tr>
+            <tr>
+              <td class="feature-name" data-lang="pt">Ledger imutavel (hash-chain)</td>
+              <td class="feature-name" data-lang="en">Immutable ledger (hash-chain)</td>
+              <td><span class="check">✓</span></td>
+              <td><span class="cross">✗</span></td>
+              <td><span class="cross">✗</span></td>
+              <td><span class="cross">✗</span></td>
+            </tr>
+            <tr>
+              <td class="feature-name" data-lang="pt">Approval workflows nativos</td>
+              <td class="feature-name" data-lang="en">Native approval workflows</td>
+              <td><span class="check">✓</span></td>
+              <td><span class="cross">✗</span></td>
+              <td><span class="cross">✗</span></td>
+              <td><span class="cross">✗</span></td>
+            </tr>
+            <tr>
+              <td class="feature-name" data-lang="pt">Limites de autonomia por agent</td>
+              <td class="feature-name" data-lang="en">Autonomy limits per agent</td>
+              <td><span class="check">✓</span></td>
+              <td><span class="cross">✗</span></td>
+              <td><span class="cross">✗</span></td>
+              <td><span class="cross">✗</span></td>
+            </tr>
+            <tr>
+              <td class="feature-name" data-lang="pt">Assistente executivo com evidencias</td>
+              <td class="feature-name" data-lang="en">Executive assistant with evidence</td>
+              <td><span class="check">✓</span></td>
+              <td><span class="cross">✗</span></td>
+              <td><span class="cross">✗</span></td>
+              <td><span class="cross">✗</span></td>
+            </tr>
+            <tr>
+              <td class="feature-name" data-lang="pt">Drift detection</td>
+              <td class="feature-name" data-lang="en">Drift detection</td>
+              <td><span class="check">✓</span></td>
+              <td><span class="cross">✗</span></td>
+              <td><span class="cross">✗</span></td>
+              <td><span class="cross">✗</span></td>
+            </tr>
+            <tr>
+              <td class="feature-name" data-lang="pt">On-premises</td>
+              <td class="feature-name" data-lang="en">On-premises</td>
+              <td><span class="check">✓</span></td>
+              <td><span class="check">✓</span></td>
+              <td><span class="cross">✗</span></td>
+              <td><span class="check">✓</span></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <!-- CTA Section -->
+  <section class="cta" id="cta">
+    <div class="container">
+      <h2 data-lang="pt">Pronto para governar seus AI Agents?</h2>
+      <h2 data-lang="en">Ready to govern your AI Agents?</h2>
+
+      <p data-lang="pt">
+        Agende uma demonstracao e veja como Libervia pode transformar a governanca de IA na sua empresa.
+      </p>
+      <p data-lang="en">
+        Schedule a demo and see how Libervia can transform AI governance at your company.
+      </p>
+
+      <a href="mailto:contato@libervia.io" class="btn btn-primary" data-lang="pt">
+        Agendar Demonstracao →
+      </a>
+      <a href="mailto:contact@libervia.io" class="btn btn-primary" data-lang="en">
+        Schedule Demo →
+      </a>
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <footer>
+    <div class="container">
+      <div class="footer-content">
+        <div class="footer-brand">
+          <a href="#" class="logo">
+            <div class="logo-icon">L</div>
+            Libervia
+          </a>
+          <p data-lang="pt">
+            Plataforma de governanca para AI Agents. Controle, auditoria e visibilidade em tempo real para suas automacoes de IA.
+          </p>
+          <p data-lang="en">
+            Governance platform for AI Agents. Control, audit, and real-time visibility for your AI automations.
+          </p>
+        </div>
+
+        <div class="footer-links">
+          <h4 data-lang="pt">Produto</h4>
+          <h4 data-lang="en">Product</h4>
+          <ul>
+            <li><a href="#solution" data-lang="pt">Recursos</a><a href="#solution" data-lang="en">Features</a></li>
+            <li><a href="#comparison" data-lang="pt">Comparativo</a><a href="#comparison" data-lang="en">Comparison</a></li>
+            <li><a href="#" data-lang="pt">Documentacao</a><a href="#" data-lang="en">Documentation</a></li>
+          </ul>
+        </div>
+
+        <div class="footer-links">
+          <h4 data-lang="pt">Empresa</h4>
+          <h4 data-lang="en">Company</h4>
+          <ul>
+            <li><a href="#" data-lang="pt">Sobre</a><a href="#" data-lang="en">About</a></li>
+            <li><a href="#" data-lang="pt">Blog</a><a href="#" data-lang="en">Blog</a></li>
+            <li><a href="#" data-lang="pt">Contato</a><a href="#" data-lang="en">Contact</a></li>
+          </ul>
+        </div>
+
+        <div class="footer-links">
+          <h4 data-lang="pt">Legal</h4>
+          <h4 data-lang="en">Legal</h4>
+          <ul>
+            <li><a href="#" data-lang="pt">Privacidade</a><a href="#" data-lang="en">Privacy</a></li>
+            <li><a href="#" data-lang="pt">Termos</a><a href="#" data-lang="en">Terms</a></li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="footer-bottom">
+        <div data-lang="pt">© 2026 Libervia. Todos os direitos reservados.</div>
+        <div data-lang="en">© 2026 Libervia. All rights reserved.</div>
+        <div>
+          <span data-lang="pt">Feito com ❤️ para enterprises</span>
+          <span data-lang="en">Made with ❤️ for enterprises</span>
+        </div>
+      </div>
+    </div>
+  </footer>
+
+  <script>
+    // Language Toggle
+    const langBtns = document.querySelectorAll('[data-lang-switch]');
+    const html = document.documentElement;
+
+    langBtns.forEach(btn => {
+      btn.addEventListener('click', () => {
+        const lang = btn.getAttribute('data-lang-switch');
+        html.setAttribute('lang', lang);
+
+        langBtns.forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+
+        // Save preference
+        localStorage.setItem('preferredLang', lang);
+      });
+    });
+
+    // Load saved preference
+    const savedLang = localStorage.getItem('preferredLang');
+    if (savedLang) {
+      html.setAttribute('lang', savedLang);
+      langBtns.forEach(btn => {
+        btn.classList.toggle('active', btn.getAttribute('data-lang-switch') === savedLang);
+      });
+    }
+
+    // Smooth scroll for anchor links
+    document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+      anchor.addEventListener('click', function(e) {
+        e.preventDefault();
+        const target = document.querySelector(this.getAttribute('href'));
+        if (target) {
+          target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+      });
+    });
+
+    // Navbar background on scroll
+    const nav = document.querySelector('nav');
+    window.addEventListener('scroll', () => {
+      if (window.scrollY > 50) {
+        nav.style.background = 'rgba(15, 23, 42, 0.95)';
+      } else {
+        nav.style.background = 'rgba(15, 23, 42, 0.8)';
+      }
+    });
+  </script>
+
+</body>
+</html>

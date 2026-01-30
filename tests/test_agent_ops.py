@@ -168,6 +168,38 @@ class TestIsDeniedEvent:
         )
         assert is_denied_event(event) is True
 
+    def test_rbac_denied_legacy_decision_field(self):
+        """RBAC_DECISION with decision=deny (legacy payload) is denied."""
+        event = LedgerEvent(
+            event_type="RBAC_DECISION",
+            tenant_id="t",
+            actor_id="a",
+            actor_roles=[],
+            case_id="c",
+            step="s",
+            payload={"decision": "deny", "permission": "reports.read"},
+            bundle_manifest_sha256="",
+            contract_ledger_sha256="",
+            engine_version="",
+        )
+        assert is_denied_event(event) is True
+
+    def test_rbac_allowed_legacy_decision_field(self):
+        """RBAC_DECISION with decision=allow (legacy payload) is not denied."""
+        event = LedgerEvent(
+            event_type="RBAC_DECISION",
+            tenant_id="t",
+            actor_id="a",
+            actor_roles=[],
+            case_id="c",
+            step="s",
+            payload={"decision": "allow", "permission": "reports.read"},
+            bundle_manifest_sha256="",
+            contract_ledger_sha256="",
+            engine_version="",
+        )
+        assert is_denied_event(event) is False
+
     def test_rbac_allowed(self):
         """RBAC_DECISION with allowed=True is not denied."""
         event = LedgerEvent(

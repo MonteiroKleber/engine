@@ -1,0 +1,77 @@
+%%{ init: { 'theme': 'base', 'themeVariables': { 'primaryColor': '#1a1a2e', 'primaryTextColor': '#eee', 'lineColor': '#e94560', 'secondaryColor': '#16213e' } } }%%
+
+flowchart TB
+    %% ── Origens (quem pede) ──
+    subgraph ORIGINS["Origens de Execução"]
+        direction LR
+        O1([" LLM Agent\n(Bazari AI)"])
+        O2([" Usuário\n(App / Portal)"])
+        O3([" Workflow\n(Dispatcher)"])
+        O4([" Admin\n(Backoffice)"])
+    end
+
+    %% ── Camada Institucional ──
+    subgraph ENGINE["ENGINE — Camada Institucional (Libervia / EDAP)"]
+        direction TB
+
+        subgraph AUTH["Autenticação & Identidade"]
+            EA1["Verifica token / API key"]
+            EA2["Resolve ator\n(role, institution, scope)"]
+        end
+
+        subgraph VALIDATE["Validação de Políticas ISE"]
+            EV1["Consulta mandates.json\n(quem pode o quê)"]
+            EV2["Consulta policies.json\n(limites, regras, restrições)"]
+            EV3["Consulta workflows.json\n(estado atual, transições válidas)"]
+        end
+
+        subgraph DECIDE{"Decisão"}
+            ED1{"Execução\npermitida?"}
+        end
+
+        subgraph RECORD["Registro no Ledger"]
+            ER1[("Ledger\n(auditoria imutável)")]
+            ER2["operation_id\ntimestamp\nactor\naction\nresult"]
+        end
+
+        AUTH --> VALIDATE
+        VALIDATE --> DECIDE
+        ED1 -->|"PERMITIDO"| PASS["Libera execução"]
+        ED1 -->|"BLOQUEADO"| BLOCK["Rejeita\n(403 / policy_violation)"]
+        ED1 -->|"PENDENTE"| APPROVAL["Enfileira para\naprovação humana"]
+        PASS --> RECORD
+        BLOCK --> RECORD
+        APPROVAL --> RECORD
+    end
+
+    %% ── Execução Real ──
+    subgraph EXECUTION["Execução Downstream"]
+        direction LR
+        X1["Criar produto"]
+        X2["Aprovar pedido"]
+        X3["Moderar conteúdo"]
+        X4["Gerar relatório"]
+        X5["Transição de workflow"]
+    end
+
+    %% ── Conexões ──
+    O1 -->|"tool_call / API"| ENGINE
+    O2 -->|"HTTP request"| ENGINE
+    O3 -->|"dispatch event"| ENGINE
+    O4 -->|"admin action"| ENGINE
+
+    PASS ==>|"executa"| EXECUTION
+    BLOCK -.->|"nega"| ORIGINS
+    APPROVAL -.->|"aguarda aprovação"| O4
+
+    %% ── Estilos ──
+    style ORIGINS fill:#0d1117,stroke:#58a6ff,color:#eee
+    style ENGINE fill:#1a1a2e,stroke:#e94560,color:#eee,stroke-width:3px
+    style AUTH fill:#16213e,stroke:#0f3460,color:#eee
+    style VALIDATE fill:#16213e,stroke:#0f3460,color:#eee
+    style DECIDE fill:#1a1a2e,stroke:#e94560,color:#eee
+    style RECORD fill:#16213e,stroke:#0f3460,color:#eee
+    style EXECUTION fill:#0d1117,stroke:#3fb950,color:#eee
+    style PASS fill:#238636,stroke:#3fb950,color:#fff
+    style BLOCK fill:#da3633,stroke:#f85149,color:#fff
+    style APPROVAL fill:#d29922,stroke:#e3b341,color:#000

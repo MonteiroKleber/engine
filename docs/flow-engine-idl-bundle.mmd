@@ -1,0 +1,55 @@
+%%{ init: { 'theme': 'base', 'themeVariables': { 'primaryColor': '#1a1a2e', 'primaryTextColor': '#eee', 'lineColor': '#e94560', 'secondaryColor': '#16213e' } } }%%
+
+flowchart TD
+    subgraph STEP1["1 · Criação da Instituição"]
+        A1([Admin]) -->|POST /admin/institutions| A2[Engine API]
+        A2 -->|gera| A3[(institution_id\nd9c54363-...)]
+    end
+
+    subgraph STEP2["2 · Definição da IDL"]
+        B1["bazari-mvp.idl"]
+        B1 --- B2["atores\n(user, moderator, admin)"]
+        B1 --- B3["entidades\n(product, order, report)"]
+        B1 --- B4["workflows\n(approvals, transitions)"]
+        B1 --- B5["políticas & endpoints\n(reports, moderation)"]
+    end
+
+    subgraph STEP3["3 · Compilação IDL → IR → Bundle"]
+        direction LR
+        C1["IDL\n(.idl)"] -->|"parse"| C2["IR\n(representação intermediária)"]
+        C2 -->|"engine.ise.compiler"| C3["Bundle"]
+        C3 --- C4["operations.json"]
+        C3 --- C5["mandates.json"]
+        C3 --- C6["workflows.json"]
+        C3 --- C7["policies.json"]
+    end
+
+    subgraph STEP4["4 · Deploy do Servidor"]
+        D1["ENGINE_BUNDLE_PATH=/path/bundle"] --> D2["Engine Server"]
+        D2 --- D3["ENGINE_INSTALL_MODE=prod"]
+        D2 --- D4["ENGINE_AUTH_MODE=strict"]
+        D2 --- D5["ENGINE_API_MODE=idl"]
+        D2 -->|expõe| D6["/reports\n/approvals\n/moderation\n/workflows"]
+    end
+
+    subgraph STEP5["5 · Runtime — Chamadas + Governança"]
+        E1([Usuário]) --> E4
+        E2([Moderador]) --> E4
+        E3([Admin]) --> E4
+        E4["Engine\n(gateway de governança)"] -->|"valida regras\n+ políticas ISE"| E5{"Permitido?"}
+        E5 -->|Sim| E6["Executa operação"]
+        E5 -->|Não| E7["Rejeita\n(403 / policy violation)"]
+        E6 -->|registra| E8[("Ledger\n(auditoria imutável)")]
+        E7 -->|registra| E8
+    end
+
+    STEP1 ==> STEP2
+    STEP2 ==> STEP3
+    STEP3 ==> STEP4
+    STEP4 ==> STEP5
+
+    style STEP1 fill:#1a1a2e,stroke:#e94560,color:#eee
+    style STEP2 fill:#16213e,stroke:#0f3460,color:#eee
+    style STEP3 fill:#1a1a2e,stroke:#e94560,color:#eee
+    style STEP4 fill:#16213e,stroke:#0f3460,color:#eee
+    style STEP5 fill:#1a1a2e,stroke:#e94560,color:#eee

@@ -58,8 +58,17 @@ def is_denied_event(event: LedgerEvent) -> bool:
     }
 
     if event_type in decision_types:
-        # Denied if allowed is explicitly False
-        return event.payload.get("allowed") is False
+        # Denied if allowed is explicitly False (preferred)
+        if event.payload.get("allowed") is False:
+            return True
+
+        # Back-compat: older RBAC_DECISION events used payload.decision ("allow"/"deny")
+        # without payload.allowed. Treat decision=deny as a denial so the observe
+        # API and portal reflect real blocked attempts.
+        if event_type == "RBAC_DECISION":
+            return event.payload.get("decision") == "deny"
+
+        return False
 
     return False
 

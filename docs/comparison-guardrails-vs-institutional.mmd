@@ -1,0 +1,119 @@
+%%{ init: { 'theme': 'base', 'themeVariables': { 'primaryColor': '#1a1a2e', 'primaryTextColor': '#eee', 'lineColor': '#e94560', 'secondaryColor': '#16213e' } } }%%
+
+flowchart TB
+    subgraph TITLE[" "]
+        direction LR
+        T1["🔒 GUARDRAILS (NeMo, Guardrails AI, etc.)"]
+        T2["🏛️ ENGINE — Camada Institucional (Libervia/EDAP)"]
+    end
+
+    %% ══════════════════════════════════════════════
+    %% GUARDRAILS TRADICIONAIS
+    %% ══════════════════════════════════════════════
+    subgraph GUARDRAILS["Guardrails Tradicionais"]
+        direction TB
+
+        subgraph G_SCOPE["Escopo"]
+            GS1["Focado em LLM/prompt"]
+            GS2["Filtra entrada/saída de texto"]
+            GS3["Sem contexto de negócio"]
+        end
+
+        subgraph G_RULES["Regras"]
+            GR1["Tópicos proibidos\n(toxicidade, PII, jailbreak)"]
+            GR2["Hardcoded ou YAML config"]
+            GR3["Genéricas, sem personalização\npor instituição"]
+        end
+
+        subgraph G_ENFORCE["Enforcement"]
+            GE1["Bloqueia/permite resposta"]
+            GE2["Sem workflow de aprovação"]
+            GE3["Sem ledger de auditoria"]
+        end
+
+        subgraph G_LIMIT["Limitações"]
+            GL1["Não sabe quem é o ator"]
+            GL2["Não conhece permissões (RBAC)"]
+            GL3["Não valida estado de workflow"]
+            GL4["Não integra com backend real"]
+        end
+    end
+
+    %% ══════════════════════════════════════════════
+    %% ENGINE / CAMADA INSTITUCIONAL
+    %% ══════════════════════════════════════════════
+    subgraph ENGINE["Engine — Camada Institucional"]
+        direction TB
+
+        subgraph E_SCOPE["Escopo"]
+            ES1["Governa TODA execução\n(LLM, API, Workflow, Admin)"]
+            ES2["Valida ações, não só texto"]
+            ES3["Contexto institucional completo"]
+        end
+
+        subgraph E_RULES["Regras (ISE Compiler)"]
+            ER1["Mandates: quem pode o quê\n(actor → operation → entity)"]
+            ER2["Policies: limites, quotas,\nrestrições por contexto"]
+            ER3["Compiladas de IDL por instituição"]
+        end
+
+        subgraph E_ENFORCE["Enforcement"]
+            EE1["3 saídas: permitir, bloquear,\naguardar aprovação humana"]
+            EE2["Workflow-aware\n(valida transições de estado)"]
+            EE3["Ledger imutável\n(audit trail completo)"]
+        end
+
+        subgraph E_PLUS["Diferenciais"]
+            EP1["Identidade do ator (JWT/scope)"]
+            EP2["RBAC institucional real"]
+            EP3["Multi-tenant por design"]
+            EP4["Integra LLM + Backend + Humanos"]
+        end
+    end
+
+    %% ══════════════════════════════════════════════
+    %% COMPARAÇÃO LADO A LADO
+    %% ══════════════════════════════════════════════
+    subgraph COMPARE["Comparação Direta"]
+        direction LR
+
+        subgraph COL1[" "]
+            C1["Guardrails"]
+        end
+        subgraph COL2[" "]
+            C2["Engine"]
+        end
+
+        C1 --- C2
+    end
+
+    %% ══════════════════════════════════════════════
+    %% TABELA VISUAL
+    %% ══════════════════════════════════════════════
+    subgraph TABLE["Matriz de Comparação"]
+        direction TB
+
+        ROW1["Escopo ───────────── Texto LLM │ Toda execução"]
+        ROW2["Regras ───────────── YAML fixo │ IDL compilada"]
+        ROW3["Identidade ────────── Não │ Sim (JWT + scopes)"]
+        ROW4["RBAC ─────────────── Não │ Sim (mandates)"]
+        ROW5["Workflow State ───── Não │ Sim (transitions)"]
+        ROW6["Aprovação Humana ─── Não │ Sim (approvals)"]
+        ROW7["Ledger/Auditoria ─── Não │ Sim (imutável)"]
+        ROW8["Multi-tenant ─────── Não │ Sim (por instituição)"]
+        ROW9["Backend Integration ─ Não │ Sim (executa ações)"]
+    end
+
+    %% ── Estilos ──
+    style GUARDRAILS fill:#2d1b1b,stroke:#f85149,color:#eee
+    style ENGINE fill:#1a2e1a,stroke:#3fb950,color:#eee
+    style TABLE fill:#161b22,stroke:#30363d,color:#c9d1d9
+    style COMPARE fill:#0d1117,stroke:#30363d,color:#eee
+    style G_SCOPE fill:#21262d,stroke:#f85149,color:#eee
+    style G_RULES fill:#21262d,stroke:#f85149,color:#eee
+    style G_ENFORCE fill:#21262d,stroke:#f85149,color:#eee
+    style G_LIMIT fill:#21262d,stroke:#da3633,color:#eee
+    style E_SCOPE fill:#21262d,stroke:#3fb950,color:#eee
+    style E_RULES fill:#21262d,stroke:#3fb950,color:#eee
+    style E_ENFORCE fill:#21262d,stroke:#3fb950,color:#eee
+    style E_PLUS fill:#21262d,stroke:#238636,color:#eee
