@@ -12,7 +12,6 @@ from engine.ise.emit.policies_emit import (
     emit_policies_json,
     validate_field_path,
     ISEPolicyValidationError,
-    ALLOWED_ENDPOINT_SIGS,
     ALLOWED_PHASES,
     ALLOWED_RULE_TYPES,
 )
@@ -194,44 +193,19 @@ class TestPolicyEmissionMulti:
 class TestPolicyValidationEndpointSig:
     """Tests for endpoint_sig validation."""
 
-    def test_invalid_endpoint_sig_raises_error(self):
-        """Policy with invalid endpoint_sig returns ISE_POLICY_INVALID error."""
-        idl = {
-            **BASE_IDL,
-            "policies": [
-                {
-                    "policy_id": "bad-endpoint",
-                    "phase": "pre",
-                    "endpoint_sig": "POST /unknown/endpoint",  # Invalid
-                    "rule_type": "numeric_max",
-                    "field_path": "amount",
-                    "value": 100,
-                }
-            ],
-        }
-
-        result = compile_bundle_to_memory(
-            idl=json.dumps(idl),
-            bundle_name="test-bundle",
+    def test_any_endpoint_sig_allowed(self):
+        """Any endpoint_sig should be accepted (Engine neutral, no allowlist)."""
+        # Engine is neutral - any endpoint_sig from IDL is allowed
+        policy = IDLPolicy(
+            policy_id="test",
+            phase="pre",
+            endpoint_sig="POST /custom/endpoint",
+            rule_type="numeric_max",
+            field_path="amount",
+            value=100,
         )
-
-        assert result["success"] is False
-        assert result["error_code"] == errors.ISE_POLICY_INVALID
-        assert "endpoint" in result["error_message"].lower() or "policy" in result["error_message"].lower()
-
-    def test_valid_endpoint_sigs_allowed(self):
-        """Verify allowed endpoint_sig values work."""
-        for endpoint_sig in ALLOWED_ENDPOINT_SIGS:
-            policy = IDLPolicy(
-                policy_id="test",
-                phase="pre",
-                endpoint_sig=endpoint_sig,
-                rule_type="numeric_max",
-                field_path="amount",
-                value=100,
-            )
-            # Should not raise
-            validate_policies_v11([policy])
+        # Should not raise - Engine accepts any endpoint_sig
+        validate_policies_v11([policy])
 
 
 class TestPolicyValidationFieldPath:
@@ -539,21 +513,20 @@ class TestMultiplePolicyErrors:
             IDLPolicy(
                 policy_id="bad-1",
                 phase="invalid",  # Error 1
-                endpoint_sig="POST /unknown",  # Error 2
-                rule_type="bad_type",  # Error 3
-                field_path="a..b",  # Error 4
+                endpoint_sig="POST /unknown",  # Engine neutral - accepts any endpoint
+                rule_type="bad_type",  # Error 2
+                field_path="a..b",  # Error 3
             ),
         ]
 
         with pytest.raises(ISEPolicyValidationError) as exc_info:
             validate_policies_v11(policies)
 
-        # Should have 4 errors
-        assert len(exc_info.value.details) == 4
+        # Should have 3 errors (endpoint_sig is not validated since Engine is neutral)
+        assert len(exc_info.value.details) == 3
 
         # Check error codes present
         error_codes = {d["code"] for d in exc_info.value.details}
-        assert "ENDPOINT_NOT_ALLOWED" in error_codes
         assert "FIELD_PATH_INVALID" in error_codes
         assert "PHASE_INVALID" in error_codes
         assert "RULE_TYPE_INVALID" in error_codes

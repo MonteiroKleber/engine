@@ -8,13 +8,6 @@ from engine.ise.idl_parser import IDLPolicy
 from engine.ise.errors import ISE_POLICY_INVALID
 
 
-# Allowed endpoint signatures (exact match only, no wildcards)
-# Must match runtime core/policy.py ALLOWED_ENDPOINT_SIGS
-ALLOWED_ENDPOINT_SIGS = frozenset({
-    "POST /finance/expenses",
-    "POST /approvals/{approval_id}/decide",
-})
-
 # Valid phases
 ALLOWED_PHASES = frozenset({"pre", "post"})
 
@@ -94,15 +87,6 @@ def validate_policies_v11(policies: List[IDLPolicy]) -> None:
     errors: List[Dict[str, Any]] = []
 
     for policy in policies:
-        # Validate endpoint_sig
-        if policy.endpoint_sig not in ALLOWED_ENDPOINT_SIGS:
-            errors.append({
-                "policy_id": policy.policy_id,
-                "field": "endpoint_sig",
-                "code": "ENDPOINT_NOT_ALLOWED",
-                "message": f"endpoint_sig '{policy.endpoint_sig}' not in allowed set: {sorted(ALLOWED_ENDPOINT_SIGS)}",
-            })
-
         # Validate field_path
         if not validate_field_path(policy.field_path):
             errors.append({

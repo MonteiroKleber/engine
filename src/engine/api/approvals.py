@@ -12,11 +12,13 @@ from pydantic import BaseModel
 
 from engine.core.actor_context import ActorContext
 from engine.core.ledger import get_ledger, get_ledger_for_institution
-from engine.core.institution_context import get_request_institution_id
+from engine.core.institution_context import get_request_institution_id, resolve_institution_id
 from engine.core.institution_context import DEFAULT_INSTITUTION_ID
+from engine.core.admin_auth import require_admin_auth
 from engine.core.legacy_telemetry import record_legacy_invocation
 from engine.core.approvals import (
     ApprovalRule,
+    ApprovalTargetKind,
     find_approval_requested,
     find_approval_decided,
     is_approval_decided,
@@ -24,6 +26,11 @@ from engine.core.approvals import (
     emit_approval_decided,
     get_approvals_policy,
     get_rule_name_from_step,
+    extract_target_from_event,
+    get_job_ref_from_approval,
+    get_entity_ref_from_approval,
+    JobRef,
+    EntityRef,
 )
 from engine.core.sod import check_sod, SOD_VIOLATION, SOD_RULE_INVALID
 from engine.core.state_store import (
@@ -63,6 +70,208 @@ class DecideRequest(BaseModel):
     """Request body for decide endpoint."""
     decision: str
     reason: Optional[str] = None
+
+
+class PendingApprovalItem(BaseModel):
+    """Item in pending approvals list."""
+    approval_id: str
+    created_at: str
+    rule_name: Optional[str] = None
+    case_id: str
+    step: str
+    requested_by: str
+    requested_by_roles: List[str] = []
+    dept_id: Optional[str] = None
+
+
+class PendingApprovalsResponse(BaseModel):
+    """Response for pending approvals list."""
+    approvals: List[PendingApprovalItem]
+    total: int
+
+
+class ApprovalItemWithStatus(BaseModel):
+    """Approval item with status information."""
+    approval_id: str
+    created_at: str
+    rule_name: Optional[str] = None
+    case_id: str
+    step: str
+    requested_by: str
+    requested_by_roles: List[str] = []
+    dept_id: Optional[str] = None
+    status: str  # pending, approved, rejected
+    decided_at: Optional[str] = None
+    decided_by: Optional[str] = None
+    decision_reason: Optional[str] = None
+
+
+class ApprovalsListResponse(BaseModel):
+    """Response for approvals list with status filter."""
+    approvals: List[ApprovalItemWithStatus]
+    total: int
+
+
+@router.get("", response_model=ApprovalsListResponse)
+async def list_approvals(
+    request: Request,
+    status: Optional[str] = None,
+    limit: int = 100,
+) -> ApprovalsListResponse:
+    """List approvals with optional status filter.
+
+    Args:
+        status: Filter by status (pending, approved, rejected, all). Default: all.
+        limit: Maximum number of approvals to return.
+
+    Returns:
+        List of approval items with status.
+    """
+    institution_id = resolve_institution_id(request, require_header=True)
+    require_admin_auth(request, institution_id)
+
+    ledger = get_ledger_for_institution(institution_id)
+    all_events = ledger.get_all_events()
+
+    # Build approval data from events
+    requested_events: Dict[str, Any] = {}  # approval_id -> request event
+    decided_events: Dict[str, Any] = {}    # approval_id -> decide event
+
+    for event in all_events:
+        if event.event_type == "APPROVAL_REQUESTED":
+            approval_id = event.case_id
+            if approval_id:
+                requested_events[approval_id] = event
+        elif event.event_type == "APPROVAL_DECIDED":
+            approval_id = event.case_id
+            if approval_id:
+                decided_events[approval_id] = event
+
+    # Build approval items with status
+    items: List[ApprovalItemWithStatus] = []
+    for approval_id, req_event in requested_events.items():
+        dec_event = decided_events.get(approval_id)
+
+        if dec_event:
+            # Decided - check decision
+            decision = dec_event.data.get("decision", "approved") if dec_event.data else "approved"
+            item_status = "approved" if decision == "approve" else "rejected"
+        else:
+            item_status = "pending"
+
+        # Apply status filter
+        if status and status != "all" and item_status != status:
+            continue
+
+        rule_name = get_rule_name_from_step(req_event.step) if req_event.step else None
+
+        items.append(
+            ApprovalItemWithStatus(
+                approval_id=approval_id,
+                created_at=req_event.timestamp or "",
+                rule_name=rule_name,
+                case_id=req_event.case_id,
+                step=req_event.step or "",
+                requested_by=req_event.actor_id or "",
+                requested_by_roles=list(req_event.actor_roles) if req_event.actor_roles else [],
+                dept_id=req_event.dept_id,
+                status=item_status,
+                decided_at=dec_event.timestamp if dec_event else None,
+                decided_by=dec_event.actor_id if dec_event else None,
+                decision_reason=dec_event.data.get("reason") if dec_event and dec_event.data else None,
+            )
+        )
+
+    # Sort by created_at descending
+    items.sort(key=lambda x: x.created_at, reverse=True)
+
+    return ApprovalsListResponse(
+        approvals=items[:limit],
+        total=len(items),
+    )
+
+
+@router.get("/pending", response_model=PendingApprovalsResponse)
+async def list_pending_approvals(
+    request: Request,
+    limit: int = 100,
+) -> PendingApprovalsResponse:
+    """List pending approvals for institution.
+
+    Returns approvals that have been requested but not yet decided.
+    Pending = APPROVAL_REQUESTED without corresponding APPROVAL_DECIDED.
+
+    Requires:
+    - `X-Institution-Id` header
+    - Admin auth (`X-Admin-Key` or bootstrap `X-Admin-Token`)
+
+    Example:
+    ```bash
+    curl http://localhost:8001/approvals/pending?limit=50 \\
+        -H "X-Institution-Id: ${INSTITUTION_ID}" \\
+        -H "X-Admin-Token: ${ENGINE_ISE_ADMIN_TOKEN}"
+    ```
+
+    Args:
+        request: FastAPI request object.
+        limit: Maximum number of approvals to return (default 100).
+
+    Returns:
+        List of pending approval items.
+    """
+    # Require admin auth + institution ID
+    institution_id = resolve_institution_id(request, require_header=True)
+    require_admin_auth(request, institution_id)
+
+    # Get all events from ledger
+    ledger = get_ledger_for_institution(institution_id)
+    all_events = ledger.get_all_events()
+
+    # Build sets of requested and decided approval IDs
+    requested_events: Dict[str, Any] = {}  # approval_id -> event
+    decided_ids: set = set()
+
+    for event in all_events:
+        if event.event_type == "APPROVAL_REQUESTED":
+            # Extract approval_id from case_id (which is the approval_id for approval events)
+            approval_id = event.case_id
+            if approval_id:
+                requested_events[approval_id] = event
+        elif event.event_type == "APPROVAL_DECIDED":
+            approval_id = event.case_id
+            if approval_id:
+                decided_ids.add(approval_id)
+
+    # Find pending: requested but not decided
+    pending_items: List[PendingApprovalItem] = []
+    for approval_id, event in requested_events.items():
+        if approval_id not in decided_ids:
+            # Extract rule_name from step if possible
+            rule_name = get_rule_name_from_step(event.step) if event.step else None
+
+            pending_items.append(
+                PendingApprovalItem(
+                    approval_id=approval_id,
+                    created_at=event.timestamp or "",
+                    rule_name=rule_name,
+                    case_id=event.case_id,
+                    step=event.step or "",
+                    requested_by=event.actor_id or "",
+                    requested_by_roles=list(event.actor_roles) if event.actor_roles else [],
+                    dept_id=event.dept_id,
+                )
+            )
+
+    # Sort by created_at descending (most recent first)
+    pending_items.sort(key=lambda x: x.created_at, reverse=True)
+
+    # Apply limit
+    limited_items = pending_items[:limit]
+
+    return PendingApprovalsResponse(
+        approvals=limited_items,
+        total=len(pending_items),
+    )
 
 
 def _is_legacy_write_approval(rule_name: str) -> bool:
@@ -206,8 +415,15 @@ async def decide_approval(
             },
         )
 
+    # Use institution_id for ledger lookup (fall back to header if not set by middleware)
+    lookup_institution_id = (
+        institution_id
+        or request.headers.get("X-Institution-Id")
+        or request.headers.get("X-Tenant-Id")
+    )
+
     # Check if approval exists (APPROVAL_REQUESTED event)
-    requested_event = find_approval_requested(approval_id)
+    requested_event = find_approval_requested(approval_id, lookup_institution_id)
     if not requested_event:
         raise HTTPException(
             status_code=404,
@@ -218,7 +434,7 @@ async def decide_approval(
         )
 
     # Check if already decided
-    if is_approval_decided(approval_id):
+    if is_approval_decided(approval_id, lookup_institution_id):
         raise HTTPException(
             status_code=409,
             detail={
@@ -323,6 +539,24 @@ async def decide_approval(
                     "code": sod_error_code,
                     "message": sod_message,
                 },
+            )
+
+    # Check target kind from the APPROVAL_REQUESTED event payload
+    target = extract_target_from_event(requested_event)
+
+    # Handle job-based approvals (Jobs First-Class spec)
+    if target and target.kind == ApprovalTargetKind.JOB:
+        job_ref = get_job_ref_from_approval(approval_id, lookup_institution_id)
+        if job_ref:
+            return await _handle_job_approval_decision(
+                request=request,
+                approval_id=approval_id,
+                rule=rule,
+                actor=actor,
+                decision=body.decision,
+                reason=body.reason,
+                institution_id=institution_id,
+                job_ref=job_ref,
             )
 
     # Check if this is a legacy write approval (GAP 3)
@@ -543,6 +777,165 @@ async def decide_approval(
     }
 
 
+async def _handle_job_approval_decision(
+    request: Request,
+    approval_id: str,
+    rule: Any,
+    actor: ActorContext,
+    decision: str,
+    reason: Optional[str],
+    institution_id: Optional[str],
+    job_ref: "JobRef",
+) -> Dict[str, Any]:
+    """Handle approval decision for job-based approval (Jobs First-Class spec).
+
+    When approved, releases job.enqueue so the job can be executed by the runtime.
+
+    Args:
+        request: FastAPI request object.
+        approval_id: The approval ID.
+        rule: The approval rule.
+        actor: The deciding actor.
+        decision: "approve" or "reject".
+        reason: Optional decision reason.
+        institution_id: Institution ID.
+        job_ref: Job reference with job_id and action.
+
+    Returns:
+        Decision result.
+
+    Raises:
+        HTTPException: Various error codes.
+    """
+    from engine.core.job_store import get_job_store, JobState
+
+    if not institution_id:
+        raise HTTPException(
+            status_code=400,
+            detail={
+                "code": "INSTITUTION_REQUIRED",
+                "message": "Institution ID required for job approval",
+            },
+        )
+
+    # Get job store and find the job
+    job_store = get_job_store(institution_id, dept_id=None)
+    job = job_store.get_job(job_ref.job_id)
+
+    if not job:
+        raise HTTPException(
+            status_code=404,
+            detail={
+                "code": "JOB_NOT_FOUND",
+                "message": f"Job {job_ref.job_id} not found",
+            },
+        )
+
+    # Check job state
+    if job.state != JobState.PENDING_APPROVAL.value:
+        raise HTTPException(
+            status_code=409,
+            detail={
+                "code": "JOB_STATE_INVALID",
+                "message": f"Job is not pending approval (state: {job.state})",
+            },
+        )
+
+    # SoD check: proposer cannot decide their own approval
+    if actor.actor_id == job.requested_by:
+        raise HTTPException(
+            status_code=403,
+            detail={
+                "code": "APPROVAL_SOD_VIOLATION",
+                "message": "Self-approval not allowed: proposer cannot decide their own job approval",
+            },
+        )
+
+    # Emit APPROVAL_DECIDED event
+    emit_approval_decided(
+        approval_id=approval_id,
+        rule=rule,
+        actor=actor,
+        decision=decision,
+        reason=reason,
+        institution_id=institution_id,
+    )
+
+    from datetime import datetime, timezone
+    now = datetime.now(timezone.utc).isoformat()
+
+    if decision == "reject":
+        # Update job state to rejected
+        job_store.update_job_state(
+            job_id=job.job_id,
+            state=JobState.REJECTED.value,
+        )
+
+        return {
+            "status": "decided",
+            "approval_id": approval_id,
+            "job_id": job.job_id,
+            "job_type": job.job_type,
+            "decision": decision,
+            "job_state": JobState.REJECTED.value,
+        }
+
+    # Approve: update job state to approved, ready for enqueue
+    job_store.update_job_state(
+        job_id=job.job_id,
+        state=JobState.APPROVED.value,
+        approved_by=actor.actor_id,
+    )
+
+    # If action is "enqueue", automatically enqueue the job
+    if job_ref.action == "enqueue":
+        from engine.core.job_dispatcher import dispatch_job_enqueue
+        from engine.core.operations import Operation
+
+        # Create a minimal operation for dispatch
+        operation = Operation(
+            operation_id=f"job_enqueue_{job.job_type}",
+            endpoint_sig=f"POST /jobs/{job.job_id}/enqueue",
+            permission="job.enqueue",
+            method="POST",
+            path=f"/jobs/{job.job_id}/enqueue",
+        )
+
+        enqueue_result = await dispatch_job_enqueue(
+            institution_id=institution_id,
+            dept_id=None,
+            actor=actor,
+            operation=operation,
+            path_params={"job_id": job.job_id},
+        )
+
+        if enqueue_result.error_code:
+            raise HTTPException(
+                status_code=enqueue_result.status_code,
+                detail=enqueue_result.response_body,
+            )
+
+        return {
+            "status": "decided",
+            "approval_id": approval_id,
+            "job_id": job.job_id,
+            "job_type": job.job_type,
+            "decision": decision,
+            "job_state": JobState.ENQUEUED.value,
+            "outbox_path": enqueue_result.response_body.get("outbox_path"),
+        }
+
+    # Just approve without auto-enqueue
+    return {
+        "status": "decided",
+        "approval_id": approval_id,
+        "job_id": job.job_id,
+        "job_type": job.job_type,
+        "decision": decision,
+        "job_state": JobState.APPROVED.value,
+    }
+
+
 async def _handle_legacy_write_decision(
     request: Request,
     approval_id: str,
@@ -676,7 +1069,7 @@ async def _handle_generic_approval_decision(
     """Handle approval decision for generic workflow transition (Expansão 03).
 
     This handler processes approval decisions for workflow transitions that
-    require approval (e.g., ModerationAction Apply/Revert).
+    require approval. Uses generic entity access - no hardcoded entity_type checks.
 
     Args:
         request: FastAPI request object.
@@ -714,6 +1107,17 @@ async def _handle_generic_approval_decision(
             },
         )
 
+    # Verify entity exists (generic accessor)
+    entity_data = state_store.get_entity(entity_type, entity_id)
+    if entity_data is None:
+        raise HTTPException(
+            status_code=404,
+            detail={
+                "code": "ENTITY_NOT_FOUND",
+                "message": f"Entity {entity_type}:{entity_id} not found",
+            },
+        )
+
     # Emit APPROVAL_DECIDED event
     emit_approval_decided(
         approval_id=approval_id,
@@ -726,17 +1130,11 @@ async def _handle_generic_approval_decision(
     now = datetime.now(timezone.utc).isoformat()
 
     if decision == "reject":
-        # Update entity status to REJECTED
-        if entity_type == "ModerationAction":
-            state_store._data["moderation_actions"][entity_id]["status"] = "REJECTED"
-            state_store._data["moderation_actions"][entity_id]["updated_at"] = now
-        elif entity_type == "ContentReport":
-            state_store._data["content_reports"][entity_id]["status"] = "REJECTED"
-            state_store._data["content_reports"][entity_id]["updated_at"] = now
-        elif entity_type == "ChatReport":
-            state_store._data["chat_reports"][entity_id]["status"] = "REJECTED"
-            state_store._data["chat_reports"][entity_id]["updated_at"] = now
-        state_store._save()
+        # Update entity status to REJECTED (generic mutator)
+        state_store.update_entity(entity_type, entity_id, {
+            "status": "REJECTED",
+            "updated_at": now,
+        })
 
         # Emit CASE_REJECTED
         emit_case_rejected(entity_id, actor, institution_id=institution_id)
@@ -750,57 +1148,36 @@ async def _handle_generic_approval_decision(
             "case_status": "REJECTED",
         }
 
-    # Handle approve - apply transition effects
+    # Handle approve - build updates from transition effects
+    updates: Dict[str, Any] = {"updated_at": now}
+
     to_state = transition_def.get("to")
     effects = transition_def.get("effects", [])
 
-    # Get current entity data
-    if entity_type == "ModerationAction":
-        entity_data = state_store._data["moderation_actions"].get(entity_id, {})
-    elif entity_type == "ContentReport":
-        entity_data = state_store._data["content_reports"].get(entity_id, {})
-    elif entity_type == "ChatReport":
-        entity_data = state_store._data["chat_reports"].get(entity_id, {})
-    else:
-        raise HTTPException(
-            status_code=500,
-            detail={
-                "code": "ENTITY_TYPE_UNSUPPORTED",
-                "message": f"Unsupported entity type: {entity_type}",
-            },
-        )
-
     # Apply to_state if specified
     if to_state:
-        entity_data["status"] = to_state
+        updates["status"] = to_state
 
     # Apply effects
     for effect in effects:
         effect_type = effect.get("type")
         if effect_type == "set_state":
-            entity_data["status"] = effect.get("value")
+            updates["status"] = effect.get("value")
         elif effect_type == "set_field":
             field_name = effect.get("field")
             field_value = effect.get("value")
             if field_name:
-                entity_data[field_name] = field_value
+                updates[field_name] = field_value
         elif effect_type == "bump_version":
             current_version = entity_data.get("version", 0)
-            entity_data["version"] = current_version + effect.get("value", 1)
+            updates["version"] = current_version + effect.get("value", 1)
 
-    # Update timestamps
-    entity_data["updated_at"] = now
-    if entity_type == "ModerationAction" and entity_data.get("status") == "APPLIED":
-        entity_data["applied_at"] = now
+    # Set applied_at if transitioning to APPLIED state
+    if updates.get("status") == "APPLIED":
+        updates["applied_at"] = now
 
-    # Persist updated entity
-    if entity_type == "ModerationAction":
-        state_store._data["moderation_actions"][entity_id] = entity_data
-    elif entity_type == "ContentReport":
-        state_store._data["content_reports"][entity_id] = entity_data
-    elif entity_type == "ChatReport":
-        state_store._data["chat_reports"][entity_id] = entity_data
-    state_store._save()
+    # Persist updates (generic mutator)
+    state_store.update_entity(entity_type, entity_id, updates)
 
     # Emit CASE_COMMITTED
     emit_case_committed(entity_id, actor, institution_id=institution_id)

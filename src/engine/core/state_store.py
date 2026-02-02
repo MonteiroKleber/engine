@@ -893,6 +893,59 @@ class StateStore:
         """
         return self._data["generic_approval_index"].get(approval_id)
 
+    # Entity type to collection mapping (generic entity access)
+    ENTITY_COLLECTIONS: Dict[str, str] = {
+        "ModerationAction": "moderation_actions",
+        "ContentReport": "content_reports",
+        "ChatReport": "chat_reports",
+        "ChatBlock": "chat_blocks",
+        "Expense": "expenses",
+        "Ticket": "tickets",
+    }
+
+    def get_entity(self, entity_type: str, entity_id: str) -> Optional[Dict[str, Any]]:
+        """Get entity by type and ID (generic accessor).
+
+        Args:
+            entity_type: Entity type name (e.g., "ModerationAction").
+            entity_id: Entity ID.
+
+        Returns:
+            Entity data dict, or None if not found.
+        """
+        collection = self.ENTITY_COLLECTIONS.get(entity_type)
+        if not collection or collection not in self._data:
+            return None
+        return self._data[collection].get(entity_id)
+
+    def update_entity(
+        self,
+        entity_type: str,
+        entity_id: str,
+        updates: Dict[str, Any],
+    ) -> bool:
+        """Update entity fields (generic mutator).
+
+        Args:
+            entity_type: Entity type name.
+            entity_id: Entity ID.
+            updates: Dict of field -> value to update.
+
+        Returns:
+            True if updated, False if entity not found.
+        """
+        collection = self.ENTITY_COLLECTIONS.get(entity_type)
+        if not collection or collection not in self._data:
+            return False
+        if entity_id not in self._data[collection]:
+            return False
+
+        for field, value in updates.items():
+            self._data[collection][entity_id][field] = value
+
+        self._save()
+        return True
+
 
 # Global state stores: (institution_id, dept_id) key for namespaced stores
 # Key format: (institution_id, dept_id) where either can be None

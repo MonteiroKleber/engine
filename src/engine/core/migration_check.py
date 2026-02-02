@@ -19,7 +19,11 @@ from .idl_router import get_api_mode, API_MODE_LEGACY, API_MODE_IDL, API_MODE_BO
 
 # Bind kinds supported by the dispatcher (Etapas 6.1-6.3 + Expansões)
 # These match the handlers in idl_router.py
-SUPPORTED_BIND_KINDS = frozenset({"create", "read", "delete", "approval", "approval_decide", "transition"})
+SUPPORTED_BIND_KINDS = frozenset({
+    "create", "read", "delete", "approval", "approval_decide", "transition",
+    # Jobs first-class (Jobs First-Class Spec)
+    "job.request", "job.enqueue", "job.get",
+})
 
 # Migration check result codes
 MIGRATION_OK = "MIGRATION_OK"

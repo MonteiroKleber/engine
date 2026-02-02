@@ -20,13 +20,8 @@ from .base import BaseExtractor
 
 
 # =============================================================================
-# Runtime Policy v1.1 Constants (must match ISE emit/policies_emit.py)
+# Runtime Policy v1.1 Constants
 # =============================================================================
-ALLOWED_ENDPOINT_SIGS = frozenset({
-    "POST /finance/expenses",
-    "POST /approvals/{approval_id}/decide",
-})
-
 ALLOWED_PHASES = frozenset({"pre", "post"})
 
 ALLOWED_RULE_TYPES = frozenset({

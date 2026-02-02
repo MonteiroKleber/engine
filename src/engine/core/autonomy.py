@@ -26,28 +26,6 @@ from .errors import (
 )
 
 
-# Allowed endpoint signatures (same as policy engine and mandates)
-ALLOWED_ENDPOINT_SIGS = frozenset({
-    "POST /finance/expenses",
-    "POST /approvals/{approval_id}/decide",
-    "POST /support/tickets",
-    # Bazari Phase 1 (control-plane CRUD)
-    "POST /reports",
-    "GET /reports/{report_id}",
-    "GET /reports/my",
-    "GET /moderation/reports",
-    "POST /chat/reports",
-    "POST /chat/blocks",
-    "DELETE /chat/blocks/{block_id}",
-    "POST /moderation/actions",
-    "GET /moderation/actions/{action_id}",
-    "GET /moderation/actions",
-    # Bazari MVP (workflows / transitions)
-    "POST /moderation/reports/{report_id}/triage",
-    "POST /moderation/actions/{action_id}/apply",
-    "POST /moderation/actions/{action_id}/submit",
-})
-
 # Allowed phases
 ALLOWED_PHASES = frozenset({"pre", "post"})
 
@@ -238,12 +216,6 @@ def parse_autonomy_data(data: Dict[str, Any]) -> AutonomyDef:
             raise AutonomySchemaError(
                 code=AUTONOMY_INVALID,
                 message=f"{context}: endpoint_sig is required",
-            )
-
-        if endpoint_sig not in ALLOWED_ENDPOINT_SIGS:
-            raise AutonomySchemaError(
-                code=AUTONOMY_ENDPOINT_UNKNOWN,
-                message=f"{context}: unknown endpoint_sig '{endpoint_sig}'",
             )
 
         phase = rule_data.get("phase")

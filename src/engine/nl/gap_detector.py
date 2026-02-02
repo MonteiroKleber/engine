@@ -8,13 +8,8 @@ from engine.nl.schemas.answers_v1 import Gap, Question, generate_question_id
 
 
 # =============================================================================
-# Runtime Policy v1.1 Constants (must match ISE emit/policies_emit.py)
+# Runtime Policy v1.1 Constants
 # =============================================================================
-ALLOWED_ENDPOINT_SIGS = frozenset({
-    "POST /finance/expenses",
-    "POST /approvals/{approval_id}/decide",
-})
-
 ALLOWED_PHASES = frozenset({"pre", "post"})
 
 ALLOWED_RULE_TYPES = frozenset({
@@ -425,28 +420,6 @@ def _validate_single_runtime_policy(
                     step="policy_id",
                     question_text=f"What is the policy ID for policy #{policy_index}?",
                     question_type="text",
-                ),
-            ],
-        ))
-
-    # Check endpoint_sig is valid
-    if policy.endpoint_sig not in ALLOWED_ENDPOINT_SIGS:
-        gap_key = f"{base_gap_key}-endpoint"
-        gaps.append(Gap(
-            gap_key=gap_key,
-            gap_type="runtime_policy",
-            severity="required",
-            description=f"Policy '{policy.policy_id}' has invalid endpoint_sig: '{policy.endpoint_sig}'",
-            policy_ref=GAP_POLICY_ENDPOINT_INVALID,
-            questions=[
-                Question(
-                    question_id=generate_question_id(gap_key, GAP_POLICY_ENDPOINT_INVALID, "endpoint_sig"),
-                    gap_key=gap_key,
-                    policy_key=GAP_POLICY_ENDPOINT_INVALID,
-                    step="endpoint_sig",
-                    question_text=f"Select valid endpoint for policy '{policy.policy_id}'",
-                    question_type="choice",
-                    options=sorted(ALLOWED_ENDPOINT_SIGS),
                 ),
             ],
         ))

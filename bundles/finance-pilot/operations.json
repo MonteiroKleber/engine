@@ -33,7 +33,96 @@
       "idempotency": "none",
       "errors": [401, 403, 404],
       "bind": { "kind": "read", "entity": "Expense" }
+    },
+    {
+      "operation_id": "job_files_list",
+      "method": "POST",
+      "path": "/personal/jobs/files/list",
+      "endpoint_sig": "POST /personal/jobs/files/list",
+      "permission": "files.list",
+      "scope": "tenant",
+      "idempotency": "none",
+      "errors": [400, 401, 403],
+      "bind": { "kind": "job.request", "job_type": "files.list" }
+    },
+    {
+      "operation_id": "job_files_scan",
+      "method": "POST",
+      "path": "/personal/jobs/files/scan",
+      "endpoint_sig": "POST /personal/jobs/files/scan",
+      "permission": "files.scan",
+      "scope": "tenant",
+      "idempotency": "none",
+      "errors": [400, 401, 403],
+      "bind": { "kind": "job.request", "job_type": "files.scan" }
+    },
+    {
+      "operation_id": "job_files_suggest",
+      "method": "POST",
+      "path": "/personal/jobs/files/suggest",
+      "endpoint_sig": "POST /personal/jobs/files/suggest",
+      "permission": "files.suggest",
+      "scope": "tenant",
+      "idempotency": "none",
+      "errors": [400, 401, 403],
+      "bind": { "kind": "job.request", "job_type": "files.suggest" }
+    },
+    {
+      "operation_id": "job_files_delete",
+      "method": "POST",
+      "path": "/personal/jobs/files/delete",
+      "endpoint_sig": "POST /personal/jobs/files/delete",
+      "permission": "files.delete",
+      "scope": "tenant",
+      "idempotency": "none",
+      "errors": [400, 401, 403],
+      "bind": { "kind": "job.request", "job_type": "files.delete" }
+    },
+    {
+      "operation_id": "job_files_rename",
+      "method": "POST",
+      "path": "/personal/jobs/files/rename",
+      "endpoint_sig": "POST /personal/jobs/files/rename",
+      "permission": "files.rename",
+      "scope": "tenant",
+      "idempotency": "none",
+      "errors": [400, 401, 403],
+      "bind": { "kind": "job.request", "job_type": "files.rename" }
+    },
+    {
+      "operation_id": "job_files_move",
+      "method": "POST",
+      "path": "/personal/jobs/files/move",
+      "endpoint_sig": "POST /personal/jobs/files/move",
+      "permission": "files.move",
+      "scope": "tenant",
+      "idempotency": "none",
+      "errors": [400, 401, 403],
+      "bind": { "kind": "job.request", "job_type": "files.move" }
+    },
+    {
+      "operation_id": "job_get",
+      "method": "GET",
+      "path": "/personal/jobs/{job_id}",
+      "endpoint_sig": "GET /personal/jobs/{job_id}",
+      "permission": "jobs.get",
+      "path_params": ["job_id"],
+      "scope": "tenant",
+      "idempotency": "none",
+      "errors": [401, 403, 404],
+      "bind": { "kind": "job.get" }
+    },
+    {
+      "operation_id": "job_enqueue",
+      "method": "POST",
+      "path": "/personal/jobs/{job_id}/enqueue",
+      "endpoint_sig": "POST /personal/jobs/{job_id}/enqueue",
+      "permission": "jobs.enqueue",
+      "path_params": ["job_id"],
+      "scope": "tenant",
+      "idempotency": "required",
+      "errors": [400, 401, 403, 404, 409],
+      "bind": { "kind": "job.enqueue" }
     }
   ]
 }
-

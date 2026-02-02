@@ -13,6 +13,54 @@
       "endpoint_sig": "POST /approvals/{approval_id}/decide",
       "phase": "post",
       "required_level": 0
+    },
+    {
+      "rule_id": "job-files-list-pre",
+      "endpoint_sig": "POST /personal/jobs/files/list",
+      "phase": "pre",
+      "required_level": 0
+    },
+    {
+      "rule_id": "job-files-scan-pre",
+      "endpoint_sig": "POST /personal/jobs/files/scan",
+      "phase": "pre",
+      "required_level": 0
+    },
+    {
+      "rule_id": "job-files-suggest-pre",
+      "endpoint_sig": "POST /personal/jobs/files/suggest",
+      "phase": "pre",
+      "required_level": 0
+    },
+    {
+      "rule_id": "job-files-delete-pre",
+      "endpoint_sig": "POST /personal/jobs/files/delete",
+      "phase": "pre",
+      "required_level": 0
+    },
+    {
+      "rule_id": "job-files-rename-pre",
+      "endpoint_sig": "POST /personal/jobs/files/rename",
+      "phase": "pre",
+      "required_level": 0
+    },
+    {
+      "rule_id": "job-files-move-pre",
+      "endpoint_sig": "POST /personal/jobs/files/move",
+      "phase": "pre",
+      "required_level": 0
+    },
+    {
+      "rule_id": "job-get-pre",
+      "endpoint_sig": "GET /personal/jobs/{job_id}",
+      "phase": "pre",
+      "required_level": 0
+    },
+    {
+      "rule_id": "job-enqueue-pre",
+      "endpoint_sig": "POST /personal/jobs/{job_id}/enqueue",
+      "phase": "pre",
+      "required_level": 0
     }
   ]
 }

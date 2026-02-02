@@ -10,7 +10,7 @@ Endpoints:
 
 from typing import List, Optional
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Request
 from pydantic import BaseModel, Field
 
 from engine.core.admin_auth import require_admin_auth
@@ -87,9 +87,11 @@ ERROR_TO_HTTP = {
 )
 async def list_depts(
     institution_id: str,
-    actor_id: str = require_admin_auth,
+    request: Request,
 ) -> DeptsSummaryResponse:
     """List departments for an institution.
+
+    Requires admin authentication (X-Admin-Key or X-Admin-Token).
 
     Returns:
     - installed: All departments available in the bundle
@@ -98,6 +100,9 @@ async def list_depts(
 
     If no active_depts.json exists, all installed depts are considered active.
     """
+    # Verify admin auth
+    require_admin_auth(request, institution_id)
+
     summary = get_depts_summary(institution_id)
     return DeptsSummaryResponse(
         installed=summary["installed"],
@@ -115,20 +120,25 @@ async def list_depts(
 async def activate_dept_endpoint(
     institution_id: str,
     dept_id: str,
-    request: Optional[DeptActivateRequest] = None,
-    actor_id: str = require_admin_auth,
+    request: Request,
+    body: Optional[DeptActivateRequest] = None,
 ) -> DeptActionResponse:
     """Activate a department.
+
+    Requires admin authentication (X-Admin-Key or X-Admin-Token).
 
     The department must be installed in the bundle but not yet active.
     On first activation, creates active_depts.json with all installed depts.
     """
-    pin = request.pinned_contract_sha256 if request else None
+    # Verify admin auth
+    auth_result = require_admin_auth(request, institution_id)
+
+    pin = body.pinned_contract_sha256 if body else None
 
     success, error_code, error_msg = activate_dept(
         institution_id=institution_id,
         dept_id=dept_id,
-        actor_id=actor_id,
+        actor_id=auth_result.key_id or "admin",
         pinned_contract_sha256=pin,
     )
 
@@ -158,20 +168,25 @@ async def activate_dept_endpoint(
 async def deactivate_dept_endpoint(
     institution_id: str,
     dept_id: str,
-    request: Optional[DeptDeactivateRequest] = None,
-    actor_id: str = require_admin_auth,
+    request: Request,
+    body: Optional[DeptDeactivateRequest] = None,
 ) -> DeptActionResponse:
     """Deactivate a department.
+
+    Requires admin authentication (X-Admin-Key or X-Admin-Token).
 
     The department must be currently active.
     Cannot deactivate the last active department.
     """
-    reason = request.reason if request else None
+    # Verify admin auth
+    auth_result = require_admin_auth(request, institution_id)
+
+    reason = body.reason if body else None
 
     success, error_code, error_msg = deactivate_dept(
         institution_id=institution_id,
         dept_id=dept_id,
-        actor_id=actor_id,
+        actor_id=auth_result.key_id or "admin",
         reason=reason,
     )
 

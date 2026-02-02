@@ -69,6 +69,7 @@ from engine.api.admin_policies import router as admin_policies_router
 from engine.api.admin_autonomy import router as admin_autonomy_router
 from engine.api.admin_depts import router as admin_depts_router
 from engine.api.admin_actors import router as admin_actors_router
+from engine.api.runtime import router as runtime_router
 from engine.console.routes import router as console_router, RedirectException
 from engine.core.institution_config import (
     get_cached_config,
@@ -415,6 +416,7 @@ app.include_router(admin_policies_router)
 app.include_router(admin_autonomy_router)
 app.include_router(admin_depts_router)
 app.include_router(admin_actors_router)
+app.include_router(runtime_router)
 app.include_router(observe_router)
 app.include_router(console_router)
 

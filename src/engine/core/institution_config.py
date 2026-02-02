@@ -14,9 +14,7 @@ from engine.core.errors import (
     INSTITUTION_CONFIG_INVALID,
     INSTITUTION_CONFIG_UNAVAILABLE,
     INSTITUTION_CONFIG_HISTORY_UNAVAILABLE,
-    INSTITUTION_EMERGENCY_ENDPOINT_UNKNOWN,
 )
-from engine.core.policy import ALLOWED_ENDPOINT_SIGS
 
 
 # Config schema version
@@ -418,12 +416,10 @@ def _validate_config(config_dict: Dict[str, Any]) -> Tuple[bool, Optional[str], 
             if len(endpoints) != len(set(endpoints)):
                 return False, INSTITUTION_CONFIG_INVALID, "emergency_stop.blocked_endpoints must not contain duplicates"
 
-            # Validate each endpoint_sig against ALLOWED_ENDPOINT_SIGS
+            # Validate each endpoint is a string
             for endpoint in endpoints:
                 if not isinstance(endpoint, str):
                     return False, INSTITUTION_CONFIG_INVALID, "emergency_stop.blocked_endpoints items must be strings"
-                if endpoint not in ALLOWED_ENDPOINT_SIGS:
-                    return False, INSTITUTION_EMERGENCY_ENDPOINT_UNKNOWN, f"Unknown endpoint_sig: '{endpoint}'. Allowed: {sorted(ALLOWED_ENDPOINT_SIGS)}"
 
     # Validate EGE v1.2 fields
     if "pinned_bundle_manifest_sha256" in config_dict:

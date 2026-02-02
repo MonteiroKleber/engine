@@ -1,12 +1,66 @@
-"""Approvals - MVP approval workflow with ledger integration."""
+"""Approvals - MVP approval workflow with ledger integration.
+
+Supports generic approval targets (Jobs First-Class spec):
+- entity_ref: {entity_type, entity_id, transition?}
+- job_ref: {job_id, action? (enqueue)}
+
+The approval system is target-agnostic - no hardcoded entity_type checks.
+"""
 
 import hashlib
 import uuid
 from dataclasses import dataclass, field
-from typing import Any, Dict, List, Optional
+from enum import Enum
+from typing import Any, Dict, List, Optional, Union
 
-from .ledger import get_ledger, LedgerEvent
+from .ledger import get_ledger, get_ledger_for_institution, LedgerEvent
 from .actor_context import ActorContext
+
+
+class ApprovalTargetKind(str, Enum):
+    """Approval target kinds."""
+    JOB = "job"
+    ENTITY = "entity"
+    LEGACY_API = "legacy_api"  # Backward compatibility for API-triggered approvals
+
+
+@dataclass
+class JobRef:
+    """Reference to a job for approval."""
+    job_id: str
+    action: str = "enqueue"  # Action to take when approved
+
+    def to_dict(self) -> Dict[str, Any]:
+        return {"job_id": self.job_id, "action": self.action}
+
+
+@dataclass
+class EntityRef:
+    """Reference to an entity for approval."""
+    entity_type: str
+    entity_id: str
+    transition: Optional[str] = None
+    workflow: Optional[str] = None
+
+    def to_dict(self) -> Dict[str, Any]:
+        result = {"entity_type": self.entity_type, "entity_id": self.entity_id}
+        if self.transition:
+            result["transition"] = self.transition
+        if self.workflow:
+            result["workflow"] = self.workflow
+        return result
+
+
+@dataclass
+class ApprovalTarget:
+    """Generic approval target supporting job_ref or entity_ref."""
+    kind: ApprovalTargetKind
+    ref: Union[JobRef, EntityRef, Dict[str, Any]]
+
+    def to_dict(self) -> Dict[str, Any]:
+        if isinstance(self.ref, (JobRef, EntityRef)):
+            return {"kind": self.kind.value, "ref": self.ref.to_dict()}
+        return {"kind": self.kind.value, "ref": self.ref}
 
 
 @dataclass
@@ -149,12 +203,71 @@ def emit_approval_requested(
     )
 
 
+def emit_approval_requested_generic(
+    approval_id: str,
+    rule_name: str,
+    target: ApprovalTarget,
+    actor: ActorContext,
+    approver_roles: List[str],
+    payload_sha256: str = "",
+    tenant_id: Optional[str] = None,
+) -> Optional[LedgerEvent]:
+    """Emit APPROVAL_REQUESTED event with generic target (Jobs First-Class spec).
+
+    This is the preferred function for new approvals. It supports:
+    - job_ref: {job_id, action} - for job-based approvals
+    - entity_ref: {entity_type, entity_id, transition} - for entity transitions
+
+    Args:
+        approval_id: The approval ID (case_id).
+        rule_name: The approval rule name (e.g., "FileOperationFlow.Approve").
+        target: ApprovalTarget with kind and ref.
+        actor: The requesting actor.
+        approver_roles: List of roles that can decide.
+        payload_sha256: SHA256 of the request payload (optional).
+        tenant_id: Override tenant_id (defaults to actor.tenant_id).
+
+    Returns:
+        The created event, or None if failed.
+    """
+    from .ledger import get_ledger_for_institution
+
+    effective_tenant_id = tenant_id or actor.tenant_id
+    ledger = get_ledger_for_institution(effective_tenant_id)
+    if not ledger:
+        # Fall back to default ledger
+        ledger = get_ledger()
+    if not ledger:
+        return None
+
+    step = get_approval_step_name(rule_name)
+
+    return ledger.append(
+        event_type="APPROVAL_REQUESTED",
+        tenant_id=effective_tenant_id,
+        actor_id=actor.actor_id,
+        actor_roles=actor.roles,
+        case_id=approval_id,
+        step=step,
+        payload={
+            "decision": None,
+            "name": step,
+            "target_kind": target.kind.value,
+            "target_ref": target.to_dict()["ref"],
+            "payload_sha256": payload_sha256,
+            "requested_by": actor.actor_id,
+            "required_roles": approver_roles,
+        },
+    )
+
+
 def emit_approval_decided(
     approval_id: str,
     rule: ApprovalRule,
     actor: ActorContext,
     decision: str,
     reason: Optional[str] = None,
+    institution_id: Optional[str] = None,
 ) -> Optional[LedgerEvent]:
     """Emit APPROVAL_DECIDED event to ledger.
 
@@ -164,11 +277,15 @@ def emit_approval_decided(
         actor: The deciding actor.
         decision: "approve" or "reject".
         reason: Optional reason string.
+        institution_id: Optional institution ID for institution-specific ledger.
 
     Returns:
         The created event, or None if failed.
     """
-    ledger = get_ledger()
+    if institution_id:
+        ledger = get_ledger_for_institution(institution_id)
+    else:
+        ledger = get_ledger()
     if not ledger:
         return None
 
@@ -193,16 +310,22 @@ def emit_approval_decided(
     )
 
 
-def find_approval_requested(approval_id: str) -> Optional[LedgerEvent]:
+def find_approval_requested(
+    approval_id: str, institution_id: Optional[str] = None
+) -> Optional[LedgerEvent]:
     """Find APPROVAL_REQUESTED event for an approval_id.
 
     Args:
         approval_id: The approval ID to search for.
+        institution_id: Optional institution ID for institution-specific ledger.
 
     Returns:
         The APPROVAL_REQUESTED event if found, None otherwise.
     """
-    ledger = get_ledger()
+    if institution_id:
+        ledger = get_ledger_for_institution(institution_id)
+    else:
+        ledger = get_ledger()
     if not ledger:
         return None
 
@@ -217,16 +340,22 @@ def find_approval_requested(approval_id: str) -> Optional[LedgerEvent]:
     return None
 
 
-def find_approval_decided(approval_id: str) -> Optional[LedgerEvent]:
+def find_approval_decided(
+    approval_id: str, institution_id: Optional[str] = None
+) -> Optional[LedgerEvent]:
     """Find APPROVAL_DECIDED event for an approval_id.
 
     Args:
         approval_id: The approval ID to search for.
+        institution_id: Optional institution ID for institution-specific ledger.
 
     Returns:
         The APPROVAL_DECIDED event if found, None otherwise.
     """
-    ledger = get_ledger()
+    if institution_id:
+        ledger = get_ledger_for_institution(institution_id)
+    else:
+        ledger = get_ledger()
     if not ledger:
         return None
 
@@ -241,9 +370,11 @@ def find_approval_decided(approval_id: str) -> Optional[LedgerEvent]:
     return None
 
 
-def is_approval_decided(approval_id: str) -> bool:
+def is_approval_decided(
+    approval_id: str, institution_id: Optional[str] = None
+) -> bool:
     """Check if an approval has already been decided."""
-    return find_approval_decided(approval_id) is not None
+    return find_approval_decided(approval_id, institution_id) is not None
 
 
 def can_actor_decide(actor: ActorContext, rule: ApprovalRule) -> bool:
@@ -258,4 +389,123 @@ def get_rule_name_from_step(step: str) -> Optional[str]:
     """Extract rule name from step (e.g., 'APPROVAL:expense.create' -> 'expense.create')."""
     if step.startswith("APPROVAL:"):
         return step[9:]
+    return None
+
+
+def extract_target_from_event(event: LedgerEvent) -> Optional[ApprovalTarget]:
+    """Extract ApprovalTarget from APPROVAL_REQUESTED event payload.
+
+    Supports both new generic format (target_kind/target_ref) and legacy format (api).
+
+    Args:
+        event: APPROVAL_REQUESTED ledger event.
+
+    Returns:
+        ApprovalTarget if extractable, None otherwise.
+    """
+    if event.event_type != "APPROVAL_REQUESTED":
+        return None
+
+    payload = event.payload or {}
+
+    # New generic format
+    target_kind = payload.get("target_kind")
+    target_ref = payload.get("target_ref")
+
+    if target_kind and target_ref:
+        kind = ApprovalTargetKind(target_kind)
+        if kind == ApprovalTargetKind.JOB:
+            ref = JobRef(
+                job_id=target_ref.get("job_id", ""),
+                action=target_ref.get("action", "enqueue"),
+            )
+        elif kind == ApprovalTargetKind.ENTITY:
+            ref = EntityRef(
+                entity_type=target_ref.get("entity_type", ""),
+                entity_id=target_ref.get("entity_id", ""),
+                transition=target_ref.get("transition"),
+                workflow=target_ref.get("workflow"),
+            )
+        else:
+            ref = target_ref  # Legacy or unknown
+        return ApprovalTarget(kind=kind, ref=ref)
+
+    # Legacy format (api-based)
+    target = payload.get("target", {})
+    if target.get("api"):
+        return ApprovalTarget(
+            kind=ApprovalTargetKind.LEGACY_API,
+            ref={"api": target["api"]},
+        )
+
+    return None
+
+
+def is_job_approval(event: LedgerEvent) -> bool:
+    """Check if approval event is for a job."""
+    target = extract_target_from_event(event)
+    return target is not None and target.kind == ApprovalTargetKind.JOB
+
+
+def is_entity_approval(event: LedgerEvent) -> bool:
+    """Check if approval event is for an entity transition."""
+    target = extract_target_from_event(event)
+    return target is not None and target.kind == ApprovalTargetKind.ENTITY
+
+
+def get_job_ref_from_approval(
+    approval_id: str, institution_id: Optional[str] = None
+) -> Optional[JobRef]:
+    """Get JobRef from a pending job approval.
+
+    Args:
+        approval_id: The approval ID.
+        institution_id: Optional institution ID for institution-specific ledger.
+
+    Returns:
+        JobRef if this is a job approval, None otherwise.
+    """
+    event = find_approval_requested(approval_id, institution_id)
+    if not event:
+        return None
+
+    target = extract_target_from_event(event)
+    if target and target.kind == ApprovalTargetKind.JOB:
+        if isinstance(target.ref, JobRef):
+            return target.ref
+        # Handle dict case
+        return JobRef(
+            job_id=target.ref.get("job_id", ""),
+            action=target.ref.get("action", "enqueue"),
+        )
+    return None
+
+
+def get_entity_ref_from_approval(
+    approval_id: str, institution_id: Optional[str] = None
+) -> Optional[EntityRef]:
+    """Get EntityRef from a pending entity approval.
+
+    Args:
+        approval_id: The approval ID.
+        institution_id: Optional institution ID for institution-specific ledger.
+
+    Returns:
+        EntityRef if this is an entity approval, None otherwise.
+    """
+    event = find_approval_requested(approval_id, institution_id)
+    if not event:
+        return None
+
+    target = extract_target_from_event(event)
+    if target and target.kind == ApprovalTargetKind.ENTITY:
+        if isinstance(target.ref, EntityRef):
+            return target.ref
+        # Handle dict case
+        return EntityRef(
+            entity_type=target.ref.get("entity_type", ""),
+            entity_id=target.ref.get("entity_id", ""),
+            transition=target.ref.get("transition"),
+            workflow=target.ref.get("workflow"),
+        )
     return None

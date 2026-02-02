@@ -1,15 +1,19 @@
 {
   "version": "1.0.0",
   "name": "rbac",
-  "description": "Role-Based Access Control for finance-pilot",
+  "description": "Role-Based Access Control for finance-pilot with jobs permissions",
   "roles": [
     {
       "name": "admin",
-      "permissions": ["expense.create", "expense.read", "expense.delete", "expense.approve", "approval.decide"]
+      "permissions": [
+        "expense.create", "expense.read", "expense.delete", "expense.approve", "approval.decide",
+        "files.list", "files.scan", "files.suggest", "files.delete", "files.rename", "files.move",
+        "jobs.get", "jobs.enqueue"
+      ]
     },
     {
       "name": "manager",
-      "permissions": ["expense.read", "expense.approve", "approval.decide"]
+      "permissions": ["expense.read", "expense.approve", "approval.decide", "jobs.get"]
     },
     {
       "name": "analyst",
@@ -18,6 +22,29 @@
     {
       "name": "viewer",
       "permissions": ["expense.read"]
+    },
+    {
+      "name": "owner",
+      "permissions": [
+        "expense.create", "expense.read", "expense.delete", "expense.approve", "approval.decide",
+        "files.list", "files.scan", "files.suggest", "files.delete", "files.rename", "files.move",
+        "jobs.get", "jobs.enqueue"
+      ]
+    },
+    {
+      "name": "executive_admin",
+      "permissions": [
+        "expense.read", "expense.approve", "approval.decide",
+        "files.list", "files.scan", "files.suggest", "files.delete", "files.rename", "files.move",
+        "jobs.get", "jobs.enqueue"
+      ]
+    },
+    {
+      "name": "agent",
+      "permissions": [
+        "files.list", "files.scan", "files.suggest", "files.delete", "files.rename", "files.move",
+        "jobs.get", "jobs.enqueue"
+      ]
     }
   ]
 }

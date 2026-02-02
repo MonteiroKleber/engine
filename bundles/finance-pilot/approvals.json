@@ -1,7 +1,7 @@
 {
   "version": "1.0.0",
   "name": "approvals",
-  "description": "Approval rules for finance-pilot",
+  "description": "Approval rules for finance-pilot with destructive job operations",
   "rules": [
     {
       "rule_name": "expense.create",
@@ -9,6 +9,30 @@
         "api": "POST /finance/expenses"
       },
       "approver_roles": ["manager"],
+      "quorum": 1
+    },
+    {
+      "rule_name": "job.files.delete",
+      "trigger": {
+        "api": "POST /personal/jobs/files/delete"
+      },
+      "approver_roles": ["owner", "executive_admin"],
+      "quorum": 1
+    },
+    {
+      "rule_name": "job.files.rename",
+      "trigger": {
+        "api": "POST /personal/jobs/files/rename"
+      },
+      "approver_roles": ["owner", "executive_admin"],
+      "quorum": 1
+    },
+    {
+      "rule_name": "job.files.move",
+      "trigger": {
+        "api": "POST /personal/jobs/files/move"
+      },
+      "approver_roles": ["owner", "executive_admin"],
       "quorum": 1
     }
   ]

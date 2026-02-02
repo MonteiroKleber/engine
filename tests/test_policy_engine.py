@@ -23,11 +23,9 @@ from engine.core.policy import (
     evaluate_policies,
     load_policies_from_file,
     parse_policies_data,
-    validate_endpoint_sig,
     validate_field_path,
-    ALLOWED_ENDPOINT_SIGS,
 )
-from engine.core.errors import POLICY_ENDPOINT_UNKNOWN, POLICY_PATH_INVALID
+from engine.core.errors import POLICY_PATH_INVALID
 from engine.loader.load_bundle import load_bundle
 from engine.loader.verify_hashes import compute_sha256
 from engine.api.server import app
@@ -952,8 +950,8 @@ class TestPolicySchemaV11:
         result = parse_policies_data(data)
         assert result.policies[0].endpoint_sig == "POST /approvals/{approval_id}/decide"
 
-    def test_v11_unknown_endpoint_raises_error(self):
-        """v1.1 with unknown endpoint_sig should raise POLICY_ENDPOINT_UNKNOWN."""
+    def test_v11_any_endpoint_sig_allowed(self):
+        """v1.1 with any endpoint_sig should work (Engine neutral, no allowlist)."""
         data = {
             "policy_schema_version": "1.1",
             "policies": [
@@ -961,14 +959,15 @@ class TestPolicySchemaV11:
                     "policy_id": "test",
                     "rule_type": "numeric_max",
                     "field_path": "amount",
-                    "endpoint_sig": "POST /unknown/endpoint",
+                    "endpoint_sig": "POST /custom/endpoint",
                     "value": 100,
                 }
             ]
         }
-        with pytest.raises(PolicySchemaError) as exc_info:
-            parse_policies_data(data)
-        assert exc_info.value.code == POLICY_ENDPOINT_UNKNOWN
+        # Engine is neutral - any endpoint_sig is accepted
+        result = parse_policies_data(data)
+        assert len(result.policies) == 1
+        assert result.policies[0].endpoint_sig == "POST /custom/endpoint"
 
     def test_v11_missing_endpoint_sig_raises_error(self):
         """v1.1 without endpoint_sig should raise POLICY_INVALID."""
@@ -1025,16 +1024,21 @@ class TestPolicyLegacyBackwardCompat:
         result = parse_policies_data(data)
         assert result.policies[0].endpoint_sig == "POST /finance/expenses"
 
-    def test_legacy_wildcard_pattern_enters_safe_mode(self, tmp_path: Path, ledger_path: Path, monkeypatch):
-        """Legacy with wildcard endpoint_pattern should enter SAFE_MODE."""
-        # Create a policies.json with wildcard (invalid in v1.1)
+    def test_legacy_wildcard_pattern_is_accepted(self, tmp_path: Path, ledger_path: Path, monkeypatch):
+        """Legacy with wildcard endpoint_pattern is accepted (Engine neutral).
+
+        Note: Engine is neutral and accepts any endpoint_sig. Wildcards are
+        stored as-is. Runtime behavior with wildcards depends on how evaluate_policies
+        handles matching (exact match only in v1.1 semantics).
+        """
+        # Create a policies.json with wildcard
         policies_data = {
             "policies": [
                 {
                     "policy_id": "test",
                     "rule_type": "numeric_max",
                     "field_path": "amount",
-                    "endpoint_pattern": "POST /finance/*",  # Wildcard - not allowed
+                    "endpoint_pattern": "POST /finance/*",  # Engine accepts any pattern
                     "value": 100,
                 }
             ]
@@ -1043,9 +1047,10 @@ class TestPolicyLegacyBackwardCompat:
         with open(policies_path, "w", encoding="utf-8") as f:
             json.dump(policies_data, f)
 
-        # load_policies_from_file returns None for invalid schema
+        # Engine is neutral - any endpoint_sig is accepted
         result = load_policies_from_file(policies_path)
-        assert result is None
+        assert result is not None
+        assert result.policies[0].endpoint_sig == "POST /finance/*"
 
     def test_legacy_missing_endpoint_pattern_raises_error(self):
         """Legacy without endpoint_pattern should raise POLICY_INVALID."""
@@ -1120,29 +1125,35 @@ class TestFieldPathValidation:
 
 
 class TestEndpointSigValidation:
-    """Tests for endpoint_sig validation."""
+    """Tests for endpoint_sig handling (Engine neutral - no allowlist)."""
 
-    def test_allowed_endpoints(self):
-        """Verify allowed endpoint signatures."""
-        assert "POST /finance/expenses" in ALLOWED_ENDPOINT_SIGS
-        assert "POST /approvals/{approval_id}/decide" in ALLOWED_ENDPOINT_SIGS
-
-    def test_validate_allowed_endpoint(self):
-        """validate_endpoint_sig should pass for allowed endpoints."""
-        validate_endpoint_sig("POST /finance/expenses")  # Should not raise
-        validate_endpoint_sig("POST /approvals/{approval_id}/decide")  # Should not raise
-
-    def test_validate_unknown_endpoint(self):
-        """validate_endpoint_sig should raise for unknown endpoints."""
-        with pytest.raises(PolicySchemaError) as exc_info:
-            validate_endpoint_sig("GET /finance/expenses")
-        assert exc_info.value.code == POLICY_ENDPOINT_UNKNOWN
-
-    def test_validate_wildcard_rejected(self):
-        """validate_endpoint_sig should reject wildcards."""
-        with pytest.raises(PolicySchemaError) as exc_info:
-            validate_endpoint_sig("*")
-        assert exc_info.value.code == POLICY_ENDPOINT_UNKNOWN
+    def test_any_endpoint_sig_accepted(self):
+        """Any endpoint_sig should be accepted (Engine neutral)."""
+        # Engine is neutral - no allowlist validation
+        # Any well-formed endpoint_sig from IDL is accepted
+        data = {
+            "policy_schema_version": "1.1",
+            "policies": [
+                {
+                    "policy_id": "test-1",
+                    "rule_type": "numeric_max",
+                    "field_path": "amount",
+                    "endpoint_sig": "POST /finance/expenses",
+                    "value": 100,
+                },
+                {
+                    "policy_id": "test-2",
+                    "rule_type": "numeric_max",
+                    "field_path": "amount",
+                    "endpoint_sig": "POST /custom/business/endpoint",
+                    "value": 100,
+                },
+            ]
+        }
+        result = parse_policies_data(data)
+        assert len(result.policies) == 2
+        assert result.policies[0].endpoint_sig == "POST /finance/expenses"
+        assert result.policies[1].endpoint_sig == "POST /custom/business/endpoint"
 
 
 class TestFieldMissingBehavior:

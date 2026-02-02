@@ -20,8 +20,64 @@
       "mandate_id": "approval-decide-post",
       "endpoint_sig": "POST /approvals/{approval_id}/decide",
       "phase": "post",
-      "allowed_roles": ["manager", "admin"],
+      "allowed_roles": ["manager", "admin", "owner", "executive_admin"],
       "message": "Approval decision mandate for pilot"
+    },
+    {
+      "mandate_id": "job-files-list-pre",
+      "endpoint_sig": "POST /personal/jobs/files/list",
+      "phase": "pre",
+      "allowed_roles": ["owner", "admin", "agent"],
+      "message": "Files list job mandate"
+    },
+    {
+      "mandate_id": "job-files-scan-pre",
+      "endpoint_sig": "POST /personal/jobs/files/scan",
+      "phase": "pre",
+      "allowed_roles": ["owner", "admin", "agent"],
+      "message": "Files scan job mandate"
+    },
+    {
+      "mandate_id": "job-files-suggest-pre",
+      "endpoint_sig": "POST /personal/jobs/files/suggest",
+      "phase": "pre",
+      "allowed_roles": ["owner", "admin", "agent"],
+      "message": "Files suggest job mandate"
+    },
+    {
+      "mandate_id": "job-files-delete-pre",
+      "endpoint_sig": "POST /personal/jobs/files/delete",
+      "phase": "pre",
+      "allowed_roles": ["owner", "admin", "agent"],
+      "message": "Files delete job mandate (requires approval)"
+    },
+    {
+      "mandate_id": "job-files-rename-pre",
+      "endpoint_sig": "POST /personal/jobs/files/rename",
+      "phase": "pre",
+      "allowed_roles": ["owner", "admin", "agent"],
+      "message": "Files rename job mandate (requires approval)"
+    },
+    {
+      "mandate_id": "job-files-move-pre",
+      "endpoint_sig": "POST /personal/jobs/files/move",
+      "phase": "pre",
+      "allowed_roles": ["owner", "admin", "agent"],
+      "message": "Files move job mandate (requires approval)"
+    },
+    {
+      "mandate_id": "job-get-pre",
+      "endpoint_sig": "GET /personal/jobs/{job_id}",
+      "phase": "pre",
+      "allowed_roles": ["owner", "admin", "agent"],
+      "message": "Job get mandate"
+    },
+    {
+      "mandate_id": "job-enqueue-pre",
+      "endpoint_sig": "POST /personal/jobs/{job_id}/enqueue",
+      "phase": "pre",
+      "allowed_roles": ["owner", "admin", "agent"],
+      "message": "Job enqueue mandate"
     }
   ]
 }

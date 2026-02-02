@@ -65,15 +65,23 @@ def compile_bundle(
     Returns:
         CompileResult with bundle details or error info.
     """
-    # Parse IDL
+    # Parse JSON first to detect format
     try:
-        parsed = parse_idl(idl)
+        idl_data = json.loads(idl) if isinstance(idl, str) else idl
     except json.JSONDecodeError as e:
         return CompileResult(
             success=False,
             error_code=errors.ISE_IDL_INVALID_JSON,
             error_message=f"Invalid JSON in IDL: {e}",
         )
+
+    # Detect IRCS v1 format and use canonical path
+    if idl_data.get("ir_version") == "ircs.v1":
+        return compile_from_ircs(idl_data, bundle_name, output_dir)
+
+    # Legacy path: Parse IDL
+    try:
+        parsed = parse_idl(idl_data)
     except IDLParseError as e:
         return CompileResult(
             success=False,
@@ -620,15 +628,23 @@ def compile_bundle_to_memory(
     Returns:
         Dict with compilation result including all contract contents.
     """
-    # Parse IDL
+    # Parse JSON first to detect format
     try:
-        parsed = parse_idl(idl)
+        idl_data = json.loads(idl) if isinstance(idl, str) else idl
     except json.JSONDecodeError as e:
         return {
             "success": False,
             "error_code": errors.ISE_IDL_INVALID_JSON,
             "error_message": f"Invalid JSON in IDL: {e}",
         }
+
+    # Detect IRCS v1 format and use canonical path
+    if idl_data.get("ir_version") == "ircs.v1":
+        return compile_from_ircs_to_memory(idl_data, bundle_name)
+
+    # Legacy path: Parse IDL
+    try:
+        parsed = parse_idl(idl_data)
     except Exception as e:
         return {
             "success": False,
@@ -850,6 +866,117 @@ def compile_from_ircs(
         sha256s=sha256s,
         bundle_hash=bundle_hash,
     )
+
+
+def compile_from_ircs_to_memory(
+    ir: Dict[str, Any],
+    bundle_name: str,
+) -> Dict[str, Any]:
+    """Compile bundle from IRCS v1 to memory (no disk write).
+
+    Args:
+        ir: IRCS v1 dict (from parse_dsl or loaded from ir.json)
+        bundle_name: Name for the bundle
+
+    Returns:
+        Dict with compilation result including all contract contents.
+    """
+    # Convert IRCS v1 → ParsedIDL
+    try:
+        parsed = ircs_to_parsed_idl(ir)
+    except IRCSAdapterError as e:
+        return {
+            "success": False,
+            "error_code": e.code,
+            "error_message": e.message,
+        }
+    except Exception as e:
+        return {
+            "success": False,
+            "error_code": errors.ISE_IDL_PARSE_FAILED,
+            "error_message": f"Failed to convert IRCS v1: {e}",
+        }
+
+    # Get source_idl_sha256 from IR for ledger
+    source_idl_sha256 = get_source_idl_sha256(ir)
+    if not source_idl_sha256:
+        return {
+            "success": False,
+            "error_code": errors.ISE_SOURCE_IDL_SHA256_MISSING,
+            "error_message": "IRCS v1 missing required field 'source_idl_sha256'",
+        }
+
+    # Generate contracts using existing emitters
+    try:
+        contracts = _emit_all_contracts(parsed, ir=ir)
+    except ISEPolicyValidationError as e:
+        return {
+            "success": False,
+            "error_code": e.code,
+            "error_message": f"Policy validation failed: {e.message}",
+        }
+    except Exception as e:
+        return {
+            "success": False,
+            "error_code": errors.ISE_EMIT_FAILED,
+            "error_message": f"Failed to emit contracts: {e}",
+        }
+
+    # Generate manifest
+    try:
+        manifest = generate_manifest(
+            bundle_name=bundle_name,
+            version=parsed.version,
+            contracts=contracts,
+            system_name=parsed.system_name,
+        )
+        bundle_hash = get_bundle_hash(manifest)
+        manifest_json = json.dumps(manifest, indent=2, sort_keys=True)
+        contracts["bundle.manifest.json"] = manifest_json
+    except Exception as e:
+        return {
+            "success": False,
+            "error_code": errors.ISE_MANIFEST_FAILED,
+            "error_message": f"Failed to generate manifest: {e}",
+        }
+
+    # Generate contract ledger
+    try:
+        contract_hashes = {
+            c["file"]: c["sha256"].replace("SHA256:", "")
+            for c in manifest["contracts"]
+        }
+        ir_json_str = json.dumps(ir, indent=2, sort_keys=True, ensure_ascii=False)
+        manifest_hash = sha256_str(manifest_json)
+        ledger_json = generate_contract_ledger(
+            bundle_name=bundle_name,
+            version=parsed.version,
+            contracts=contract_hashes,
+            manifest_hash=manifest_hash,
+            idl_source=ir_json_str,
+        )
+        if source_idl_sha256:
+            ledger_json["source_idl_sha256"] = source_idl_sha256
+        ledger_str = json.dumps(ledger_json, indent=2, sort_keys=True)
+        contracts["contract_ledger.json"] = ledger_str
+    except Exception as e:
+        return {
+            "success": False,
+            "error_code": errors.ISE_COMPILE_FAILED,
+            "error_message": f"Failed to generate contract ledger: {e}",
+        }
+
+    # Build SHA256 map
+    sha256s = {filename: sha256_str(content) for filename, content in contracts.items()}
+
+    return {
+        "success": True,
+        "bundle_name": bundle_name,
+        "version": parsed.version,
+        "contracts": contracts,
+        "sha256s": sha256s,
+        "bundle_hash": bundle_hash,
+    }
 
 
 def compile_from_ircs_file(

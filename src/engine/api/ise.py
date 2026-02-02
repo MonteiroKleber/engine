@@ -176,6 +176,10 @@ class CompileReleaseRequest(BaseModel):
         default=True,
         description="Validate for finance-pilot MVP requirements",
     )
+    institution_id: Optional[str] = Field(
+        default=None,
+        description="Institution UUID for namespaced bundle storage",
+    )
 
 
 class CompileReleaseResponse(BaseModel):
@@ -220,6 +224,7 @@ async def compile_release_endpoint(
         idl=request.idl,
         bundle_name=request.bundle_name,
         validate_finance_pilot=request.validate_finance_pilot,
+        institution_id=request.institution_id,
     )
 
     # Map failed status to HTTP errors

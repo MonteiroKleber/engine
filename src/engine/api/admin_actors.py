@@ -36,6 +36,7 @@ class CreateActorTokenRequest(BaseModel):
 
     actor_id: str = Field(..., description="UUID of the actor")
     roles: List[str] = Field(default_factory=list, description="Roles to assign")
+    is_agent: bool = Field(default=False, description="True if this actor is a governed agent")
 
 
 class CreateActorTokenResponse(BaseModel):
@@ -44,6 +45,7 @@ class CreateActorTokenResponse(BaseModel):
     token: str = Field(..., description="Plaintext token (only shown once)")
     actor_id: str = Field(..., description="Actor UUID")
     roles: List[str] = Field(..., description="Assigned roles")
+    is_agent: bool = Field(default=False, description="True if this actor is a governed agent")
     message: str = Field(default="Token created successfully. Store it securely.")
 
 
@@ -56,6 +58,7 @@ class ActorTokenInfo(BaseModel):
     status: str = Field(..., description="active or revoked")
     created_at: str = Field(..., description="ISO 8601 timestamp")
     created_by: Optional[str] = Field(None, description="Admin key ID that created")
+    is_agent: bool = Field(default=False, description="True if this actor is a governed agent")
 
 
 class ListActorsResponse(BaseModel):
@@ -87,6 +90,7 @@ def _emit_actor_event(
     roles: Optional[List[str]] = None,
     decision: str = "allow",
     reason: Optional[str] = None,
+    is_agent: bool = False,
 ) -> None:
     """Emit ledger event for actor token operations."""
     try:
@@ -98,6 +102,7 @@ def _emit_actor_event(
             "target_actor_id": actor_id,
             "token_sha256": token_sha256,
             "admin_key_id": admin_key_id,
+            "is_agent": is_agent,
         }
         if roles is not None:
             payload["roles"] = roles
@@ -153,6 +158,7 @@ async def create_actor_token(
         actor_id=body.actor_id,
         roles=body.roles,
         created_by=auth_result.key_id,
+        is_agent=body.is_agent,
     )
 
     if error_code:
@@ -186,12 +192,14 @@ async def create_actor_token(
         token_sha256=token_sha256,
         admin_key_id=auth_result.key_id,
         roles=body.roles,
+        is_agent=body.is_agent,
     )
 
     return CreateActorTokenResponse(
         token=plaintext_token,
         actor_id=body.actor_id,
         roles=body.roles,
+        is_agent=body.is_agent,
     )
 
 
@@ -226,6 +234,7 @@ async def list_actors(
             status=a.status,
             created_at=a.created_at,
             created_by=a.created_by,
+            is_agent=a.is_agent,
         )
         for a in actors
     ]
@@ -338,6 +347,7 @@ async def get_actor_tokens(
             status=a.status,
             created_at=a.created_at,
             created_by=a.created_by,
+            is_agent=a.is_agent,
         )
         for a in actors
     ]

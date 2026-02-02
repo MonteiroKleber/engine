@@ -11,12 +11,6 @@ from .actor_context import ActorContext
 from .errors import POLICY_ENDPOINT_UNKNOWN, POLICY_PATH_INVALID, POLICY_INVALID
 
 
-# Allowed endpoint signatures (exact match only, no wildcards)
-ALLOWED_ENDPOINT_SIGS = frozenset({
-    "POST /finance/expenses",
-    "POST /approvals/{approval_id}/decide",
-})
-
 # Regex for valid field path tokens: only alphanumeric and underscore
 _FIELD_TOKEN_PATTERN = re.compile(r"^[a-zA-Z0-9_]+$")
 
@@ -28,23 +22,6 @@ class PolicySchemaError(Exception):
         self.code = code
         self.message = message
         super().__init__(message)
-
-
-def validate_endpoint_sig(endpoint_sig: str) -> None:
-    """Validate that endpoint_sig is in the allowed set.
-
-    Args:
-        endpoint_sig: The endpoint signature to validate.
-
-    Raises:
-        PolicySchemaError: If endpoint_sig is not allowed.
-    """
-    if endpoint_sig not in ALLOWED_ENDPOINT_SIGS:
-        raise PolicySchemaError(
-            code=POLICY_ENDPOINT_UNKNOWN,
-            message=f"Unknown endpoint_sig: '{endpoint_sig}'. "
-            f"Allowed values: {sorted(ALLOWED_ENDPOINT_SIGS)}",
-        )
 
 
 def validate_field_path(field_path: str) -> List[str]:
@@ -562,9 +539,6 @@ def parse_policies_data(data: Dict[str, Any]) -> PolicyDef:
                 )
             # endpoint_pattern must be exactly an allowed endpoint_sig
             endpoint_sig = endpoint_pattern
-
-        # Validate endpoint_sig is allowed
-        validate_endpoint_sig(endpoint_sig)
 
         rules.append(
             PolicyRule(

@@ -20,21 +20,18 @@ from engine.core.mandates import (
     clear_all_mandates,
     MandateDef,
     Mandate,
-    ALLOWED_ENDPOINT_SIGS as MANDATE_ALLOWED_SIGS,
 )
 from engine.core.autonomy import (
     set_autonomy_for_dept,
     reset_all_autonomy,
     AutonomyDef,
     AutonomyRule,
-    ALLOWED_ENDPOINT_SIGS as AUTONOMY_ALLOWED_SIGS,
 )
 from engine.core.policy import (
     set_policies,
     clear_all_policies,
     PolicyDef,
     PolicyRule,
-    ALLOWED_ENDPOINT_SIGS as POLICY_ALLOWED_SIGS,
 )
 from engine.legacy_bridge.write_models import (
     LegacyWriteAction,
@@ -66,19 +63,7 @@ def reset_state(tmp_path, monkeypatch):
     reset_all_autonomy()
     clear_all_policies()
 
-    # Patch allowed endpoint sigs to include our test endpoint
-    monkeypatch.setattr(
-        "engine.core.mandates.ALLOWED_ENDPOINT_SIGS",
-        frozenset(MANDATE_ALLOWED_SIGS | {BRIDGE_ENDPOINT}),
-    )
-    monkeypatch.setattr(
-        "engine.core.autonomy.ALLOWED_ENDPOINT_SIGS",
-        frozenset(AUTONOMY_ALLOWED_SIGS | {BRIDGE_ENDPOINT}),
-    )
-    monkeypatch.setattr(
-        "engine.core.policy.ALLOWED_ENDPOINT_SIGS",
-        frozenset(POLICY_ALLOWED_SIGS | {BRIDGE_ENDPOINT}),
-    )
+    # Engine is neutral - any endpoint_sig is accepted, no patching needed
 
     yield
 

@@ -63,9 +63,11 @@ echo "Checking contracts from manifest..."
 CONTRACTS=$(python3 -c "
 import json
 manifest = json.load(open('$MANIFEST_PATH'))
-contracts = manifest.get('contracts', {})
-# contracts is a dict: {filename: sha256_hash}
-for filename, sha256_hash in contracts.items():
+contracts = manifest.get('contracts', [])
+# contracts is a list: [{file: ..., sha256: ...}, ...]
+for contract in contracts:
+    filename = contract.get('file', '')
+    sha256_hash = contract.get('sha256', '')
     print(f'{filename}|{sha256_hash}')
 ")
 

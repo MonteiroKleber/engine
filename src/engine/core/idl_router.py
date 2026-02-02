@@ -30,12 +30,20 @@ from .dispatcher import (
     dispatch_transition,
     DispatchResult,
 )
+from .job_dispatcher import (
+    dispatch_job_request,
+    dispatch_job_enqueue,
+    dispatch_job_get,
+    dispatch_job_approval_decide,
+    JobDispatchResult,
+)
 from .approvals import get_approvals_policy
 from .actor_context import ActorContext, DEFAULT_TENANT_ID
 from .institution_context import get_request_institution_id
 from .dept_context import get_request_dept
 from .logging import get_logger
 from .errors import RUNTIME_OPERATION_NOT_FOUND
+from .rbac import gate_rbac
 
 
 # Valid API modes
@@ -256,8 +264,37 @@ def _create_idl_handler(
 
         elif bind_kind == "read":
             # DSL v1.2.2 does not have bind.kind=list.
-            # Canonical behavior: treat read endpoints without path params as list.
-            if path_params:
+            # Check if this is a passthrough operation (no entity binding)
+            entity_type = current_operation.bind.get("entity") if current_operation.bind else None
+
+            if not entity_type:
+                # Passthrough operation: check RBAC and return success
+                # Actual work is done by bridge handler or external service
+                permission = current_operation.permission
+                if not gate_rbac(permission, actor, dept_id=dept_id):
+                    result = DispatchResult(
+                        status_code=403,
+                        response_body={
+                            "code": "RBAC_DENIED",
+                            "message": f"Permission '{permission}' denied",
+                        },
+                        error_code="RBAC_DENIED",
+                        step=f"RBAC:{permission}",
+                    )
+                else:
+                    # RBAC passed - passthrough success
+                    request_body = await _read_request_body(request)
+                    result = DispatchResult(
+                        status_code=200,
+                        response_body={
+                            "status": "passthrough",
+                            "message": "Operation requires bridge handler",
+                            "request": request_body,
+                        },
+                        step=f"PASSTHROUGH:{current_operation.endpoint_sig}",
+                    )
+            elif path_params:
+                # Canonical behavior: treat read endpoints without path params as list
                 result = await dispatch_read(
                     institution_id=institution_id,
                     dept_id=dept_id,
@@ -308,6 +345,28 @@ def _create_idl_handler(
                     },
                 )
 
+            # Check if this is a job approval (Jobs First-Class)
+            # If approval_id exists in JobStore, use job approval dispatcher
+            from .job_store import get_job_store
+            job_store = get_job_store(institution_id, dept_id)
+            job = job_store.get_job_by_approval_id(approval_id)
+
+            if job:
+                # Job-based approval - use job_dispatcher
+                job_result = await dispatch_job_approval_decide(
+                    institution_id=institution_id,
+                    dept_id=dept_id,
+                    actor=actor,
+                    approval_id=approval_id,
+                    decision=decision,
+                    reason=reason,
+                )
+                return JSONResponse(
+                    status_code=job_result.status_code,
+                    content=job_result.response_body,
+                )
+
+            # Legacy approval - use standard dispatcher
             result = await dispatch_approval_decide(
                 institution_id=institution_id,
                 dept_id=dept_id,
@@ -328,6 +387,53 @@ def _create_idl_handler(
                 operation=current_operation,
                 path_params=path_params,
                 request_body=request_body,
+            )
+
+        # ========== JOB BIND.KINDS (Jobs First-Class) ==========
+        elif bind_kind == "job.request":
+            # Create a new job request
+            request_body = await _read_request_body(request)
+            job_result = await dispatch_job_request(
+                institution_id=institution_id,
+                dept_id=dept_id,
+                actor=actor,
+                operation=current_operation,
+                request_body=request_body,
+                path_params=path_params,
+            )
+            return JSONResponse(
+                status_code=job_result.status_code,
+                content=job_result.response_body,
+            )
+
+        elif bind_kind == "job.enqueue":
+            # Enqueue a job to the outbox
+            request_body = await _read_request_body(request)
+            job_result = await dispatch_job_enqueue(
+                institution_id=institution_id,
+                dept_id=dept_id,
+                actor=actor,
+                operation=current_operation,
+                path_params=path_params,
+                request_body=request_body,
+            )
+            return JSONResponse(
+                status_code=job_result.status_code,
+                content=job_result.response_body,
+            )
+
+        elif bind_kind == "job.get":
+            # Get job status and result
+            job_result = await dispatch_job_get(
+                institution_id=institution_id,
+                dept_id=dept_id,
+                actor=actor,
+                operation=current_operation,
+                path_params=path_params,
+            )
+            return JSONResponse(
+                status_code=job_result.status_code,
+                content=job_result.response_body,
             )
 
         else:

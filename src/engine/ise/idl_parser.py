@@ -29,12 +29,10 @@ from .errors import (
 
 # Import runtime constants for validation
 from engine.core.mandates import (
-    ALLOWED_ENDPOINT_SIGS as MANDATE_ALLOWED_ENDPOINT_SIGS,
     ALLOWED_PHASES as MANDATE_ALLOWED_PHASES,
     ALLOWED_RULE_TYPES as MANDATE_ALLOWED_RULE_TYPES,
 )
 from engine.core.autonomy import (
-    ALLOWED_ENDPOINT_SIGS as AUTONOMY_ALLOWED_ENDPOINT_SIGS,
     ALLOWED_PHASES as AUTONOMY_ALLOWED_PHASES,
     MIN_LEVEL as AUTONOMY_MIN_LEVEL,
     MAX_LEVEL as AUTONOMY_MAX_LEVEL,
@@ -974,14 +972,6 @@ def _parse_single_mandate(mandate_data: Dict[str, Any], seen_ids: set) -> IDLMan
             details={"mandate_id": mandate_id},
         )
 
-    if endpoint_sig not in MANDATE_ALLOWED_ENDPOINT_SIGS:
-        raise IDLParseError(
-            code=ISE_MANDATE_ENDPOINT_INVALID,
-            message=f"Mandate '{mandate_id}': invalid endpoint_sig '{endpoint_sig}'. "
-            f"Allowed: {sorted(MANDATE_ALLOWED_ENDPOINT_SIGS)}",
-            details={"mandate_id": mandate_id, "endpoint_sig": endpoint_sig},
-        )
-
     # Validate phase
     phase = mandate_data.get("phase", "")
     if not phase:
@@ -1149,14 +1139,6 @@ def _parse_autonomy_rule(rule_data: Dict[str, Any], seen_ids: set) -> IDLAutonom
             code=ISE_AUTONOMY_INVALID,
             message=f"Autonomy rule '{rule_id}': missing endpoint_sig",
             details={"rule_id": rule_id},
-        )
-
-    if endpoint_sig not in AUTONOMY_ALLOWED_ENDPOINT_SIGS:
-        raise IDLParseError(
-            code=ISE_AUTONOMY_ENDPOINT_INVALID,
-            message=f"Autonomy rule '{rule_id}': invalid endpoint_sig '{endpoint_sig}'. "
-            f"Allowed: {sorted(AUTONOMY_ALLOWED_ENDPOINT_SIGS)}",
-            details={"rule_id": rule_id, "endpoint_sig": endpoint_sig},
         )
 
     # Validate phase

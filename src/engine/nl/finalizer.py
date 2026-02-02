@@ -10,13 +10,8 @@ from engine.nl.errors import NL_POLICY_INVALID
 
 
 # =============================================================================
-# Runtime Policy v1.1 Constants (must match ISE emit/policies_emit.py)
+# Runtime Policy v1.1 Constants
 # =============================================================================
-ALLOWED_ENDPOINT_SIGS = frozenset({
-    "POST /finance/expenses",
-    "POST /approvals/{approval_id}/decide",
-})
-
 ALLOWED_PHASES = frozenset({"pre", "post"})
 
 ALLOWED_RULE_TYPES = frozenset({
@@ -291,16 +286,6 @@ def _validate_single_policy(policy: Dict[str, Any], index: int, dept_id: Optiona
             "field": "policy_id",
             "code": "POLICY_ID_MISSING",
             "message": f"{prefix}Policy #{index} is missing policy_id",
-        })
-
-    # Validate endpoint_sig
-    endpoint_sig = policy.get("endpoint_sig", "")
-    if endpoint_sig not in ALLOWED_ENDPOINT_SIGS:
-        errors.append({
-            "policy_id": policy_id,
-            "field": "endpoint_sig",
-            "code": "ENDPOINT_NOT_ALLOWED",
-            "message": f"{prefix}endpoint_sig '{endpoint_sig}' not in allowed set: {sorted(ALLOWED_ENDPOINT_SIGS)}",
         })
 
     # Validate phase

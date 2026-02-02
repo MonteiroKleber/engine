@@ -6,9 +6,10 @@ They are intentionally read-only and require admin auth.
 
 from __future__ import annotations
 
+from datetime import datetime, timedelta, timezone
 from typing import Any, Dict, List, Optional, Set
 
-from fastapi import APIRouter, HTTPException, Request
+from fastapi import APIRouter, HTTPException, Query, Request
 from pydantic import BaseModel, Field
 
 from engine.agent_ops.read_model import is_denied_event
@@ -47,10 +48,16 @@ class ObserveEventItem(BaseModel):
     reason: Optional[str] = None
     actor_id: str
     actor_roles: List[str] = Field(default_factory=list)
-    case_id: str
+    case_id: Optional[str] = None
     dept_id: Optional[str] = None
-    step: str
+    step: Optional[str] = None
     request_id: Optional[str] = None
+    explanation: str = Field(default="", description="Human-readable explanation")
+    # Requester tracking (for runtime jobs initiated by Console users)
+    requester_user_id: Optional[str] = Field(None, description="Console user ID who initiated the request")
+    requester_user_name: Optional[str] = Field(None, description="Console user name/email")
+    # Full payload (security-redacted)
+    payload: Dict[str, Any] = Field(default_factory=dict, description="Event payload with sensitive keys redacted")
 
 
 class ObserveActorDetailResponse(BaseModel):
@@ -145,6 +152,103 @@ async def observe_actors(limit: int = 50, request: Request = None):
     return ObserveActorsResponse(items=items, next_cursor=None)
 
 
+# Keys that should be redacted from payload for security
+_SENSITIVE_KEYS = frozenset({
+    "token",
+    "secret",
+    "admin_key",
+    "password",
+    "api_key",
+    "plaintext_secret",
+})
+
+# Prefixes that indicate sensitive data
+_SENSITIVE_PREFIXES = ("encrypted_",)
+
+
+def _redact_sensitive(payload: Dict[str, Any]) -> Dict[str, Any]:
+    """Redact sensitive keys from payload for security.
+
+    Removes values for keys matching:
+    - Exact matches: token, secret, admin_key, password, api_key, plaintext_secret
+    - Prefix matches: encrypted_*
+
+    Args:
+        payload: Original event payload.
+
+    Returns:
+        Copy of payload with sensitive values replaced by "[REDACTED]".
+    """
+    if not payload:
+        return {}
+
+    result = {}
+    for key, value in payload.items():
+        key_lower = key.lower()
+
+        # Check exact matches
+        if key_lower in _SENSITIVE_KEYS:
+            result[key] = "[REDACTED]"
+            continue
+
+        # Check prefix matches
+        if any(key_lower.startswith(prefix) for prefix in _SENSITIVE_PREFIXES):
+            result[key] = "[REDACTED]"
+            continue
+
+        # Recursively redact nested dicts
+        if isinstance(value, dict):
+            result[key] = _redact_sensitive(value)
+        else:
+            result[key] = value
+
+    return result
+
+
+def _compute_explanation(event_type: str, allowed: Optional[bool], payload: Dict[str, Any]) -> str:
+    """Compute deterministic human-readable explanation from event fields.
+
+    Mapping is based only on event_type + allowed + payload fields.
+    No heuristics or external lookups.
+
+    Args:
+        event_type: The event type string.
+        allowed: Whether the action was allowed (True/False/None).
+        payload: Event payload dict.
+
+    Returns:
+        Human-readable explanation string.
+    """
+    decision = payload.get("decision")
+
+    # RBAC decisions
+    if event_type == "RBAC_DECISION":
+        if allowed is False or decision == "deny":
+            return "Permissão negada pelo RBAC"
+        if allowed is True or decision == "allow":
+            return "Permissão concedida pelo RBAC"
+
+    # Approval flow
+    if event_type == "APPROVAL_REQUESTED":
+        return "Aprovação solicitada"
+
+    if event_type == "APPROVAL_DECIDED":
+        if decision == "approve":
+            return "Aprovação concedida"
+        if decision == "reject":
+            return "Aprovação rejeitada"
+
+    # Actor token events
+    if event_type == "ACTOR_TOKEN_CREATED":
+        return "Token de ator criado"
+
+    if event_type == "ACTOR_TOKEN_REVOKED":
+        return "Token de ator revogado"
+
+    # Fallback: "Evento: <EVENT_TYPE>"
+    return f"Evento: {event_type}"
+
+
 def _ledger_event_to_observe_item(event: Any) -> ObserveEventItem:
     """Convert a LedgerEvent to ObserveEventItem."""
     payload = event.payload or {}
@@ -161,6 +265,9 @@ def _ledger_event_to_observe_item(event: Any) -> ObserveEventItem:
             if code is None:
                 code = "RBAC_ALLOWED" if allowed else "RBAC_DENIED"
 
+    # Compute explanation
+    explanation = _compute_explanation(event.event_type, allowed, payload)
+
     return ObserveEventItem(
         seq=event.seq,
         occurred_at=event.timestamp or "",
@@ -175,6 +282,10 @@ def _ledger_event_to_observe_item(event: Any) -> ObserveEventItem:
         dept_id=event.dept_id,
         step=event.step,
         request_id=event.request_id,
+        explanation=explanation,
+        requester_user_id=payload.get("requester_user_id"),
+        requester_user_name=payload.get("requester_user_name"),
+        payload=_redact_sensitive(payload),
     )
 
 
@@ -261,4 +372,84 @@ async def observe_actor_detail(
         actor=actor_item,
         recent_events=recent_events,
         denied_events=denied_events,
+    )
+
+
+class ObserveLedgerEventsResponse(BaseModel):
+    """Response for ledger events query."""
+
+    events: List[ObserveEventItem] = Field(default_factory=list)
+    total: int = Field(description="Total events matching filters (before limit)")
+    filtered_by: Dict[str, Any] = Field(default_factory=dict)
+
+
+@router.get("/ledger/events", response_model=ObserveLedgerEventsResponse)
+async def observe_ledger_events(
+    request: Request,
+    event_type: Optional[str] = Query(None, description="Filter by event type"),
+    actor_id: Optional[str] = Query(None, description="Filter by actor ID"),
+    days: int = Query(15, ge=1, le=90, description="Events from last N days"),
+    limit: int = Query(200, ge=1, le=1000, description="Max events to return"),
+    offset: int = Query(0, ge=0, description="Skip first N events (for pagination)"),
+):
+    """Query ledger events with filters and pagination.
+
+    Read-only endpoint for observability. Returns events filtered by type,
+    actor, and time window. Results are sorted by timestamp descending
+    (most recent first).
+
+    Pagination: use offset + limit to navigate pages.
+    Example: offset=0, limit=50 returns first 50; offset=50, limit=50 returns next 50.
+
+    Requires:
+    - `X-Institution-Id` (or legacy `X-Tenant-Id`)
+    - Admin auth (`X-Admin-Key` or bootstrap `X-Admin-Token` where allowed)
+    """
+    institution_id = resolve_institution_id(request, require_header=True)
+    require_admin_auth(request, institution_id)
+
+    ledger = get_ledger_for_institution(institution_id)
+    all_events = ledger.get_all_events()
+
+    # Compute cutoff timestamp
+    cutoff = datetime.now(timezone.utc) - timedelta(days=days)
+    cutoff_iso = cutoff.isoformat().replace("+00:00", "Z")
+
+    # Filter events
+    filtered = []
+    for event in all_events:
+        # Time filter
+        ts = event.timestamp or ""
+        if ts and ts < cutoff_iso:
+            continue
+
+        # Event type filter
+        if event_type and event.event_type != event_type:
+            continue
+
+        # Actor filter
+        if actor_id and event.actor_id != actor_id:
+            continue
+
+        filtered.append(event)
+
+    total = len(filtered)
+
+    # Sort by timestamp desc (most recent first), then apply offset + limit
+    filtered.sort(key=lambda e: e.timestamp or "", reverse=True)
+    paginated = filtered[offset : offset + limit]
+
+    # Convert to response items
+    events = [_ledger_event_to_observe_item(e) for e in paginated]
+
+    return ObserveLedgerEventsResponse(
+        events=events,
+        total=total,
+        filtered_by={
+            "event_type": event_type,
+            "actor_id": actor_id,
+            "days": days,
+            "limit": limit,
+            "offset": offset,
+        },
     )

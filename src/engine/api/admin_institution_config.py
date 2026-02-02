@@ -21,11 +21,9 @@ from engine.core.errors import (
     INSTITUTION_CONFIG_UNAVAILABLE,
     INSTITUTION_CONFIG_HISTORY_UNAVAILABLE,
     INSTITUTION_NOT_FOUND,
-    INSTITUTION_EMERGENCY_ENDPOINT_UNKNOWN,
 )
 from engine.core.institutions import get_registry
 from engine.core.ledger import get_ledger
-from engine.core.policy import ALLOWED_ENDPOINT_SIGS
 
 
 router = APIRouter(prefix="/admin", tags=["admin"])
@@ -37,7 +35,6 @@ ERROR_CODE_TO_STATUS = {
     INSTITUTION_CONFIG_UNAVAILABLE: 500,
     INSTITUTION_CONFIG_HISTORY_UNAVAILABLE: 500,
     INSTITUTION_NOT_FOUND: 404,
-    INSTITUTION_EMERGENCY_ENDPOINT_UNKNOWN: 400,
 }
 
 
