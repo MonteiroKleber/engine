@@ -63,6 +63,10 @@ class BindKind(Enum):
     DELETE = "delete"
     TRANSITION = "transition"
     APPROVAL = "approval"
+    # Jobs-first bind kinds (dispatched via job_dispatcher.py)
+    JOB_REQUEST = "job.request"
+    JOB_ENQUEUE = "job.enqueue"
+    JOB_GET = "job.get"
 
 
 # ============================================================
@@ -391,6 +395,7 @@ class BindSpec(ASTNode):
     workflow: Optional[str] = None
     transition: Optional[str] = None
     decision: Optional[str] = None
+    job_type: Optional[str] = None  # For job.request/enqueue/get bind kinds
 
 
 @dataclass

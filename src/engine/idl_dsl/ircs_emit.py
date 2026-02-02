@@ -379,6 +379,8 @@ class IRCSEmitter:
             result["transition"] = node.transition
         if node.decision:
             result["decision"] = node.decision
+        if node.job_type:
+            result["job_type"] = node.job_type
         return result
 
     # ============================================================

@@ -1330,7 +1330,7 @@ class Parser:
         return errors
 
     def _parse_bind_spec(self) -> BindSpec:
-        """Parse: { entity: X, kind: Y, ... }"""
+        """Parse: { entity: X, kind: Y, job_type: "Z", ... }"""
         self._expect(TokenType.LBRACE, ErrorCode.IDL_P005_EXPECTED_LBRACE, "Expected '{'")
 
         entity = ""
@@ -1338,6 +1338,7 @@ class Parser:
         workflow = None
         transition = None
         decision = None
+        job_type = None
 
         while not self._check(TokenType.RBRACE, TokenType.EOF):
             token = self._advance()
@@ -1365,6 +1366,9 @@ class Parser:
                 ).value
             elif token.type == TokenType.DECISION:
                 decision = self._parse_string_value()
+            elif token.type == TokenType.IDENTIFIER and token.value == "job_type":
+                # job_type: "files.list"
+                job_type = self._parse_string_value()
             else:
                 raise self._error(
                     ErrorCode.IDL_P024_EXPECTED_KEYWORD,
@@ -1383,10 +1387,16 @@ class Parser:
             workflow=workflow,
             transition=transition,
             decision=decision,
+            job_type=job_type,
         )
 
     def _parse_bind_kind(self) -> BindKind:
-        """Parse bind kind."""
+        """Parse bind kind.
+
+        Supports standard kinds: create, read, update, delete, transition, approval
+        And jobs-first kinds: job.request, job.enqueue, job.get
+        """
+        # Standard bind kinds
         if self._match(TokenType.CREATE):
             return BindKind.CREATE
         if self._match(TokenType.READ):
@@ -1399,9 +1409,24 @@ class Parser:
             return BindKind.TRANSITION
         if self._match(TokenType.APPROVAL):
             return BindKind.APPROVAL
+
+        # Jobs-first bind kinds: job.request, job.enqueue, job.get
+        # Note: The lexer tokenizes "job.request" as a single IDENTIFIER
+        token = self._peek()
+        if token.type == TokenType.IDENTIFIER:
+            if token.value == "job.request":
+                self._advance()
+                return BindKind.JOB_REQUEST
+            elif token.value == "job.enqueue":
+                self._advance()
+                return BindKind.JOB_ENQUEUE
+            elif token.value == "job.get":
+                self._advance()
+                return BindKind.JOB_GET
+
         raise self._error(
             ErrorCode.IDL_P022_INVALID_BIND_KIND,
-            f"Invalid bind kind. Hint: Valid values are: create, read, update, delete, transition, approval",
+            "Invalid bind kind. Valid: create, read, update, delete, transition, approval, job.request, job.enqueue, job.get",
         )
 
     def _validate_path_template(self, path: str, token: Token) -> list[str]:
